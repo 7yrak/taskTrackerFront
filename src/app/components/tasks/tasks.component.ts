@@ -14,6 +14,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
+import { jsPDF } from 'jspdf';
+// @ts-ignore
+import autoTable from 'jspdf-autotable';
 import { TaskService, ImportResult } from '../../services/task.service';
 import { TaskFilterService } from '../../services/task-filter.service';
 import { ProjectService } from '../../services/project.service';
@@ -619,6 +622,53 @@ export class TasksComponent {
     a.click();
     URL.revokeObjectURL(url);
     this.snack.open(`Exportando ${visibleTasks.length} tareas de la vista...`, 'OK', { duration: 3000 });
+  }
+
+  exportPdf() {
+    const visibleTasks = this.dataSource.data;
+    if (visibleTasks.length === 0) {
+      this.snack.open('No hay tareas en la vista actual para exportar a PDF', 'OK', { duration: 2500 });
+      return;
+    }
+
+    const doc = new jsPDF({ orientation: 'landscape' });
+    const head = [['Título', 'Proyecto', 'Asignado', 'Estado', 'Prioridad', 'Inicio', 'Venc.', '% Real', '% Esp.']];
+
+    const body = visibleTasks.map(node => {
+      const prefix = '  '.repeat(node.level || 0);
+      const title = `${prefix}${node.title}`;
+      const project = node.projectName ?? '';
+      const assignee = node.assigneeNames?.join(', ') ?? '';
+      const status = this.statusLabels[node.status] ?? node.status;
+      const priority = this.priorityLabels[node.priority] ?? node.priority;
+      const startDate = node.startDate ? (this.parseLocalDate(node.startDate)?.toLocaleDateString('es-ES') || '') : '';
+      const dueDate = node.dueDate ? (this.parseLocalDate(node.dueDate)?.toLocaleDateString('es-ES') || '') : '';
+      const progressActual = node.progressActual != null ? `${node.progressActual}%` : '';
+      const progressExpected = node.progressExpected != null ? `${node.progressExpected}%` : '';
+
+      return [title, project, assignee, status, priority, startDate, dueDate, progressActual, progressExpected];
+    });
+
+    autoTable(doc, {
+      head: head,
+      body: body,
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+      headStyles: { fillColor: [44, 62, 80], textColor: 255, fontStyle: 'bold' },
+      columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 25 }, 2: { cellWidth: 30 } },
+      didDrawPage: (data: any) => {
+        doc.setFontSize(18);
+        doc.setTextColor(40);
+        doc.text('Vista de Tareas', data.settings.margin.left, 15);
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        doc.setFontSize(10);
+        doc.text(`Página ${data.pageNumber} de ${pageCount}`, data.settings.margin.left, doc.internal.pageSize.getHeight() - 10);
+      },
+      margin: { top: 20 },
+    });
+
+    const today = this.formatLocalDate(new Date());
+    doc.save(`vista_tareas_${today}.pdf`);
   }
 
   exportTasks() {
