@@ -572,6 +572,55 @@ export class TasksComponent {
     });
   }
 
+  exportView() {
+    const visibleTasks = this.dataSource.data;
+    if (visibleTasks.length === 0) {
+      this.snack.open('No hay tareas en la vista actual para exportar', 'OK', { duration: 2500 });
+      return;
+    }
+
+    const headers = ['Título', 'Proyecto', 'Asignado a', 'Estado', 'Prioridad', 'Inicio', 'Vencimiento', '% Real', '% Esperado'];
+
+    const rows = visibleTasks.map(node => {
+      const prefix = '  '.repeat(node.level || 0);
+
+      const title = `${prefix}${node.title}`;
+      const project = node.projectName ?? '';
+      const assignee = node.assigneeNames?.join(', ') ?? '';
+      const status = this.statusLabels[node.status] ?? node.status;
+      const priority = this.priorityLabels[node.priority] ?? node.priority;
+
+      const startDate = node.startDate ? this.parseLocalDate(node.startDate)?.toLocaleDateString('es-ES') : '';
+      const dueDate = node.dueDate ? this.parseLocalDate(node.dueDate)?.toLocaleDateString('es-ES') : '';
+
+      const progressActual = node.progressActual != null ? `${node.progressActual}%` : '';
+      const progressExpected = node.progressExpected != null ? `${node.progressExpected}%` : '';
+
+      const rowData = [title, project, assignee, status, priority, startDate, dueDate, progressActual, progressExpected];
+
+      const escapeCsv = (val: string | undefined) => {
+        const strVal = String(val ?? '');
+        if (/[";\n\r]/.test(strVal)) {
+          return `"${strVal.replace(/"/g, '""')}"`;
+        }
+        return strVal;
+      };
+
+      return rowData.map(escapeCsv).join(';');
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const today = this.formatLocalDate(new Date());
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `vista_tareas_${today}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    this.snack.open(`Exportando ${visibleTasks.length} tareas de la vista...`, 'OK', { duration: 3000 });
+  }
+
   exportTasks() {
     // Export ALL tasks for backup purposes, not just the visible ones.
     const tasksToExport = this.allTasks;
