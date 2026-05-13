@@ -1,0 +1,75 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1 class="page-title">Proyectos</h1>
+    <span class="spacer"></span>
+    <button mat-flat-button color="primary" (click)="openCreate()">
+      <mat-icon>add</mat-icon> Nuevo proyecto
+    </button>
+  </div>
+
+  <div class="projects-grid">
+    @for (project of projects(); track project.id) {
+      <mat-card class="project-card">
+        <mat-card-header>
+          <div class="project-color-badge" [style.background-color]="project.color"></div>
+          <mat-card-title>{{ project.name }}</mat-card-title>
+          <mat-card-subtitle>{{ project.memberCount }} miembro(s)</mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          @if (project.description) {
+            <p class="description">{{ project.description }}</p>
+          }
+
+          <div class="stats-row">
+            <div class="stat-item">
+              <span class="stat-num">{{ project.totalTasks }}</span>
+              <span class="stat-lbl">Total</span>
+            </div>
+            <div class="stat-item in-progress">
+              <span class="stat-num">{{ project.inProgressTasks }}</span>
+              <span class="stat-lbl">En progreso</span>
+            </div>
+            <div class="stat-item done">
+              <span class="stat-num">{{ project.doneTasks }}</span>
+              <span class="stat-lbl">Completadas</span>
+            </div>
+          </div>
+
+          <div class="progress-section">
+            <div class="progress-label">
+              <span>Progreso Real</span>
+              <span>{{ getProgress(project) }}%</span>
+            </div>
+            <mat-progress-bar mode="determinate"
+              [value]="getProgress(project)"
+              color="primary">
+            </mat-progress-bar>
+            @if (project.progressExpected !== null && project.progressExpected !== undefined) {
+              <div class="progress-label" style="margin-top: 8px; font-size: 0.875rem; color: #666;">
+                <span>Progreso Esperado</span>
+                <span>{{ project.progressExpected }}%</span>
+              </div>
+            }
+          </div>
+        </mat-card-content>
+
+        <mat-card-actions align="end">
+          <button mat-icon-button color="primary" matTooltip="Editar" (click)="openEdit(project)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" matTooltip="Eliminar" (click)="confirmDelete(project)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    } @empty {
+      <div class="empty-state">
+        <mat-icon>folder_open</mat-icon>
+        <h3>No hay proyectos</h3>
+        <p>Crea tu primer proyecto para empezar a organizar tus tareas.</p>
+        <button mat-flat-button color="primary" (click)="openCreate()">Crear proyecto</button>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,365 @@
+<style>
+  .progress-inline-input {
+    width: 38px;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 2px;
+    text-align: right;
+    border-radius: 4px;
+    font-weight: 600;
+    color: inherit;
+    font-family: inherit;
+    font-size: 12px;
+    transition: all 0.2s;
+  }
+  .progress-inline-input:hover { border-color: #CBD5E1; background: #FFF; cursor: text; }
+  .progress-inline-input:focus { border-color: #3B82F6; background: #FFF; outline: none; }
+  .progress-inline-input::-webkit-outer-spin-button,
+  .progress-inline-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .progress-inline-input[type=number] { -moz-appearance: textfield; }
+
+  /* Alineación definitiva del botón del árbol */
+  .task-title-cell {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+  }
+  .toggle-btn {
+    cursor: pointer;
+    color: #64748B;
+    margin-right: 6px;
+    user-select: none;
+    transition: color 0.2s;
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+  }
+  .toggle-btn:hover { color: #3B82F6; }
+  .leaf-indent {
+    width: 30px; /* 24px del ícono + 6px de margen */
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  .title-inline-input {
+    flex: 1;
+    width: 100%;
+    border: 1px solid #3B82F6;
+    background: #FFF;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+    color: inherit;
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+    min-width: 50px;
+    box-sizing: border-box;
+  }
+
+  /* Tareas completadas tachadas */
+  .task-done-row {
+    background-color: #F8FAFC !important;
+  }
+  .task-done-row .task-name {
+    color: #94A3B8;
+  }
+
+  /* Alineación centrada de los Porcentajes */
+  .mat-column-progressActual, .mat-column-progressExpected { 
+    text-align: center; 
+  }
+  ::ng-deep .mat-column-progressActual .mat-sort-header-container,
+  ::ng-deep .mat-column-progressExpected .mat-sort-header-container { 
+    justify-content: center; 
+  }
+  
+  .progress-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .pct-container { display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 45px; }
+  .bar-pct { font-weight: 600; font-size: 13px; }
+  .pct-symbol { font-weight: 600; font-size: 12px; margin-left: 2px; }
+  .progress-icon { font-size: 16px !important; width: 16px !important; height: 16px !important; line-height: 16px !important; margin-left: 6px; flex-shrink: 0; }
+
+  /* Evitar saltos de línea en toda la tabla para mantener filas compactas */
+  .tasks-table td.mat-cell, 
+  .tasks-table th.mat-header-cell {
+    white-space: nowrap;
+  }
+</style>
+<div class="page-container">
+  <div class="page-header">
+    <h1 class="page-title">Tareas</h1>
+    <span class="spacer"></span>
+    <input #fileInput type="file" accept=".xlsx,.xls" style="display:none" (change)="onFileSelected($event)" />
+    <!--button mat-stroked-button color="warn" (click)="confirmDeleteAll()" style="margin-right:8px"
+            matTooltip="Elimina TODAS las tareas del sistema">
+      <mat-icon>delete_sweep</mat-icon> Borrar todo
+    </button-->
+    <button mat-stroked-button (click)="exportTasks()" style="margin-right:8px"
+            matTooltip="Exporta todas las tareas al formato Excel">
+      <mat-icon>file_download</mat-icon> Exportar Excel
+    </button>
+    <button mat-stroked-button color="primary" (click)="triggerImport()" style="margin-right:8px">
+      <mat-icon>upload_file</mat-icon> Importar Excel
+    </button>
+    <button mat-flat-button color="primary" (click)="openCreate()">
+      <mat-icon>add</mat-icon> Nueva tarea
+    </button>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filter-bar">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Proyecto</mat-label>
+      <mat-select [ngModel]="filterProject()" (ngModelChange)="filterProject.set($event); applyFilter()" multiple>
+        @for (p of projects(); track p.id) {
+          <mat-option [value]="p.id">{{ p.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Estado</mat-label>
+      <mat-select [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event); applyFilter()" multiple>
+        @for (s of statuses; track s) {
+          <mat-option [value]="s">{{ statusLabels[s] }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Prioridad</mat-label>
+      <mat-select [ngModel]="filterPriority()" (ngModelChange)="filterPriority.set($event); applyFilter()" multiple>
+        <mat-option value="LOW">Baja</mat-option>
+        <mat-option value="MEDIUM">Media</mat-option>
+        <mat-option value="HIGH">Alta</mat-option>
+        <mat-option value="CRITICAL">Crítica</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Asignado a</mat-label>
+      <mat-select [ngModel]="filterAssignee()" (ngModelChange)="filterAssignee.set($event); applyFilter()" multiple>
+        @for (m of members(); track m.id) {
+          <mat-option [value]="m.id">{{ m.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <button mat-stroked-button (click)="clearFilters()">
+      <mat-icon>clear</mat-icon> Limpiar
+    </button>
+
+    <button mat-stroked-button (click)="toggleExpandAll()" [disabled]="!hasExpandableTasks()">
+      <mat-icon>{{ areAllExpanded() ? 'unfold_less' : 'unfold_more' }}</mat-icon>
+      {{ areAllExpanded() ? 'Contraer todas' : 'Expandir todas' }}
+    </button>
+
+    <span class="spacer"></span>
+    <span class="task-count">{{ taskCount() }} tarea(s)</span>
+  </div>
+
+  <!-- Tabla árbol -->
+  <div class="table-wrapper">
+    <div class="table-scroll">
+      <table mat-table [dataSource]="dataSource" class="tasks-table"
+             [trackBy]="trackById"
+             matSort [matSortActive]="activeSort.active" [matSortDirection]="activeSort.direction"
+             (matSortChange)="applySort($event)">
+
+        <!-- Columna Tarea (con árbol) -->
+        <ng-container matColumnDef="title">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Tarea</th>
+          <td mat-cell *matCellDef="let node">
+            <div class="task-title-cell" [style.paddingLeft.px]="node.level * 20">
+              @if (node.childrenNodes.length > 0) {
+                <mat-icon class="toggle-btn" (click)="toggleExpand(node); $event.stopPropagation()"
+                        [matTooltip]="node.expanded ? 'Colapsar' : 'Expandir'">
+                  {{ node.expanded ? 'expand_more' : 'chevron_right' }}
+                </mat-icon>
+              } @else {
+                <span class="leaf-indent"></span>
+              }
+              @if (editingTitleId() === node.id) {
+                <input type="text" [id]="'title-input-' + node.id" class="title-inline-input"
+                       [value]="node.title"
+                       (blur)="updateTitle(node, $event)"
+                       (keydown.enter)="updateTitle(node, $event)"
+                       (keydown.escape)="cancelTitleEdit()"
+                       (click)="$event.stopPropagation()" />
+              } @else {
+                <span class="task-name" [class.parent-name]="node.hasChildren"
+                      [matTooltip]="node.description ? node.description + '\n(Doble clic para editar)' : 'Doble clic para editar'" matTooltipShowDelay="600"
+                      (dblclick)="startEditingTitle(node, $event)">
+                  {{ node.title }}
+                </span>
+              }
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Proyecto -->
+        <ng-container matColumnDef="project">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Proyecto</th>
+          <td mat-cell *matCellDef="let node">
+            @if (node.projectName) {
+              <span class="color-dot" [style.background-color]="node.projectColor"></span>
+              {{ node.projectName }}
+            } @else {
+              <span class="no-value">—</span>
+            }
+          </td>
+        </ng-container>
+
+        <!-- Asignado a -->
+        <ng-container matColumnDef="assignee">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Asignado a</th>
+          <td mat-cell *matCellDef="let node">
+            {{ (node.assigneeNames && node.assigneeNames.length > 0) ? node.assigneeNames.join(', ') : '—' }}
+          </td>
+        </ng-container>
+
+        <!-- Estado -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+          <td mat-cell *matCellDef="let node">
+            @if (node.hasChildren) {
+              <span class="status-chip {{ node.status }}" matTooltip="Calculado de subtareas">
+                {{ statusLabels[node.status] }}
+              </span>
+            } @else {
+              <button mat-button [matMenuTriggerFor]="statusMenu" class="status-btn">
+                <span class="status-chip {{ node.status }}">{{ statusLabels[node.status] }}</span>
+                <mat-icon>arrow_drop_down</mat-icon>
+              </button>
+              <mat-menu #statusMenu="matMenu">
+                @for (s of statuses; track s) {
+                  <button mat-menu-item (click)="changeStatus(node, s)" [disabled]="node.status === s">
+                    <span class="status-chip {{ s }}">{{ statusLabels[s] }}</span>
+                  </button>
+                }
+              </mat-menu>
+            }
+          </td>
+        </ng-container>
+
+        <!-- Prioridad -->
+        <ng-container matColumnDef="priority">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Prioridad</th>
+          <td mat-cell *matCellDef="let node">
+            <span class="priority-chip {{ node.priority }}">{{ priorityLabels[node.priority] }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Fecha inicio -->
+        <ng-container matColumnDef="startDate">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Inicio</th>
+          <td mat-cell *matCellDef="let node">
+            @if (node.startDate) {
+              {{ node.startDate | date:'dd/MM/yy' }}
+            } @else {
+              <span class="no-value">—</span>
+            }
+          </td>
+        </ng-container>
+
+        <!-- Fecha vencimiento -->
+        <ng-container matColumnDef="dueDate">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Vencimiento</th>
+          <td mat-cell *matCellDef="let node">
+            @if (node.dueDate) {
+              <span class="due-date-cell" [class.overdue]="isOverdue(node)">
+                @if (isOverdue(node)) {
+                  <mat-icon class="overdue-icon">schedule</mat-icon>
+                }
+                {{ node.dueDate | date:'dd/MM/yy' }}
+              </span>
+            } @else {
+              <span class="no-value">—</span>
+            }
+          </td>
+        </ng-container>
+
+        <!-- Avance real -->
+        <ng-container matColumnDef="progressActual">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>% Real</th>
+          <td mat-cell *matCellDef="let node">
+            <div class="progress-cell">
+              <div class="pct-container">
+                @if (node.hasChildren) {
+                  <span class="bar-pct" matTooltip="Calculado de subtareas">{{ node.progressActual }}%</span>
+                } @else {
+                  <input type="number" class="progress-inline-input" min="0" max="100"
+                         [value]="node.progressActual"
+                         (change)="updateProgress(node, $event)"
+                         (click)="$event.stopPropagation()"
+                         matTooltip="Editar % real" />
+                  <span class="pct-symbol">%</span>
+                }
+              </div>
+              @if (progressIcon(node)) {
+                <mat-icon class="progress-icon {{ progressStatus(node) }}">{{ progressIcon(node) }}</mat-icon>
+              }
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Avance esperado -->
+        <ng-container matColumnDef="progressExpected">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>% Esperado</th>
+          <td mat-cell *matCellDef="let node">
+            @if (node.progressExpected !== null && node.progressExpected !== undefined) {
+              <div class="progress-cell">
+                <div class="pct-container">
+                  <span class="bar-pct">{{ node.progressExpected }}%</span>
+                </div>
+              </div>
+            } @else {
+              <span class="no-value">—</span>
+            }
+          </td>
+        </ng-container>
+
+        <!-- Acciones -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let node">
+            <div class="actions-cell">
+              <button mat-icon-button class="action-btn" color="primary" matTooltip="Editar" (click)="openEdit(node)">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button class="action-btn" matTooltip="Agregar subtarea" (click)="openCreate(node.id)"
+                      style="color:#6366F1">
+                <mat-icon>add_circle_outline</mat-icon>
+              </button>
+              <button mat-icon-button class="action-btn" color="warn" matTooltip="Eliminar" (click)="confirmDelete(node)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+            [class.overdue-row]="isOverdue(row)"
+            [class.parent-row]="row.hasChildren"
+            [class.task-done-row]="row.status === 'DONE'"></tr>
+
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell no-data" [attr.colspan]="displayedColumns.length">
+            No hay tareas que coincidan con los filtros.
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>

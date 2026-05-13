@@ -1,0 +1,62 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1 class="page-title">Equipo</h1>
+    <span class="spacer"></span>
+    <button mat-flat-button color="primary" (click)="openCreate()">
+      <mat-icon>person_add</mat-icon> Agregar miembro
+    </button>
+  </div>
+
+  <div class="members-grid">
+    @for (member of members(); track member.id) {
+      <mat-card class="member-card">
+        <mat-card-content>
+          <div class="member-header">
+            <div class="avatar">{{ getInitials(member.name) }}</div>
+            <div class="member-info">
+              <h3 class="member-name">{{ member.name }}</h3>
+              <p class="member-email">{{ member.email }}</p>
+              @if (member.role) {
+                <span class="member-role">{{ member.role }}</span>
+              }
+            </div>
+            <div class="member-actions">
+              <button mat-icon-button color="primary" matTooltip="Editar" (click)="openEdit(member)">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" matTooltip="Eliminar" (click)="confirmDelete(member)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="member-stats">
+            <div class="stat">
+              <mat-icon>task_alt</mat-icon>
+              <span>{{ member.taskCount }} tarea(s)</span>
+            </div>
+            <div class="stat">
+              <mat-icon>folder</mat-icon>
+              <span>{{ member.projectNames.length }} proyecto(s)</span>
+            </div>
+          </div>
+
+          @if (member.projectNames.length > 0) {
+            <div class="projects-chips">
+              @for (proj of member.projectNames; track proj) {
+                <mat-chip>{{ proj }}</mat-chip>
+              }
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    } @empty {
+      <div class="empty-state">
+        <mat-icon>group_off</mat-icon>
+        <h3>No hay miembros</h3>
+        <p>Agrega miembros a tu equipo para asignarles tareas.</p>
+        <button mat-flat-button color="primary" (click)="openCreate()">Agregar miembro</button>
+      </div>
+    }
+  </div>
+</div>

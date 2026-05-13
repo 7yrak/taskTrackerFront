@@ -1,0 +1,453 @@
+<style>
+  /* Compactar tabla de Tareas Críticas */
+  .critical-table .table-row {
+    padding: 0 12px !important;
+    min-height: 38px !important;
+    align-items: center;
+  }
+  .critical-table .table-header {
+    padding: 6px 12px !important;
+  }
+  .critical-table .severity-icon {
+    margin-right: 8px !important;
+    display: flex;
+    align-items: center;
+  }
+  .critical-table .severity-icon mat-icon {
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+  }
+  .critical-table .col { font-size: 13px !important; }
+  .critical-table .task-info strong { font-size: 13px !important; font-weight: 500; margin: 0; }
+</style>
+<div class="page-container">
+
+  <!-- ── Page header ──────────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">📊 Centro de Control</h1>
+      <span class="header-date">{{ today | date:'fullDate' }}</span>
+    </div>
+    <div class="header-actions">
+      <button mat-icon-button (click)="refreshData()" matTooltip="Refrescar datos" color="primary" [disabled]="isLoading()">
+        <mat-icon>refresh</mat-icon>
+      </button>
+      <button mat-flat-button color="primary" routerLink="/tasks" [disabled]="isLoading()">
+        <mat-icon>add</mat-icon> Nueva tarea
+      </button>
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Cargando información del panel...</p>
+    </div>
+  } @else {
+    <!-- ── KPI SUMMARY (Critical Metrics) ────────────────────────────────────── -->
+    <div class="kpi-summary">
+      <div class="kpi-card kpi-health">
+        <div class="kpi-icon" [ngClass]="'health-' + kpis().globalHealth">
+          <mat-icon>{{ healthIcon(kpis().globalHealth) }}</mat-icon>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-label">ESTADO GLOBAL</div>
+          <div class="kpi-value" [ngClass]="'health-text-' + kpis().globalHealth">{{ healthLabel(kpis().globalHealth) }}</div>
+        </div>
+      </div>
+
+    <div class="kpi-card kpi-projects-at-risk">
+      <div class="kpi-icon">
+        <mat-icon>warning</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <div class="kpi-label">PROYECTOS EN RIESGO</div>
+        <div class="kpi-value">{{ kpis().projectsAtRisk }}/{{ projectHealth().length }}</div>
+      </div>
+    </div>
+
+    <div class="kpi-card kpi-blocked">
+      <div class="kpi-icon"><mat-icon>block</mat-icon></div>
+      <div class="kpi-content">
+        <div class="kpi-label">TAREAS BLOQUEADAS</div>
+        <div class="kpi-value">{{ kpis().blocked }}</div>
+      </div>
+    </div>
+
+    <div class="kpi-card kpi-behind">
+      <div class="kpi-icon"><mat-icon>trending_down</mat-icon></div>
+      <div class="kpi-content">
+        <div class="kpi-label">ATRASADAS</div>
+        <div class="kpi-value">{{ kpis().behind }}</div>
+      </div>
+    </div>
+
+    <div class="kpi-card kpi-overdue">
+      <div class="kpi-icon"><mat-icon>schedule</mat-icon></div>
+      <div class="kpi-content">
+        <div class="kpi-label">VENCIDAS</div>
+        <div class="kpi-value">{{ kpis().overdue }}</div>
+      </div>
+    </div>
+
+    <div class="kpi-card kpi-active">
+      <div class="kpi-icon"><mat-icon>pending</mat-icon></div>
+      <div class="kpi-content">
+        <div class="kpi-label">ACTIVAS</div>
+        <div class="kpi-value">{{ kpis().active }}</div>
+      </div>
+    </div>
+
+    <div class="kpi-card kpi-done">
+      <div class="kpi-icon"><mat-icon>check_circle</mat-icon></div>
+      <div class="kpi-content">
+        <div class="kpi-label">COMPLETADAS</div>
+        <div class="kpi-value">{{ kpis().done }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PROYECTOS CRÍTICOS (Red Alert Section) ──────────────────────────────── -->
+  @if (criticalProjects().length > 0) {
+    <div class="critical-projects-section">
+      <h2 class="section-title critical-title">
+        <mat-icon>error</mat-icon> PROYECTOS CRÍTICOS - REQUIEREN ATENCIÓN INMEDIATA
+      </h2>
+      <div class="critical-cards-grid">
+        @for (p of criticalProjects(); track p.projectName) {
+          <div class="critical-project-card" [ngClass]="'health-' + p.health">
+            <div class="card-header">
+              <div class="project-badge" [style.background]="p.projectColor"></div>
+              <div class="card-title">
+                <h3>{{ p.projectName }}</h3>
+                <span class="health-badge" [ngClass]="'health-' + p.health">
+                  <mat-icon>{{ healthIcon(p.health) }}</mat-icon>
+                  {{ healthLabel(p.health) }}
+                </span>
+              </div>
+            </div>
+
+            <div class="card-metrics">
+              <div class="metric">
+                <span class="metric-label">Avance Real vs Esperado</span>
+                <div class="progress-comparison">
+                  <div class="actual">{{ p.avgActual }}% Real</div>
+                  @if (p.avgExpected) {
+                    <div class="expected">{{ p.avgExpected }}% Esperado</div>
+                  }
+                </div>
+              </div>
+
+              <div class="metric">
+                <span class="metric-label">Tareas Críticas</span>
+                <div class="critical-tasks-info">
+                  @if (p.blockedTasks > 0) {
+                    <span class="blocked"><strong>{{ p.blockedTasks }}</strong> Bloqueadas</span>
+                  }
+                  @if (p.overdueTasks > 0) {
+                    <span class="overdue"><strong>{{ p.overdueTasks }}</strong> Vencidas</span>
+                  }
+                  @if (p.behindTasks > 0) {
+                    <span class="behind"><strong>{{ p.behindTasks }}</strong> Atrasadas</span>
+                  }
+                </div>
+              </div>
+
+              <div class="metric">
+                <span class="metric-label">Progreso</span>
+                <span class="progress-number">{{ p.doneTasks }}/{{ p.totalTasks }} completadas</span>
+              </div>
+            </div>
+
+            <div class="card-progress-bar">
+              <div class="bar-track">
+                <div class="bar-actual" [style.width.%]="p.avgActual"></div>
+                @if (p.avgExpected) {
+                  <div class="bar-expected-line" [style.left.%]="p.avgExpected"></div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ── TODOS LOS PROYECTOS (Summary Table) ──────────────────────────────── -->
+  <mat-card class="projects-summary-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>folder_open</mat-icon> RESUMEN DE TODOS LOS PROYECTOS
+        <span class="badge-count">{{ projectHealth().length }}</span>
+      </mat-card-title>
+      <div class="card-controls">
+        <div class="sort-controls">
+          <button [class.active]="sortBy() === 'risk'" (click)="sortBy.set('risk')" mat-button>
+            <mat-icon>warning</mat-icon> Riesgo
+          </button>
+          <button [class.active]="sortBy() === 'progress'" (click)="sortBy.set('progress')" mat-button>
+            <mat-icon>trending_up</mat-icon> Avance
+          </button>
+          <button [class.active]="sortBy() === 'name'" (click)="sortBy.set('name')" mat-button>
+            <mat-icon>sort_by_alpha</mat-icon> Nombre
+          </button>
+        </div>
+      </div>
+    </mat-card-header>
+    <mat-card-content>
+      @if (projectHealth().length === 0) {
+        <div class="empty-state">
+          <mat-icon>folder_open</mat-icon>
+          <p>Sin proyectos registrados</p>
+        </div>
+      } @else {
+        <div class="projects-table">
+          <div class="table-header">
+            <div class="col col-name">PROYECTO</div>
+            <div class="col col-status">ESTADO</div>
+            <div class="col col-tareas">TAREAS</div>
+            <div class="col col-bloq">BLOQ</div>
+            <div class="col col-venc">VENC</div>
+            <div class="col col-atras">ATRAS</div>
+            <div class="col col-progress">PROGRESO REAL</div>
+            <div class="col col-esperado">ESPERADO</div>
+            <div class="col col-diferencia">DIFERENCIA</div>
+          </div>
+
+          @for (p of projectHealth(); track p.projectName) {
+            <div class="table-row" [class.row-blocked]="p.health === 'blocked'"
+                 [class.row-behind]="p.health === 'behind'"
+                 [class.row-atrisk]="p.health === 'at-risk'">
+              
+              <div class="col col-name">
+                <span class="project-dot" [style.background]="p.projectColor"></span>
+                <strong>{{ p.projectName }}</strong>
+              </div>
+
+              <div class="col col-status">
+                <span class="status-chip" [ngClass]="'status-' + p.health">
+                  <mat-icon>{{ healthIcon(p.health) }}</mat-icon>
+                  {{ healthLabel(p.health) }}
+                </span>
+              </div>
+
+              <div class="col col-tareas">
+                <span>{{ p.doneTasks }}/{{ p.totalTasks }}</span>
+              </div>
+
+              <div class="col col-bloq">
+                @if (p.blockedTasks > 0) {
+                  <span class="badge blocked">{{ p.blockedTasks }}</span>
+                } @else {
+                  <span class="no-data">—</span>
+                }
+              </div>
+
+              <div class="col col-venc">
+                @if (p.overdueTasks > 0) {
+                  <span class="badge overdue">{{ p.overdueTasks }}</span>
+                } @else {
+                  <span class="no-data">—</span>
+                }
+              </div>
+
+              <div class="col col-atras">
+                @if (p.behindTasks > 0) {
+                  <span class="badge behind">{{ p.behindTasks }}</span>
+                } @else {
+                  <span class="no-data">—</span>
+                }
+              </div>
+
+              <div class="col col-progress">
+                <div class="progress-inline">
+                  <div class="progress-bar">
+                    <div class="fill" [style.width.%]="p.avgActual"></div>
+                  </div>
+                  <span class="percentage">{{ p.avgActual }}%</span>
+                </div>
+              </div>
+
+              <div class="col col-esperado">
+                @if (p.avgExpected !== null) {
+                  {{ p.avgExpected }}%
+                } @else {
+                  <span class="no-data">—</span>
+                }
+              </div>
+
+              <div class="col col-diferencia">
+                @if (p.avgExpected !== null) {
+                  <span [class.negative]="(p.avgActual - p.avgExpected) < 0">
+                    {{ (p.avgActual - p.avgExpected) > 0 ? '+' : '' }}{{ p.avgActual - p.avgExpected }}%
+                  </span>
+                } @else {
+                  <span class="no-data">—</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <!-- ── EQUIPO (Team Performance) ──────────────────────────────────────────– -->
+  <mat-card class="team-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>group</mat-icon> DESEMPEÑO DEL EQUIPO
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if (memberHealth().length === 0) {
+        <div class="empty-state">
+          <mat-icon>person_off</mat-icon>
+          <p>Sin miembros asignados a tareas</p>
+        </div>
+      } @else {
+        <div class="team-grid">
+          @for (m of memberHealth(); track m.name) {
+            <div class="team-card-item" [ngClass]="'health-' + m.health">
+              <div class="member-header">
+                <div class="avatar" [ngClass]="'health-bg-' + m.health">{{ initials(m.name) }}</div>
+                <div class="member-info-section">
+                  <strong class="member-name">{{ m.name }}</strong>
+                  <span class="status-label">{{ healthLabel(m.health) }}</span>
+                </div>
+              </div>
+
+              <div class="member-stats-row">
+                <div class="stat">
+                  <span class="stat-label">Asignadas</span>
+                  <span class="stat-value">{{ m.totalTasks }}</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">Completadas</span>
+                  <span class="stat-value">{{ m.doneTasks }}</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">Progreso</span>
+                  <span class="stat-value">{{ m.avgActual }}%</span>
+                </div>
+              </div>
+
+              @if (m.blockedTasks > 0 || m.overdueTasks > 0 || m.behindTasks > 0) {
+                <div class="alerts-row">
+                  @if (m.blockedTasks > 0) {
+                    <span class="alert-badge blocked">{{ m.blockedTasks }} bloq.</span>
+                  }
+                  @if (m.overdueTasks > 0) {
+                    <span class="alert-badge overdue">{{ m.overdueTasks }} venc.</span>
+                  }
+                  @if (m.behindTasks > 0) {
+                    <span class="alert-badge behind">{{ m.behindTasks }} atras.</span>
+                  }
+                </div>
+              }
+
+              @if (m.worstTasks.length > 0) {
+                <div class="worst-tasks">
+                  <span class="worst-label">Tareas críticas:</span>
+                  @for (wt of m.worstTasks; track wt.id) {
+                    <span class="task-chip" [matTooltip]="wt.title" (click)="openEdit(wt)" style="cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
+                      {{ wt.title | slice:0:20 }}{{ wt.title.length > 20 ? '…' : '' }}
+                    </span>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <!-- ── TAREAS CRÍTICAS ──────────────────────────────────────────────────── -->
+  @if (criticalTasks().length > 0) {
+    <mat-card class="critical-tasks-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>report_problem</mat-icon> TAREAS CRÍTICAS
+          <span class="badge-critical">{{ criticalTasks().length }}</span>
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="critical-table">
+          <div class="table-header">
+            <div class="col col-task">TAREA</div>
+            <div class="col col-project">PROYECTO</div>
+            <div class="col col-assignee">ASIGNADO A</div>
+            <div class="col col-dates">VENCIMIENTO</div>
+            <div class="col col-progress">PROGRESO</div>
+            <div class="col col-reason">MOTIVO</div>
+          </div>
+
+          @for (ct of criticalTasks(); track ct.task.id) {
+            <div class="table-row severity-{{ ct.severity }}" [style.opacity]="ct.isCritical ? '1' : '0.6'" 
+                 (click)="openEdit(ct.task)" style="cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='transparent'">
+              <div class="col col-task" [style.padding-left.px]="(ct.level || 0) * 26">
+                <span class="severity-icon reason-{{ ct.reason }}">
+                  <mat-icon>{{ reasonIcon(ct.reason) }}</mat-icon>
+                </span>
+                <div class="task-info" [matTooltip]="ct.task.description || ''">
+                  <strong>{{ ct.task.title }}</strong>
+                </div>
+              </div>
+
+              <div class="col col-project">
+                @if (ct.task.projectName) {
+                  <span class="project-dot" [style.background]="ct.task.projectColor"></span>
+                  {{ ct.task.projectName }}
+                } @else {
+                  <span class="no-data">—</span>
+                }
+              </div>
+
+              <div class="col col-assignee">
+                @if (ct.task.assigneeNames && ct.task.assigneeNames.length > 0) {
+                  <span [matTooltip]="ct.task.assigneeNames.join(', ')">
+                    {{ ct.task.assigneeNames[0] }}
+                    @if (ct.task.assigneeNames.length > 1) {
+                      <span class="more-assignees">+{{ ct.task.assigneeNames.length - 1 }}</span>
+                    }
+                  </span>
+                } @else {
+                  <span class="no-data">Sin asignar</span>
+                }
+              </div>
+
+              <div class="col col-dates">
+                @if (ct.task.dueDate) {
+                  <span [class.overdue]="isOverdue(ct.task)">
+                    {{ ct.task.dueDate | date:'dd/MM/yy' }}
+                  </span>
+                } @else {
+                  <span class="no-data">—</span>
+                }
+              </div>
+
+              <div class="col col-progress">
+                <div class="progress-mini">
+                  <div class="bar">
+                    <div class="fill" [style.width.%]="ct.task.progressActual"></div>
+                  </div>
+                  <span class="pct">{{ ct.task.progressActual }}%</span>
+                </div>
+              </div>
+
+              <div class="col col-reason">
+                <span class="reason-badge reason-{{ ct.reason }}">
+                  {{ reasonLabel(ct.reason) }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+  }
+
+</div>

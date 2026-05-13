@@ -1,0 +1,91 @@
+.sidenav-container { height: 100vh; }
+
+.sidenav {
+  width: 260px;
+  background: #ffffff; /* Fondo blanco y limpio */
+  color: #1f2937;
+  border-right: 1px solid #e5e7eb !important;
+
+  .sidenav-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 24px 20px;
+    border-bottom: 1px solid #e5e7eb;
+
+    .logo-icon {
+      font-size: 26px;
+      width: 26px;
+      height: 26px;
+      color: #2563eb; /* Azul corporativo */
+    }
+
+    .logo-text {
+      font-size: 20px;
+      font-weight: 800;
+      color: #111827;
+      letter-spacing: -0.5px;
+    }
+  }
+
+  mat-nav-list {
+    padding: 20px 12px;
+
+    a[mat-list-item] {
+      color: #4b5563; /* Texto gris oscuro */
+      border-radius: 8px;
+      margin-bottom: 4px;
+      height: 48px;
+      transition: all 0.2s ease-in-out;
+      font-weight: 500;
+      position: relative;
+
+      mat-icon {
+        color: #6b7280; /* Iconos gris claro */
+        font-size: 22px;
+        width: 22px;
+        height: 22px;
+        margin-right: 10px;
+        transition: color 0.2s ease-in-out;
+      }
+
+      &:hover {
+        background: #f3f4f6; /* Hover gris claro */
+        color: #111827;
+        
+        mat-icon { 
+          color: #2563eb; /* Azul claro al hacer hover */
+        }
+      }
+
+      &.active-link {
+        background: #eff6ff; /* Fondo azul muy claro */
+        color: #1d4ed8; /* Texto azul oscuro */
+        font-weight: 600;
+
+        mat-icon { 
+          color: #2563eb; /* Icono azul */
+        }
+        
+        &::before {
+           content: '';
+           position: absolute;
+           left: 0;
+           top: 8px;
+           bottom: 8px;
+           width: 4px;
+           background-color: #2563eb;
+           border-radius: 0 4px 4px 0;
+        }
+      }
+    }
+  }
+}
+
+.content-area {
+  background: #f3f4f6;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  height: 100%;
+}

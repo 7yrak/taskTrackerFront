@@ -1,0 +1,109 @@
+.members-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.member-card {
+  .member-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6366F1, #8B5CF6);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    font-weight: 700;
+    flex-shrink: 0;
+    letter-spacing: -0.5px;
+  }
+
+  .member-info {
+    flex: 1;
+    min-width: 0;
+
+    .member-name {
+      margin: 0 0 2px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #0F172A;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .member-email {
+      margin: 0 0 6px;
+      font-size: 12px;
+      color: #64748B;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .member-role {
+      display: inline-block;
+      background: #EEF2FF;
+      color: #4F46E5;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+  }
+
+  .member-actions { display: flex; flex-direction: column; }
+
+  .member-stats {
+    display: flex;
+    gap: 0;
+    margin-bottom: 12px;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    overflow: hidden;
+
+    .stat {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      font-size: 12px;
+      color: #475569;
+      padding: 9px 6px;
+      border-right: 1px solid #E2E8F0;
+      font-weight: 500;
+
+      &:last-child { border-right: none; }
+
+      mat-icon { font-size: 15px; width: 15px; height: 15px; color: #6366F1; }
+    }
+  }
+
+  .projects-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    mat-chip { font-size: 11px; }
+  }
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 80px 20px;
+  color: #94A3B8;
+
+  mat-icon { font-size: 56px; width: 56px; height: 56px; color: #E2E8F0; display: block; margin: 0 auto 16px; }
+  h3 { font-size: 18px; color: #475569; margin: 0 0 8px; font-weight: 600; }
+  p { margin: 0 0 24px; font-size: 14px; }
+}

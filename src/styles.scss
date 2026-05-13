@@ -1,0 +1,111 @@
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: Roboto, 'Inter', 'Helvetica Neue', sans-serif;
+  background-color: #F1F5F9;
+  color: #0F172A;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Layout globals ── */
+.page-container {
+  padding: 28px 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.page-title {
+  font-size: 21px;
+  font-weight: 700;
+  margin: 0;
+  color: #0F172A;
+  letter-spacing: -0.3px;
+}
+
+.spacer { flex: 1 1 auto; }
+
+/* ── Status chips ── */
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &.TODO        { background: #EFF6FF; color: #1D4ED8; }
+  &.IN_PROGRESS { background: #FFF7ED; color: #C2410C; }
+  &.IN_REVIEW   { background: #FAF5FF; color: #6D28D9; }
+  &.DONE        { background: #F0FDF4; color: #15803D; }
+  &.BLOCKED     { background: #FFF1F2; color: #BE123C; }
+}
+
+/* ── Priority chips ── */
+.priority-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+
+  &.LOW      { background: #F0FDF4; color: #15803D; }
+  &.MEDIUM   { background: #FEFCE8; color: #A16207; }
+  &.HIGH     { background: #FFF7ED; color: #C2410C; }
+  &.CRITICAL { background: #FFF1F2; color: #B91C1C; }
+}
+
+/* ── Color dot ── */
+.color-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 7px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* ── Material card override ── */
+mat-card {
+  border-radius: 10px !important;
+  border: 1px solid #E2E8F0 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06) !important;
+}
+
+/* ── Filter bar ── */
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+
+  mat-form-field { min-width: 155px; }
+}
+
+/* ── Overdue row ── */
+.overdue-row td { background-color: #FFF5F5; }
+
+/* ── Progress bar color (dashboard) ── */
+.mat-mdc-progress-bar {
+  --mdc-linear-progress-active-indicator-color: #6366F1;
+  --mdc-linear-progress-track-color: #E2E8F0;
+}

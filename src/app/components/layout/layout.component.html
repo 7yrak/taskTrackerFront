@@ -1,0 +1,46 @@
+<style>
+  .sidenav { width: 260px; border-right: 1px solid #E2E8F0; background: #FFFFFF; }
+  .sidenav-header { padding: 24px 20px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; border-bottom: 1px solid transparent; }
+  .logo-icon { color: #2563EB; font-size: 28px; width: 28px; height: 28px; }
+  .logo-text { font-size: 20px; font-weight: 800; color: #1E293B; letter-spacing: -0.5px; }
+  
+  .custom-nav-item { margin: 4px 12px; border-radius: 8px !important; transition: all 0.2s ease; overflow: hidden; }
+  .custom-nav-item:hover { background-color: #F8FAFC; }
+  
+  /* Colores dinámicos para las secciones activas */
+  .nav-color-0.active-link { background: rgba(59, 130, 246, 0.1); color: #2563EB; font-weight: 600; }
+  .nav-color-0.active-link mat-icon { color: #2563EB; }
+  .nav-color-1.active-link { background: rgba(16, 185, 129, 0.1); color: #059669; font-weight: 600; }
+  .nav-color-1.active-link mat-icon { color: #059669; }
+  .nav-color-2.active-link { background: rgba(139, 92, 246, 0.1); color: #7C3AED; font-weight: 600; }
+  .nav-color-2.active-link mat-icon { color: #7C3AED; }
+  .nav-color-3.active-link { background: rgba(245, 158, 11, 0.1); color: #D97706; font-weight: 600; }
+  .nav-color-3.active-link mat-icon { color: #D97706; }
+  .nav-color-4.active-link { background: rgba(236, 72, 153, 0.1); color: #DB2777; font-weight: 600; }
+  .nav-color-4.active-link mat-icon { color: #DB2777; }
+</style>
+<mat-sidenav-container class="sidenav-container">
+  <mat-sidenav mode="side" opened class="sidenav">
+    <div class="sidenav-header">
+      <mat-icon class="logo-icon">task_alt</mat-icon>
+      <span class="logo-text">TaskTracker</span>
+    </div>
+
+    <mat-nav-list>
+      @for (item of navItems; track item.route; let i = $index) {
+        <a mat-list-item
+           [routerLink]="item.route"
+           class="custom-nav-item nav-color-{{ i % 5 }}"
+           routerLinkActive="active-link"
+           [routerLinkActiveOptions]="{ exact: false }">
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+        </a>
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="content-area">
+    <router-outlet />
+  </mat-sidenav-content>
+</mat-sidenav-container>
