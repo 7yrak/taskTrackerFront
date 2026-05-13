@@ -573,48 +573,65 @@ export class TasksComponent {
   }
 
   exportTasks() {
-    const visibleTasks = this.dataSource.data;
-    if (visibleTasks.length === 0) {
+    // Export ALL tasks for backup purposes, not just the visible ones.
+    const tasksToExport = this.allTasks;
+
+    if (tasksToExport.length === 0) {
       this.snack.open('No hay tareas para exportar', 'OK', { duration: 2500 });
       return;
     }
 
-    const headers = ['Título', 'Proyecto', 'Asignado', 'Estado', 'Prioridad', 'Inicio', 'Vencimiento', '% Real', '% Esperado'];
-    const rows = visibleTasks.map(t => {
-      // Sangría visual para subtareas
-      const prefix = '  '.repeat(t.level || 0);
-      
-      const escapeCsv = (val: string) => `"${(val || '').replace(/"/g, '""')}"`;
-      
-      const title = escapeCsv(`${prefix}${t.title}`);
-      const project = escapeCsv(t.projectName || '');
-      const assignee = escapeCsv(t.assigneeNames?.join(', ') || '');
-      const status = escapeCsv(this.statusLabels[t.status] || t.status);
-      const priority = escapeCsv(this.priorityLabels[t.priority] || t.priority);
-      
-      const formatStringDate = (val?: string) => {
-        if (!val) return '""';
-        const d = this.parseLocalDate(val);
-        return d ? `"${d.toLocaleDateString('es-AR')}"` : `"${val}"`;
-      };
-      
-      const startDate = formatStringDate(t.startDate);
-      const dueDate = formatStringDate(t.dueDate);
-      const progressReal = t.progressActual != null ? `"${t.progressActual}%"` : '""';
-      const progressExpected = t.progressExpected != null ? `"${t.progressExpected}%"` : '""';
-
-      return [title, project, assignee, status, priority, startDate, dueDate, progressReal, progressExpected].join(',');
+    // Create maps for quick lookup of project names and member emails
+    const projectMap = new Map<number, string>(this.projects().map(p => [p.id, p.name]));
+    const memberMap = new Map<number, string>();
+    this.members().forEach(m => {
+      if (m.email) { // Ensure email exists
+        memberMap.set(m.id, m.email);
+      }
     });
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+    // Headers that match the import template format
+    const headers = [
+      'ID', 'Parent_ID', 'Title', 'Description', 'Project',
+      'Assignees (emails)', 'Status', 'Priority', 'Start_Date',
+      'Due_Date', 'Progress_Actual'
+    ];
+
+    const rows = tasksToExport.map(task => {
+      const escapeCsv = (val: string | number | null | undefined) => {
+        const str = String(val ?? '');
+        // Si el string contiene el separador (|), una comilla, o un salto de línea, lo encerramos entre comillas.
+        if (/[|\",\n\r]/.test(str)) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      };
+
+      const id = task.id;
+      const parentId = task.parentId ?? '';
+      const title = escapeCsv(task.title);
+      const description = escapeCsv(task.description);
+      const project = escapeCsv(task.projectId ? projectMap.get(task.projectId) : '');
+      const assignees = escapeCsv(task.assigneeIds?.map(id => memberMap.get(id)).filter(Boolean).join(';') ?? '');
+      const status = task.status;
+      const priority = task.priority;
+      const startDate = task.startDate ?? '';
+      const dueDate = task.dueDate ?? '';
+      const progressActual = task.progressActual ?? 0;
+
+      return [id, parentId, title, description, project, assignees, status, priority, startDate, dueDate, progressActual].join('|');
+    });
+
+    const csvContent = '\uFEFF' + [headers.join('|'), ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const today = this.formatLocalDate(new Date());
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; 
-    a.download = `tareas_vista_${today}.csv`; 
+    a.href = url;
+    a.download = `tareas_backup_completo_${today}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    this.snack.open(`Exportando ${tasksToExport.length} tareas para respaldo...`, 'OK', { duration: 3000 });
   }
 
   // ── Excel ─────────────────────────────────────────────────────────────────
@@ -635,6 +652,10 @@ export class TasksComponent {
     const file  = input.files?.[0];
     if (!file) return;
     input.value = '';
+
+    // NOTA: Se está enviando un archivo CSV con la barra vertical (|) como separador.
+    // El método del servicio 'importExcel' y el endpoint del backend '/api/tasks/import-excel'
+    // deben ser adaptados para procesar este formato. El backend debe esperar '|' como delimitador.
     this.taskService.importExcel(file).subscribe({
       next: (result: ImportResult) => {
         this.refresh$.next();
