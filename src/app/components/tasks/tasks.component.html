@@ -1,100 +1,3 @@
-<style>
-  .progress-inline-input {
-    width: 38px;
-    box-sizing: border-box;
-    border: 1px solid transparent;
-    background: transparent;
-    padding: 2px;
-    text-align: right;
-    border-radius: 4px;
-    font-weight: 600;
-    color: inherit;
-    font-family: inherit;
-    font-size: 12px;
-    transition: all 0.2s;
-  }
-  .progress-inline-input:hover { border-color: #CBD5E1; background: #FFF; cursor: text; }
-  .progress-inline-input:focus { border-color: #3B82F6; background: #FFF; outline: none; }
-  .progress-inline-input::-webkit-outer-spin-button,
-  .progress-inline-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-  .progress-inline-input[type=number] { -moz-appearance: textfield; }
-
-  /* Alineación definitiva del botón del árbol */
-  .task-title-cell {
-    display: flex;
-    align-items: center;
-    min-height: 40px;
-  }
-  .toggle-btn {
-    cursor: pointer;
-    color: #64748B;
-    margin-right: 6px;
-    user-select: none;
-    transition: color 0.2s;
-    flex-shrink: 0;
-    width: 24px;
-    height: 24px;
-    line-height: 24px;
-  }
-  .toggle-btn:hover { color: #3B82F6; }
-  .leaf-indent {
-    width: 30px; /* 24px del ícono + 6px de margen */
-    display: inline-block;
-    flex-shrink: 0;
-  }
-
-  .title-inline-input {
-    flex: 1;
-    width: 100%;
-    border: 1px solid #3B82F6;
-    background: #FFF;
-    padding: 3px 6px;
-    border-radius: 4px;
-    font-weight: 500;
-    color: inherit;
-    font-family: inherit;
-    font-size: 13px;
-    outline: none;
-    min-width: 50px;
-    box-sizing: border-box;
-  }
-
-  /* Tareas completadas tachadas */
-  .task-done-row {
-    background-color: #F8FAFC !important;
-  }
-  .task-done-row .task-name {
-    color: #94A3B8;
-  }
-
-  /* Alineación centrada de los Porcentajes */
-  .mat-column-progressActual, .mat-column-progressExpected { 
-    text-align: center; 
-  }
-  ::ng-deep .mat-column-progressActual .mat-sort-header-container,
-  ::ng-deep .mat-column-progressExpected .mat-sort-header-container { 
-    justify-content: center; 
-  }
-  
-  .progress-cell {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .pct-container { display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 45px; }
-  .bar-pct { font-weight: 600; font-size: 13px; }
-  .pct-symbol { font-weight: 600; font-size: 12px; margin-left: 2px; }
-  .progress-icon { font-size: 16px !important; width: 16px !important; height: 16px !important; line-height: 16px !important; margin-left: 6px; flex-shrink: 0; }
-
-  /* Evitar saltos de línea en toda la tabla para mantener filas compactas */
-  .tasks-table td.mat-cell, 
-  .tasks-table th.mat-header-cell {
-    white-space: nowrap;
-  }
-</style>
 <div class="page-container">
   <div class="page-header">
     <h1 class="page-title">Tareas</h1>
@@ -164,6 +67,15 @@
       {{ areAllExpanded() ? 'Contraer todas' : 'Expandir todas' }}
     </button>
 
+    <div class="sort-controls">
+      <button mat-stroked-button (click)="clearSorting()" [disabled]="sorts.length <= 1 && sorts[0]?.active === 'startDate'">
+        <mat-icon>clear_all</mat-icon> Limpiar Orden
+      </button>
+      <span class="sort-info" *ngIf="sorts.length > 1">
+        Orden múltiple activo. <small>Mantén Shift para añadir/quitar columnas.</small>
+      </span>
+    </div>
+
     <span class="spacer"></span>
     <span class="task-count">{{ taskCount() }} tarea(s)</span>
   </div>
@@ -171,14 +83,18 @@
   <!-- Tabla árbol -->
   <div class="table-wrapper">
     <div class="table-scroll">
-      <table mat-table [dataSource]="dataSource" class="tasks-table"
-             [trackBy]="trackById"
-             matSort [matSortActive]="activeSort.active" [matSortDirection]="activeSort.direction"
-             (matSortChange)="applySort($event)">
+      <table mat-table [dataSource]="dataSource" class="tasks-table" [trackBy]="trackById">
 
         <!-- Columna Tarea (con árbol) -->
         <ng-container matColumnDef="title">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Tarea</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="sort-header" (click)="handleSort('title', $event)" [class.sorted]="getSortDirection('title')">
+              <span>Tarea</span>
+              <mat-icon class="sort-icon" *ngIf="getSortDirection('title') === 'asc'">arrow_upward</mat-icon>
+              <mat-icon class="sort-icon" *ngIf="getSortDirection('title') === 'desc'">arrow_downward</mat-icon>
+              <span class="sort-order-badge" *ngIf="getSortOrder('title')">{{ getSortOrder('title') }}</span>
+            </div>
+          </th>
           <td mat-cell *matCellDef="let node">
             <div class="task-title-cell" [style.paddingLeft.px]="node.level * 20">
               @if (node.childrenNodes.length > 0) {
@@ -209,7 +125,14 @@
 
         <!-- Proyecto -->
         <ng-container matColumnDef="project">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Proyecto</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="sort-header" (click)="handleSort('project', $event)" [class.sorted]="getSortDirection('project')">
+              <span>Proyecto</span>
+              <mat-icon class="sort-icon" *ngIf="getSortDirection('project') === 'asc'">arrow_upward</mat-icon>
+              <mat-icon class="sort-icon" *ngIf="getSortDirection('project') === 'desc'">arrow_downward</mat-icon>
+              <span class="sort-order-badge" *ngIf="getSortOrder('project')">{{ getSortOrder('project') }}</span>
+            </div>
+          </th>
           <td mat-cell *matCellDef="let node">
             @if (node.projectName) {
               <span class="color-dot" [style.background-color]="node.projectColor"></span>
@@ -222,7 +145,14 @@
 
         <!-- Asignado a -->
         <ng-container matColumnDef="assignee">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Asignado a</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="sort-header" (click)="handleSort('assignee', $event)" [class.sorted]="getSortDirection('assignee')">
+              <span>Asignado a</span>
+              <mat-icon class="sort-icon" *ngIf="getSortDirection('assignee') === 'asc'">arrow_upward</mat-icon>
+              <mat-icon class="sort-icon" *ngIf="getSortDirection('assignee') === 'desc'">arrow_downward</mat-icon>
+              <span class="sort-order-badge" *ngIf="getSortOrder('assignee')">{{ getSortOrder('assignee') }}</span>
+            </div>
+          </th>
           <td mat-cell *matCellDef="let node">
             {{ (node.assigneeNames && node.assigneeNames.length > 0) ? node.assigneeNames.join(', ') : '—' }}
           </td>
@@ -230,7 +160,14 @@
 
         <!-- Estado -->
         <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="sort-header" (click)="handleSort('status', $event)" [class.sorted]="getSortDirection('status')">
+              <span>Estado</span>
+              <mat-icon class="sort-icon" *ngIf="getSortDirection('status') === 'asc'">arrow_upward</mat-icon>
+              <mat-icon class="sort-icon" *ngIf="getSortDirection('status') === 'desc'">arrow_downward</mat-icon>
+              <span class="sort-order-badge" *ngIf="getSortOrder('status')">{{ getSortOrder('status') }}</span>
+            </div>
+          </th>
           <td mat-cell *matCellDef="let node">
             @if (node.hasChildren) {
               <span class="status-chip {{ node.status }}" matTooltip="Calculado de subtareas">
@@ -254,7 +191,14 @@
 
         <!-- Prioridad -->
         <ng-container matColumnDef="priority">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Prioridad</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="sort-header" (click)="handleSort('priority', $event)" [class.sorted]="getSortDirection('priority')">
+              <span>Prioridad</span>
+              <mat-icon class="sort-icon" *ngIf="getSortDirection('priority') === 'asc'">arrow_upward</mat-icon>
+              <mat-icon class="sort-icon" *ngIf="getSortDirection('priority') === 'desc'">arrow_downward</mat-icon>
+              <span class="sort-order-badge" *ngIf="getSortOrder('priority')">{{ getSortOrder('priority') }}</span>
+            </div>
+          </th>
           <td mat-cell *matCellDef="let node">
             <span class="priority-chip {{ node.priority }}">{{ priorityLabels[node.priority] }}</span>
           </td>
@@ -262,7 +206,14 @@
 
         <!-- Fecha inicio -->
         <ng-container matColumnDef="startDate">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Inicio</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="sort-header" (click)="handleSort('startDate', $event)" [class.sorted]="getSortDirection('startDate')">
+              <span>Inicio</span>
+              <mat-icon class="sort-icon" *ngIf="getSortDirection('startDate') === 'asc'">arrow_upward</mat-icon>
+              <mat-icon class="sort-icon" *ngIf="getSortDirection('startDate') === 'desc'">arrow_downward</mat-icon>
+              <span class="sort-order-badge" *ngIf="getSortOrder('startDate')">{{ getSortOrder('startDate') }}</span>
+            </div>
+          </th>
           <td mat-cell *matCellDef="let node">
             @if (node.startDate) {
               {{ node.startDate | date:'dd/MM/yy' }}
@@ -274,7 +225,14 @@
 
         <!-- Fecha vencimiento -->
         <ng-container matColumnDef="dueDate">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Vencimiento</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="sort-header" (click)="handleSort('dueDate', $event)" [class.sorted]="getSortDirection('dueDate')">
+              <span>Vencimiento</span>
+              <mat-icon class="sort-icon" *ngIf="getSortDirection('dueDate') === 'asc'">arrow_upward</mat-icon>
+              <mat-icon class="sort-icon" *ngIf="getSortDirection('dueDate') === 'desc'">arrow_downward</mat-icon>
+              <span class="sort-order-badge" *ngIf="getSortOrder('dueDate')">{{ getSortOrder('dueDate') }}</span>
+            </div>
+          </th>
           <td mat-cell *matCellDef="let node">
             @if (node.dueDate) {
               <span class="due-date-cell" [class.overdue]="isOverdue(node)">
@@ -291,7 +249,14 @@
 
         <!-- Avance real -->
         <ng-container matColumnDef="progressActual">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>% Real</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="sort-header" (click)="handleSort('progressActual', $event)" [class.sorted]="getSortDirection('progressActual')">
+              <span>% Real</span>
+              <mat-icon class="sort-icon" *ngIf="getSortDirection('progressActual') === 'asc'">arrow_upward</mat-icon>
+              <mat-icon class="sort-icon" *ngIf="getSortDirection('progressActual') === 'desc'">arrow_downward</mat-icon>
+              <span class="sort-order-badge" *ngIf="getSortOrder('progressActual')">{{ getSortOrder('progressActual') }}</span>
+            </div>
+          </th>
           <td mat-cell *matCellDef="let node">
             <div class="progress-cell">
               <div class="pct-container">
@@ -315,7 +280,14 @@
 
         <!-- Avance esperado -->
         <ng-container matColumnDef="progressExpected">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>% Esperado</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <div class="sort-header" (click)="handleSort('progressExpected', $event)" [class.sorted]="getSortDirection('progressExpected')">
+              <span>% Esperado</span>
+              <mat-icon class="sort-icon" *ngIf="getSortDirection('progressExpected') === 'asc'">arrow_upward</mat-icon>
+              <mat-icon class="sort-icon" *ngIf="getSortDirection('progressExpected') === 'desc'">arrow_downward</mat-icon>
+              <span class="sort-order-badge" *ngIf="getSortOrder('progressExpected')">{{ getSortOrder('progressExpected') }}</span>
+            </div>
+          </th>
           <td mat-cell *matCellDef="let node">
             @if (node.progressExpected !== null && node.progressExpected !== undefined) {
               <div class="progress-cell">

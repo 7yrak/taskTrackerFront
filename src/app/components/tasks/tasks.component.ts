@@ -67,7 +67,7 @@ export class TasksComponent {
   statusLabels: Record<string, string>   = STATUS_LABELS;
   priorityLabels: Record<string, string> = PRIORITY_LABELS;
   statuses: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'BLOCKED'];
-  activeSort: Sort = { active: 'startDate', direction: 'asc' };
+  sorts: Sort[] = [{ active: 'startDate', direction: 'asc' }];
 
   editingTitleId = signal<number | null>(null);
 
@@ -185,20 +185,68 @@ export class TasksComponent {
     this.taskCount.set(this.countLeaves(filtered));
   }
 
-  applySort(sort: Sort) {
-    this.activeSort = sort.direction ? sort : { active: 'startDate', direction: 'asc' };
-    this.sortTree(this.rootNodes);
-    const filtered = this.filterTree(this.rootNodes);
-    this.dataSource.data = this.flatten(filtered);
+  handleSort(columnId: string, event: MouseEvent): void {
+    const existingSort = this.sorts.find(s => s.active === columnId);
+
+    if (event.shiftKey) {
+      // ---- ORDENAMIENTO MÚLTIPLE (con Shift) ----
+      if (existingSort) {
+        // La columna ya está en el sort, ciclar dirección o quitarla
+        if (existingSort.direction === 'asc') {
+          existingSort.direction = 'desc';
+        } else {
+          // Si era 'desc', la quitamos del array
+          this.sorts = this.sorts.filter(s => s.active !== columnId);
+        }
+      } else {
+        // No estaba, la añadimos al final con dirección 'asc'
+        this.sorts.push({ active: columnId, direction: 'asc' });
+      }
+    } else {
+      // ---- ORDENAMIENTO SIMPLE (sin Shift) ----
+      if (existingSort) {
+        // Si es la única columna, invertimos dirección. Si no, la establecemos como única.
+        const newDirection = this.sorts.length === 1 && existingSort.direction === 'asc' ? 'desc' : 'asc';
+        this.sorts = [{ active: columnId, direction: newDirection }];
+      } else {
+        // Si no existía, se convierte en el único criterio
+        this.sorts = [{ active: columnId, direction: 'asc' }];
+      }
+    }
+
+    // Si el usuario quita todos los criterios, volvemos al orden por defecto
+    if (this.sorts.length === 0) {
+      this.sorts = [{ active: 'startDate', direction: 'asc' }];
+    }
+
+    this.buildAndFilter();
+  }
+
+  clearSorting(): void {
+    this.sorts = [{ active: 'startDate', direction: 'asc' }];
+    this.buildAndFilter();
   }
 
   private sortTree(nodes: TaskNode[]) {
-    const { active, direction } = this.activeSort;
-    if (!active || !direction) return;
-    const multiplier = direction === 'asc' ? 1 : -1;
+    if (this.sorts.length === 0) return;
 
-    nodes.sort((a, b) => this.compareSortValues(this.sortValue(a, active), this.sortValue(b, active)) * multiplier);
-    for (const node of nodes) this.sortTree(node.childrenNodes);
+    nodes.sort((a, b) => {
+      for (const sort of this.sorts) {
+        const { active, direction } = sort;
+        const multiplier = direction === 'asc' ? 1 : -1;
+        const valueA = this.sortValue(a, active);
+        const valueB = this.sortValue(b, active);
+        const comparison = this.compareSortValues(valueA, valueB);
+        if (comparison !== 0) {
+          return comparison * multiplier;
+        }
+      }
+      return 0;
+    });
+
+    for (const node of nodes) {
+      this.sortTree(node.childrenNodes);
+    }
   }
 
   private sortValue(node: TaskNode, column: string): string | number | null {
@@ -227,6 +275,21 @@ export class TasksComponent {
   private dateSortValue(value?: string): number | null {
     const date = this.parseLocalDate(value);
     return date ? date.getTime() : null;
+  }
+
+  // --- Funciones de ayuda para la UI del ordenamiento ---
+
+  getSortDirection(columnId: string): 'asc' | 'desc' | '' {
+    const sort = this.sorts.find(s => s.active === columnId);
+    return sort ? sort.direction : '';
+  }
+
+  getSortOrder(columnId: string): number | null {
+    if (this.sorts.length <= 1) {
+      return null;
+    }
+    const index = this.sorts.findIndex(s => s.active === columnId);
+    return index !== -1 ? index + 1 : null;
   }
 
   // ── Expand / collapse ──────────────────────────────────────────────────────
