@@ -86,6 +86,7 @@ export class DashboardComponent implements OnInit {
   sortBy = signal<'risk' | 'name' | 'progress'>('risk');
 
   isLoading = signal(true);
+  isExportingPdf = signal(false);
   allTasks = signal<Task[]>([]);
 
   projects = toSignal(this.projectService.getAll(), { initialValue: [] as Project[] });
@@ -490,5 +491,52 @@ export class DashboardComponent implements OnInit {
     const s = this.progressStatus(t);
     return s === 'behind' ? 'Atrasado' : s === 'at-risk' ? 'En riesgo'
       : s === 'on-track' ? 'Al día' : 'Sin fechas';
+  }
+
+  async exportDashboardPdf() {
+    const element = document.getElementById('dashboard-content');
+    if (!element) {
+      this.snack.open('No se encontró el contenedor del dashboard', 'OK', { duration: 2500 });
+      return;
+    }
+
+    this.isExportingPdf.set(true);
+    this.snack.open('Generando PDF, por favor espere...', 'OK', { duration: 5000 });
+
+    try {
+      // @ts-ignore
+      const { default: html2canvas } = await import('html2canvas');
+      // @ts-ignore
+      const { jsPDF } = await import('jspdf');
+
+      const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+      const imgData = canvas.toDataURL('image/png');
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfPageHeight = pdf.internal.pageSize.getHeight();
+      
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+      heightLeft -= pdfPageHeight;
+
+      while (heightLeft > 0) {
+        position -= pdfPageHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdfPageHeight;
+      }
+      
+      const today = new Date().toISOString().split('T')[0];
+      pdf.save(`dashboard_reporte_${today}.pdf`);
+    } catch (error) {
+      console.error('Error al generar el PDF del dashboard:', error);
+      this.snack.open('Error al generar el PDF', 'OK', { duration: 3000 });
+    } finally {
+      this.isExportingPdf.set(false);
+    }
   }
 }

@@ -33,6 +33,9 @@
       <button mat-icon-button (click)="refreshData()" matTooltip="Refrescar datos" color="primary" [disabled]="isLoading()">
         <mat-icon>refresh</mat-icon>
       </button>
+      <button mat-stroked-button color="primary" (click)="exportDashboardPdf()" [disabled]="isLoading() || isExportingPdf()" style="margin-right: 8px;">
+        <mat-icon>{{ isExportingPdf() ? 'hourglass_top' : 'picture_as_pdf' }}</mat-icon> {{ isExportingPdf() ? 'Exportando...' : 'Exportar PDF' }}
+      </button>
       <button mat-flat-button color="primary" routerLink="/tasks" [disabled]="isLoading()">
         <mat-icon>add</mat-icon> Nueva tarea
       </button>
@@ -45,6 +48,8 @@
       <p>Cargando información del panel...</p>
     </div>
   } @else {
+    <div id="dashboard-content" style="background-color: #ffffff; padding: 10px; border-radius: 8px;">
+      
     <!-- ── KPI SUMMARY (Critical Metrics) ────────────────────────────────────── -->
     <div class="kpi-summary">
       <div class="kpi-card kpi-health">
@@ -448,6 +453,8 @@
       </mat-card-content>
     </mat-card>
   }
+    
+    </div>
   }
 
 </div>
