@@ -1,5 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { startWith, switchMap } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -10,18 +11,42 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { ProjectService } from '../../services/project.service';
-import { Project } from '../../models/project.model';
+import { Project, ProjectStatus } from '../../models/project.model';
 import { ProjectDialogComponent } from '../shared/project-dialog/project-dialog.component';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog/confirm-dialog.component';
+
+export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
+  [ProjectStatus.INITIATED]: 'Iniciado',
+  [ProjectStatus.PLANNING]: 'Planificación',
+  [ProjectStatus.IN_PROGRESS]: 'En Ejecución',
+  [ProjectStatus.ON_HOLD]: 'Detenido',
+  [ProjectStatus.MONITORING]: 'Seguimiento y Control',
+  [ProjectStatus.COMPLETED]: 'Finalizado',
+  [ProjectStatus.CLOSED]: 'Cerrado'
+};
+
+export const PROJECT_STATUS_COLORS: Record<ProjectStatus, string> = {
+  [ProjectStatus.INITIATED]: '#64748B',
+  [ProjectStatus.PLANNING]: '#3B82F6',
+  [ProjectStatus.IN_PROGRESS]: '#F59E0B',
+  [ProjectStatus.ON_HOLD]: '#EF4444',
+  [ProjectStatus.MONITORING]: '#8B5CF6',
+  [ProjectStatus.COMPLETED]: '#10B981',
+  [ProjectStatus.CLOSED]: '#1E293B'
+};
 
 @Component({
   selector: 'app-projects',
   imports: [
-    CommonModule,
+    CommonModule, FormsModule,
     MatCardModule, MatButtonModule, MatIconModule,
-    MatDialogModule, MatProgressBarModule,
-    MatSnackBarModule, MatTooltipModule
+    MatDialogModule, MatProgressBarModule, MatMenuModule,
+    MatSnackBarModule, MatTooltipModule,
+    MatSelectModule, MatFormFieldModule
   ],
   templateUrl: './projects.component.html',
   styleUrl: './projects.component.scss'
@@ -40,6 +65,53 @@ export class ProjectsComponent {
     ),
     { initialValue: [] as Project[] }
   );
+
+  // Signal para almacenar el filtro actual
+  selectedStatusFilter = signal<ProjectStatus | 'ALL'>('ALL');
+
+  // Lista de proyectos filtrada y reactiva
+  filteredProjects = computed(() => {
+    const status = this.selectedStatusFilter();
+    const allProjects = this.projects();
+    
+    if (status === 'ALL') return allProjects;
+    return allProjects.filter(p => p.status === status);
+  });
+
+  statusLabels = PROJECT_STATUS_LABELS;
+  statusColors = PROJECT_STATUS_COLORS;
+
+  getStatuses(): ProjectStatus[] {
+    return [
+      ProjectStatus.INITIATED, 
+      ProjectStatus.PLANNING, 
+      ProjectStatus.IN_PROGRESS, 
+      ProjectStatus.ON_HOLD, 
+      ProjectStatus.MONITORING, 
+      ProjectStatus.COMPLETED, 
+      ProjectStatus.CLOSED
+    ];
+  }
+
+  changeProjectStatus(project: Project, newStatus: ProjectStatus) {
+    if (project.status === newStatus) return;
+
+    const oldStatus = project.status;
+    project.status = newStatus; // Actualizamos la UI inmediatamente
+
+    const updatePayload = { ...project, status: newStatus };
+
+    this.projectService.update(project.id, updatePayload as any).subscribe({
+      next: () => {
+        this.snack.open('Estado del proyecto actualizado', 'OK', { duration: 2500 });
+      },
+      error: (err) => {
+        project.status = oldStatus; // Revertir si hay error
+        this.snack.open('Error al guardar en el servidor', 'OK', { duration: 3000 });
+        console.error('Error actualizando estado:', err);
+      }
+    });
+  }
 
   openCreate() {
     this.dialog.open(ProjectDialogComponent, { width: '480px', data: null })

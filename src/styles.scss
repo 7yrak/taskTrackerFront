@@ -1,73 +1,184 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// GLOBAL STYLES — Evertec Design System · Light + Dark
+// ─────────────────────────────────────────────────────────────────────────────
+
 * { box-sizing: border-box; }
 
+// ══ LIGHT THEME (default) ════════════════════════════════════════════════════
+body {
+  --bg-app:         #EEF2F7;
+  --bg-card:        #FFFFFF;
+  --bg-surface:     #F5F8FC;
+  --bg-surface-2:   #EEF2F7;
+  --bg-nav:         #0C1F4A;
+  --bg-nav-header:  #091833;
+
+  --text-primary:   #0C1F4A;
+  --text-secondary: #7A90AA;
+  --text-muted:     #B0C0D0;
+  --text-on-nav:    rgba(255,255,255,0.6);
+  --text-on-dark:   rgba(255,255,255,0.65);
+
+  --border:         #D8E3EE;
+  --border-subtle:  #EEF2F7;
+
+  --accent:         #0094B8;
+  --accent-bright:  #00C8EE;
+  --accent-dim:     #E0F5FA;
+  --accent-text:    #005C75;
+
+  --shadow-sm:      0 2px 8px rgba(12,31,74,0.07);
+  --shadow-md:      0 6px 20px rgba(12,31,74,0.12);
+
+  --red:            #DC2626;
+  --red-soft:       #FEF2F2;
+  --red-border:     #FECACA;
+  --red-text:       #991B1B;
+
+  --orange:         #EA580C;
+  --orange-soft:    #FFF7ED;
+  --orange-border:  #FED7AA;
+  --orange-text:    #9A3412;
+
+  --amber:          #D97706;
+  --amber-soft:     #FFFBEB;
+  --amber-border:   #FDE68A;
+  --amber-text:     #92400E;
+
+  --green:          #059669;
+  --green-soft:     #ECFDF5;
+  --green-border:   #A7F3D0;
+  --green-text:     #065F46;
+
+  --pink:           #BE185D;
+
+  --transition: 0.22s ease;
+}
+
+// ══ DARK THEME ════════════════════════════════════════════════════════════════
+body.dark-theme {
+  --bg-app:         #060D1A;
+  --bg-card:        #0E1E38;
+  --bg-surface:     #091628;
+  --bg-surface-2:   #071020;
+  --bg-nav:         #040A15;
+  --bg-nav-header:  #030810;
+
+  --text-primary:   #E4EFFC;
+  --text-secondary: #90B4D4;
+  --text-muted:     #5A80A8;
+  --text-on-nav:    rgba(220,232,245,0.72);
+  --text-on-dark:   rgba(220,232,245,0.72);
+
+  --border:         #1E3868;
+  --border-subtle:  #162B52;
+
+  --accent:         #00C4E8;
+  --accent-bright:  #33D6F0;
+  --accent-dim:     rgba(0,196,232,0.12);
+  --accent-text:    #33D6F0;
+
+  --shadow-sm:      0 4px 16px rgba(0,0,0,0.35);
+  --shadow-md:      0 8px 32px rgba(0,0,0,0.5);
+
+  --red:            #FC8181;
+  --red-soft:       rgba(248,113,113,0.14);
+  --red-border:     rgba(248,113,113,0.3);
+  --red-text:       #FCA5A5;
+
+  --orange:         #FDBA74;
+  --orange-soft:    rgba(251,146,60,0.14);
+  --orange-border:  rgba(251,146,60,0.3);
+  --orange-text:    #FED7AA;
+
+  --amber:          #FCD34D;
+  --amber-soft:     rgba(251,191,36,0.14);
+  --amber-border:   rgba(251,191,36,0.3);
+  --amber-text:     #FDE68A;
+
+  --green:          #6EE7B7;
+  --green-soft:     rgba(52,211,153,0.14);
+  --green-border:   rgba(52,211,153,0.3);
+  --green-text:     #A7F3D0;
+
+  --pink:           #F9A8D4;
+}
+
+// ══ BASE ══════════════════════════════════════════════════════════════════════
 html, body {
   height: 100%;
   margin: 0;
-  font-family: Roboto, 'Inter', 'Helvetica Neue', sans-serif;
-  background-color: #F1F5F9;
-  color: #0F172A;
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color var(--transition), color var(--transition);
 }
 
-/* ── Layout globals ── */
+// ── Layout globals ────────────────────────────────────────────────────────────
 .page-container {
-  padding: 28px 32px;
-  max-width: 1400px;
+  padding: 32px 36px;
+  max-width: 1440px;
   margin: 0 auto;
 }
 
 .page-header {
   display: flex;
   align-items: center;
-  margin-bottom: 28px;
+  margin-bottom: 32px;
+  justify-content: space-between;
 }
 
 .page-title {
-  font-size: 21px;
+  font-size: 22px;
   font-weight: 700;
   margin: 0;
-  color: #0F172A;
-  letter-spacing: -0.3px;
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
 }
 
 .spacer { flex: 1 1 auto; }
 
-/* ── Status chips ── */
+// ── Status chips ──────────────────────────────────────────────────────────────
 .status-chip {
   display: inline-flex;
   align-items: center;
   padding: 3px 10px;
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: 4px;
+  font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  transition: background var(--transition);
 
-  &.TODO        { background: #EFF6FF; color: #1D4ED8; }
-  &.IN_PROGRESS { background: #FFF7ED; color: #C2410C; }
-  &.IN_REVIEW   { background: #FAF5FF; color: #6D28D9; }
-  &.DONE        { background: #F0FDF4; color: #15803D; }
-  &.BLOCKED     { background: #FFF1F2; color: #BE123C; }
+  &.TODO        { background: var(--accent-dim);   color: var(--accent);      border: 1px solid rgba(0,148,184,0.3); }
+  &.IN_PROGRESS { background: var(--orange-soft);  color: var(--orange);      border: 1px solid var(--orange-border); }
+  &.IN_REVIEW   { background: rgba(167,139,250,0.12); color: #A78BFA;         border: 1px solid rgba(167,139,250,0.25); }
+  &.DONE        { background: var(--green-soft);   color: var(--green);       border: 1px solid var(--green-border); }
+  &.BLOCKED     { background: var(--red-soft);     color: var(--red);         border: 1px solid var(--red-border); }
 }
 
-/* ── Priority chips ── */
+// ── Priority chips ────────────────────────────────────────────────────────────
 .priority-chip {
   display: inline-flex;
   align-items: center;
   padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 11px;
+  border-radius: 3px;
+  font-size: 10px;
   font-weight: 700;
   white-space: nowrap;
   text-transform: uppercase;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
 
-  &.LOW      { background: #F0FDF4; color: #15803D; }
-  &.MEDIUM   { background: #FEFCE8; color: #A16207; }
-  &.HIGH     { background: #FFF7ED; color: #C2410C; }
-  &.CRITICAL { background: #FFF1F2; color: #B91C1C; }
+  &.LOW      { background: var(--green-soft);  color: var(--green);  }
+  &.MEDIUM   { background: var(--amber-soft);  color: var(--amber);  }
+  &.HIGH     { background: var(--orange-soft); color: var(--orange); }
+  &.CRITICAL { background: var(--red-soft);    color: var(--red);    }
 }
 
-/* ── Color dot ── */
+// ── Color dot ────────────────────────────────────────────────────────────────
 .color-dot {
   display: inline-block;
   width: 8px;
@@ -78,14 +189,17 @@ html, body {
   flex-shrink: 0;
 }
 
-/* ── Material card override ── */
+// ── Material card override ────────────────────────────────────────────────────
 mat-card {
-  border-radius: 10px !important;
-  border: 1px solid #E2E8F0 !important;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06) !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow-sm) !important;
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  transition: background var(--transition), border-color var(--transition), box-shadow var(--transition) !important;
 }
 
-/* ── Filter bar ── */
+// ── Filter bar ───────────────────────────────────────────────────────────────
 .filter-bar {
   display: flex;
   gap: 12px;
@@ -93,19 +207,32 @@ mat-card {
   align-items: center;
   margin-bottom: 20px;
   padding: 14px 16px;
-  background: white;
-  border-radius: 10px;
-  border: 1px solid #E2E8F0;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  background: var(--bg-card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: background var(--transition), border-color var(--transition);
 
   mat-form-field { min-width: 155px; }
 }
 
-/* ── Overdue row ── */
-.overdue-row td { background-color: #FFF5F5; }
+// ── Overdue row ──────────────────────────────────────────────────────────────
+.overdue-row td { background-color: var(--red-soft); }
 
-/* ── Progress bar color (dashboard) ── */
+// ── Progress bar ─────────────────────────────────────────────────────────────
 .mat-mdc-progress-bar {
-  --mdc-linear-progress-active-indicator-color: #6366F1;
-  --mdc-linear-progress-track-color: #E2E8F0;
+  --mdc-linear-progress-active-indicator-color: var(--accent);
+  --mdc-linear-progress-track-color: var(--border);
+}
+
+// ── Button overrides ─────────────────────────────────────────────────────────
+.mat-mdc-raised-button.mat-primary,
+.mat-mdc-flat-button.mat-primary {
+  --mdc-filled-button-container-color: #0094B8;
+  --mdc-filled-button-label-text-color: #ffffff;
+}
+
+.mat-mdc-outlined-button.mat-primary {
+  --mdc-outlined-button-label-text-color: var(--accent);
+  --mdc-outlined-button-outline-color: var(--accent);
 }

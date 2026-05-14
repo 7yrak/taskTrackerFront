@@ -3,14 +3,14 @@
     <h1 class="page-title">Tareas</h1>
     <span class="spacer"></span>
     <input #fileInput type="file" accept=".csv" style="display:none" (change)="onFileSelected($event)" />
-    <button mat-stroked-button color="warn" (click)="confirmDeleteAll()" style="margin-right:8px"
+    <!--button mat-stroked-button color="warn" (click)="confirmDeleteAll()" style="margin-right:8px"
             matTooltip="Elimina TODAS las tareas del sistema">
       <mat-icon>delete_sweep</mat-icon> Borrar todo
-    </button>
-    <button mat-stroked-button (click)="exportTasks()" style="margin-right:8px"
+    </button-->
+    <!--button mat-stroked-button (click)="exportTasks()" style="margin-right:8px"
             matTooltip="Exporta un respaldo de TODAS las tareas en formato CSV, compatible con la importación.">
       <mat-icon>file_download</mat-icon> Exportar Respaldo
-    </button>
+    </button-->
     <button mat-stroked-button (click)="exportView()" style="margin-right:8px"
             matTooltip="Exporta la vista actual de la tabla a un archivo CSV.">
       <mat-icon>table_view</mat-icon> Exportar Vista
@@ -19,10 +19,14 @@
             matTooltip="Exporta la vista actual de la tabla a un archivo PDF.">
       <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
     </button>
-    <button mat-stroked-button color="primary" (click)="triggerImport()" style="margin-right:8px"
+    <!--button mat-stroked-button color="primary" (click)="triggerImport()" style="margin-right:8px"
             matTooltip="Importa un respaldo de tareas desde un archivo CSV.">
       <mat-icon>upload_file</mat-icon> Importar Respaldo
-    </button>
+    </button-->
+    <mat-button-toggle-group [(ngModel)]="viewMode" style="margin-right:8px">
+      <mat-button-toggle value="table" matTooltip="Vista de Tabla"><mat-icon>table_rows</mat-icon></mat-button-toggle>
+      <mat-button-toggle value="kanban" matTooltip="Vista de Tablero Kanban"><mat-icon>view_column</mat-icon></mat-button-toggle>
+    </mat-button-toggle-group>
     <button mat-flat-button color="primary" (click)="openCreate()">
       <mat-icon>add</mat-icon> Nueva tarea
     </button>
@@ -90,7 +94,7 @@
   </div>
 
   <!-- Tabla árbol -->
-  <div class="table-wrapper">
+  <div class="table-wrapper" *ngIf="viewMode === 'table'">
     <div class="table-scroll">
       <table mat-table [dataSource]="dataSource" class="tasks-table" [trackBy]="trackById">
 
@@ -126,6 +130,10 @@
                       [matTooltip]="node.description ? node.description + '\n(Doble clic para editar)' : 'Doble clic para editar'" matTooltipShowDelay="600"
                       (dblclick)="startEditingTitle(node, $event)">
                   {{ node.title }}
+                </span>
+                <span class="comments-badge" *ngIf="node.comments?.length" matTooltip="{{ node.comments?.length }} comentario(s)">
+                  <mat-icon>chat_bubble_outline</mat-icon>
+                  {{ node.comments?.length }}
                 </span>
               }
             </div>
@@ -341,6 +349,79 @@
           </td>
         </tr>
       </table>
+    </div>
+  </div>
+
+  <!-- Kanban Board -->
+  <div class="kanban-wrapper" *ngIf="viewMode === 'kanban'">
+    <div class="kanban-board" cdkDropListGroup>
+      <div class="kanban-column" *ngFor="let status of kanbanColumns">
+        <div class="column-header">
+          <span class="status-title">{{ statusLabels[status] }}</span>
+          <span class="task-badge">{{ kanbanTasks[status].length }}</span>
+        </div>
+        
+        <div class="column-content"
+             cdkDropList
+             [id]="status"
+             [cdkDropListData]="kanbanTasks[status]"
+             (cdkDropListDropped)="drop($event)">
+             
+          <div class="kanban-card" *ngFor="let task of kanbanTasks[status]" cdkDrag>
+            <div class="card-header">
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <span class="priority-chip {{ task.priority }}">{{ priorityLabels[task.priority] }}</span>
+                <span class="project-name" *ngIf="task.projectName">
+                  <span class="color-dot" [style.background-color]="task.projectColor"></span>
+                  {{ task.projectName }}
+                </span>
+              </div>
+              <button mat-icon-button class="kanban-edit-btn" (click)="openEdit(task)" matTooltip="Editar tarea">
+                <mat-icon>edit</mat-icon>
+              </button>
+            </div>
+            
+            <div class="hierarchy-trace" *ngIf="task.hierarchyPath && task.hierarchyPath.length > 0">
+              <span *ngFor="let parent of task.hierarchyPath; let last = last">
+                {{ parent }} <span class="trace-separator">›</span> 
+              </span>
+            </div>
+
+            <div class="card-title">{{ task.title }}</div>
+            
+            <div class="card-progress">
+              <div class="progress-info">
+                <span class="pct-text">Avance: <strong>{{ task.progressActual || 0 }}%</strong><span *ngIf="task.progressExpected !== null"> / {{ task.progressExpected }}%</span></span>
+                <mat-icon *ngIf="progressIcon(task)" class="progress-icon {{ progressStatus(task) }}" [matTooltip]="'Estado del avance'">{{ progressIcon(task) }}</mat-icon>
+              </div>
+              <div class="progress-bar-bg" *ngIf="task.progressExpected !== null">
+                <div class="progress-bar-fill expected" [style.width.%]="task.progressExpected"></div>
+                <div class="progress-bar-fill actual" [style.width.%]="task.progressActual || 0" [class.behind]="progressStatus(task) === 'behind'" [class.on-track]="progressStatus(task) === 'on-track' || progressStatus(task) === 'done'"></div>
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <span class="due-date" *ngIf="task.dueDate" [class.overdue]="isOverdue(task)">
+                <mat-icon>schedule</mat-icon> {{ task.dueDate | date:'dd/MM/yy' }}
+              </span>
+              <span *ngIf="!task.dueDate"></span>
+              
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <div class="comments-indicator" *ngIf="task.comments?.length" matTooltip="{{ task.comments?.length }} comentario(s)">
+                  <mat-icon>chat_bubble_outline</mat-icon>
+                  {{ task.comments?.length }}
+                </div>
+                
+                <div class="assignee-info" *ngIf="task.assigneeNames?.length" [matTooltip]="task.assigneeNames!.join(', ')">
+                  <mat-icon>person</mat-icon>
+                  <span class="assignee-name">{{ task.assigneeNames!.join(', ') }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
     </div>
   </div>
 </div>

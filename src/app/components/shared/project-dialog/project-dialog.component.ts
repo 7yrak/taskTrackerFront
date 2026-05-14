@@ -4,8 +4,9 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
-import { Project } from '../../../models/project.model';
+import { Project, ProjectStatus } from '../../../models/project.model';
 
 const PROJECT_COLORS = [
   '#3f51b5', '#e91e63', '#009688', '#ff9800', '#9c27b0',
@@ -16,7 +17,7 @@ const PROJECT_COLORS = [
   selector: 'app-project-dialog',
   imports: [
     CommonModule, ReactiveFormsModule,
-    MatDialogModule, MatFormFieldModule, MatInputModule, MatButtonModule
+    MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule
   ],
   template: `
     <h2 mat-dialog-title>{{ data ? 'Editar proyecto' : 'Nuevo proyecto' }}</h2>
@@ -33,6 +34,19 @@ const PROJECT_COLORS = [
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Descripción</mat-label>
           <textarea matInput formControlName="description" rows="3"></textarea>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Estado</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="INITIATED">Iniciado</mat-option>
+            <mat-option value="PLANNING">Planificación</mat-option>
+            <mat-option value="IN_PROGRESS">En Ejecución</mat-option>
+            <mat-option value="ON_HOLD">Detenido</mat-option>
+            <mat-option value="MONITORING">Seguimiento y Control</mat-option>
+            <mat-option value="COMPLETED">Finalizado</mat-option>
+            <mat-option value="CLOSED">Cerrado</mat-option>
+          </mat-select>
         </mat-form-field>
 
         <div class="color-section">
@@ -85,7 +99,8 @@ export class ProjectDialogComponent implements OnInit {
   form = this.fb.group({
     name: ['', Validators.required],
     description: [''],
-    color: [PROJECT_COLORS[0]]
+    color: [PROJECT_COLORS[0]],
+    status: [ProjectStatus.INITIATED]
   });
 
   ngOnInit() {
@@ -93,7 +108,8 @@ export class ProjectDialogComponent implements OnInit {
       this.form.patchValue({
         name: this.data.name,
         description: this.data.description ?? '',
-        color: this.data.color
+        color: this.data.color,
+        status: this.data.status || ProjectStatus.INITIATED
       });
     }
   }
@@ -101,6 +117,6 @@ export class ProjectDialogComponent implements OnInit {
   save() {
     if (this.form.invalid) return;
     const v = this.form.value;
-    this.ref.close({ name: v.name, description: v.description || undefined, color: v.color });
+    this.ref.close({ name: v.name, description: v.description || undefined, color: v.color, status: v.status });
   }
 }

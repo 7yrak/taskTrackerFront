@@ -2,18 +2,64 @@
   <div class="page-header">
     <h1 class="page-title">Proyectos</h1>
     <span class="spacer"></span>
+    
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" style="width: 240px; margin-right: 16px;">
+      <mat-label>Filtrar por estado</mat-label>
+      <mat-select [ngModel]="selectedStatusFilter()" (ngModelChange)="selectedStatusFilter.set($event)">
+        
+        <mat-select-trigger>
+          @if (selectedStatusFilter() === 'ALL') {
+            Todos los proyectos
+          } @else {
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <mat-icon [style.color]="$any(statusColors)[selectedStatusFilter()]" style="font-size: 14px; width: 14px; height: 14px;">circle</mat-icon>
+              <span>{{ $any(statusLabels)[selectedStatusFilter()] }}</span>
+            </div>
+          }
+        </mat-select-trigger>
+
+        <mat-option value="ALL">Todos los proyectos</mat-option>
+        @for (status of getStatuses(); track status) {
+          <mat-option [value]="status">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <mat-icon [style.color]="statusColors[status]" style="font-size: 14px; width: 14px; height: 14px;">circle</mat-icon>
+              <span>{{ statusLabels[status] }}</span>
+            </div>
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
     <button mat-flat-button color="primary" (click)="openCreate()">
       <mat-icon>add</mat-icon> Nuevo proyecto
     </button>
   </div>
 
   <div class="projects-grid">
-    @for (project of projects(); track project.id) {
+    @for (project of filteredProjects(); track project.id) {
       <mat-card class="project-card">
         <mat-card-header>
           <div class="project-color-badge" [style.background-color]="project.color"></div>
-          <mat-card-title>{{ project.name }}</mat-card-title>
-          <mat-card-subtitle>{{ project.memberCount }} miembro(s)</mat-card-subtitle>
+          <div style="flex: 1;">
+            <mat-card-title>{{ project.name }}</mat-card-title>
+            <mat-card-subtitle>{{ project.memberCount }} miembro(s)</mat-card-subtitle>
+          </div>
+          <div class="project-status-chip" 
+               [style.background-color]="statusColors[project.status]" 
+               [matMenuTriggerFor]="statusMenu" 
+               style="cursor: pointer; display: flex; align-items: center; gap: 4px;"
+               matTooltip="Cambiar estado">
+            <span>{{ statusLabels[project.status] || 'Sin estado' }}</span>
+            <mat-icon style="font-size: 16px; width: 16px; height: 16px;">arrow_drop_down</mat-icon>
+          </div>
+          <mat-menu #statusMenu="matMenu">
+            @for (status of getStatuses(); track status) {
+              <button mat-menu-item (click)="changeProjectStatus(project, status)">
+                <mat-icon [style.color]="statusColors[status]">circle</mat-icon>
+                <span>{{ statusLabels[status] }}</span>
+              </button>
+            }
+          </mat-menu>
         </mat-card-header>
 
         <mat-card-content>

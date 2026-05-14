@@ -33,6 +33,7 @@ export interface TaskNode extends Task {
   level: number;
   expanded: boolean;
   childrenNodes: TaskNode[];
+  hierarchyPath?: string[];
 }
 
 export interface TaskRequest {

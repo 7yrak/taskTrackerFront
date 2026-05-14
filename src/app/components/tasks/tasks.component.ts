@@ -14,6 +14,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { CdkDragDrop, moveItemInArray, transferArrayItem, CdkDropList, CdkDrag, CdkDropListGroup } from '@angular/cdk/drag-drop';
 import { jsPDF } from 'jspdf';
 // @ts-ignore
 import autoTable from 'jspdf-autotable';
@@ -35,7 +37,8 @@ import { ConfirmDialogComponent } from '../shared/confirm-dialog/confirm-dialog.
     MatTableModule, MatSortModule,
     MatButtonModule, MatIconModule,
     MatDialogModule, MatSelectModule, MatFormFieldModule,
-    MatSnackBarModule, MatTooltipModule, MatMenuModule
+    MatSnackBarModule, MatTooltipModule, MatMenuModule, MatButtonToggleModule,
+    CdkDropListGroup, CdkDropList, CdkDrag
   ],
   templateUrl: './tasks.component.html',
   styleUrl: './tasks.component.scss'
@@ -50,6 +53,12 @@ export class TasksComponent {
   private dialog         = inject(MatDialog);
   private snack          = inject(MatSnackBar);
   private destroyRef     = inject(DestroyRef);
+
+  viewMode: 'table' | 'kanban' = 'table';
+  kanbanColumns = ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'BLOCKED'] as TaskStatus[];
+  kanbanTasks: Record<TaskStatus, TaskNode[]> = {
+    TODO: [], IN_PROGRESS: [], IN_REVIEW: [], DONE: [], BLOCKED: []
+  };
 
   filterProject  = this.filterService.filterProject;
   filterStatus   = this.filterService.filterStatus;
@@ -179,6 +188,17 @@ export class TasksComponent {
     return count;
   }
 
+  private flattenAll(nodes: TaskNode[]): TaskNode[] {
+    const result: TaskNode[] = [];
+    for (const node of nodes) {
+      result.push(node);
+      if (node.childrenNodes.length > 0) {
+        result.push(...this.flattenAll(node.childrenNodes));
+      }
+    }
+    return result;
+  }
+
   buildAndFilter() {
     this.rootNodes = this.buildTree(this.allTasks);
     this.sortTree(this.rootNodes);
@@ -186,6 +206,43 @@ export class TasksComponent {
     const visible  = this.flatten(filtered);
     this.dataSource.data = visible;
     this.taskCount.set(this.countLeaves(filtered));
+
+    this.kanbanTasks = { TODO: [], IN_PROGRESS: [], IN_REVIEW: [], DONE: [], BLOCKED: [] };
+    const allFiltered = this.flattenAll(filtered);
+    for (const task of allFiltered) {
+      // Solo mostrar las tareas "hojas" en el Kanban (las que no tienen subtareas)
+      if (!task.hasChildren) {
+        this.kanbanTasks[task.status].push(task);
+      }
+    }
+  }
+
+  drop(event: CdkDragDrop<TaskNode[]>) {
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    } else {
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex,
+      );
+      
+      const task = event.container.data[event.currentIndex];
+      const newStatus = event.container.id as TaskStatus;
+      
+      task.status = newStatus;
+      this.taskService.updateStatus(task.id, newStatus).subscribe({
+        next: () => {
+          this.snack.open('Estado actualizado', 'OK', { duration: 2000 });
+          this.refresh$.next();
+        },
+        error: (e) => {
+          this.snack.open(e.error?.message || 'Error al actualizar', 'OK', { duration: 3000 });
+          this.refresh$.next();
+        }
+      });
+    }
   }
 
   handleSort(columnId: string, event: MouseEvent): void {
