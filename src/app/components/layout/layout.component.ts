@@ -21,6 +21,7 @@ export class LayoutComponent {
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
     { label: 'Proyectos', icon: 'folder', route: '/projects' },
     { label: 'Tareas', icon: 'task_alt', route: '/tasks' },
-    { label: 'Equipo', icon: 'group', route: '/team' }
+    { label: 'Equipo', icon: 'group', route: '/team' },
+    { label: 'Recordatorios', icon: 'notifications', route: '/reminders' }
   ];
 }

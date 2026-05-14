@@ -1,0 +1,12 @@
+.status-chip {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-block;
+
+  &.PENDING { background: #E2E8F0; color: #475569; }
+  &.IN_PROGRESS { background: #DBEAFE; color: #1D4ED8; }
+  &.COMPLETED { background: #D1FAE5; color: #047857; }
+  &.OVERDUE { background: #FEE2E2; color: #B91C1C; }
+}
