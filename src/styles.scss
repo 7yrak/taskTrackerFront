@@ -8,16 +8,16 @@
 body {
   --bg-app:         #EEF2F7;
   --bg-card:        #FFFFFF;
-  --bg-surface:     #F5F8FC;
-  --bg-surface-2:   #EEF2F7;
-  --bg-nav:         #0C1F4A;
-  --bg-nav-header:  #091833;
+  --bg-surface:     #F8FAFC;
+  --bg-surface-2:   #F0F4F8;
+  --bg-nav:         #F8FAFC; /* Color de fondo claro para el menú lateral */
+  --bg-nav-header:  #E0E7EB; /* Color de fondo claro para el encabezado del menú lateral */
 
-  --text-primary:   #0C1F4A;
-  --text-secondary: #7A90AA;
-  --text-muted:     #B0C0D0;
-  --text-on-nav:    rgba(255,255,255,0.6);
-  --text-on-dark:   rgba(255,255,255,0.65);
+  --text-primary:   #334155;
+  --text-secondary: #64748B;
+  --text-muted:     #94A3B8;
+  --text-on-nav:    #334155; /* Texto oscuro para el menú lateral claro */
+  --text-on-dark:   #334155;
 
   --border:         #D8E3EE;
   --border-subtle:  #EEF2F7;
@@ -73,10 +73,10 @@ body.dark-theme {
   --border:         #1E3868;
   --border-subtle:  #162B52;
 
-  --accent:         #00C4E8;
-  --accent-bright:  #33D6F0;
-  --accent-dim:     rgba(0,196,232,0.12);
-  --accent-text:    #33D6F0;
+  --accent:         #FDBA74; /* Tono naranja principal para modo oscuro */
+  --accent-bright:  #FFD700; /* Tono naranja más brillante para modo oscuro */
+  --accent-dim:     rgba(251,146,60,0.14); /* Tono naranja suave/claro para modo oscuro */
+  --accent-text:    #FED7AA; /* Tono naranja oscuro para texto en modo oscuro */
 
   --shadow-sm:      0 4px 16px rgba(0,0,0,0.35);
   --shadow-md:      0 8px 32px rgba(0,0,0,0.5);

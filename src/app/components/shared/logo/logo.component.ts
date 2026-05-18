@@ -73,7 +73,7 @@ import { CommonModule } from '@angular/common';
     }
 
     /* On dark backgrounds: force white for "Task" */
-    .logo-on-dark .logo-word-task    { color: #FFFFFF; }
+    .logo-on-dark .logo-word-task    { color: #fb4300; }
     .logo-on-dark .logo-word-tracker { color: #00C4E8; }
   `]
 })
