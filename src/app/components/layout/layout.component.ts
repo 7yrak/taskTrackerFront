@@ -7,13 +7,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ThemeService } from '../../services/theme.service';
+import { LogoComponent } from '../shared/logo/logo.component';
 
 @Component({
   selector: 'app-layout',
   imports: [
     RouterOutlet, RouterLink, RouterLinkActive,
     MatSidenavModule, MatToolbarModule, MatListModule,
-    MatIconModule, MatButtonModule, MatTooltipModule
+    MatIconModule, MatButtonModule, MatTooltipModule,
+    LogoComponent
   ],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss'

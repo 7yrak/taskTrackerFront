@@ -3,7 +3,10 @@
   <!-- ── Page header ──────────────────────────────────────────────────────── -->
   <div class="page-header">
     <div class="header-left">
-      <h1 class="page-title">📊 Centro de Control</h1>
+      <div class="page-title-group">
+        <app-logo [size]="32" [showText]="false" />
+        <h1 class="page-title">Centro de Control</h1>
+      </div>
       <span class="header-date">{{ today | date:'fullDate' }}</span>
     </div>
     <div class="header-actions">
@@ -21,7 +24,8 @@
 
   @if (isLoading()) {
     <div class="loading-state">
-      <mat-spinner diameter="48"></mat-spinner>
+      <app-logo [size]="56" [showText]="true" style="font-size:22px; margin-bottom:8px;" />
+      <mat-spinner diameter="32"></mat-spinner>
       <p>Cargando información del panel...</p>
     </div>
   } @else {

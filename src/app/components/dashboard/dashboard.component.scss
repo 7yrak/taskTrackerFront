@@ -16,6 +16,12 @@
 }
 
 // ── Page Header ───────────────────────────────────────────────────────────────
+.page-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .header-left {
   display: flex;
   flex-direction: column;

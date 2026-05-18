@@ -19,6 +19,7 @@ import { Task, TaskNode, STATUS_LABELS, PRIORITY_LABELS } from '../../models/tas
 import { Project } from '../../models/project.model';
 import { Member } from '../../models/member.model';
 import { TaskDialogComponent } from '../shared/task-dialog/task-dialog.component';
+import { LogoComponent } from '../shared/logo/logo.component';
 
 export type Health = 'blocked' | 'behind' | 'at-risk' | 'on-track' | 'done';
 
@@ -66,9 +67,10 @@ const HEALTH_ORDER: Record<Health, number> = { blocked: 0, behind: 1, 'at-risk':
   selector: 'app-dashboard',
   imports: [
     CommonModule, RouterLink,
-    MatCardModule, MatIconModule, MatButtonModule, MatTooltipModule, 
+    MatCardModule, MatIconModule, MatButtonModule, MatTooltipModule,
     MatExpansionModule, MatProgressSpinnerModule,
-    MatDialogModule, MatSnackBarModule
+    MatDialogModule, MatSnackBarModule,
+    LogoComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
