@@ -12,7 +12,7 @@ export interface ImportResult {
 @Injectable({ providedIn: 'root' })
 export class TaskService {
   private http = inject(HttpClient);
-  private base = 'http://localhost:8080/api/tasks';
+  private base = 'http://10.51.9.17:8081/api/tasks';
 
   getAll(filters?: { projectIds?: number[]; statuses?: string[]; priorities?: string[]; assigneeIds?: number[] }): Observable<Task[]> {
     let params = new HttpParams().set('_t', Date.now().toString());

@@ -6,7 +6,7 @@ import { Member, MemberRequest } from '../models/member.model';
 @Injectable({ providedIn: 'root' })
 export class MemberService {
   private http = inject(HttpClient);
-  private base = 'http://localhost:8080/api/members';
+  private base = 'http://10.51.9.17:8081/api/members';
 
   getAll(): Observable<Member[]> {
     return this.http.get<Member[]>(this.base);

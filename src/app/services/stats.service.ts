@@ -8,7 +8,7 @@ export class StatsService {
   private http = inject(HttpClient);
 
   getStats(): Observable<Stats> {
-    return this.http.get<Stats>('http://localhost:8080/api/stats', {
+    return this.http.get<Stats>('http://10.51.9.17:8081/api/stats', {
       params: { _t: Date.now().toString() }
     });
   }

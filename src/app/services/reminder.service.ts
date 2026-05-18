@@ -7,7 +7,7 @@ import { Reminder, ReminderComment } from '../models/reminder.model';
   providedIn: 'root'
 })
 export class ReminderService {
-  private apiUrl = 'http://localhost:8080/api/reminders';
+  private apiUrl = 'http://10.51.9.17:8081/api/reminders';
 
   constructor(private http: HttpClient) {}
 
