@@ -167,8 +167,8 @@ html, body {
   text-transform: uppercase;
   transition: background var(--transition);
   /* Colores de estado clásicos */
-  &.TODO        { background: var(--gray-soft);    color: var(--gray-text);   border: 1px solid var(--gray-border); }
-  &.IN_PROGRESS { background: var(--blue-soft);    color: var(--blue-text);   border: 1px solid var(--blue-border); }
+  &.TODO        { background: var(--blue-soft);    color: var(--blue-text);   border: 1px solid var(--blue-border); } /* Pendiente ahora es azul */
+  &.IN_PROGRESS { background: var(--orange-soft);  color: var(--orange-text); border: 1px solid var(--orange-border); } /* En progreso ahora es naranja */
   &.IN_REVIEW   { background: var(--purple-soft);  color: var(--purple-text); border: 1px solid var(--purple-border); }
   &.DONE        { background: var(--green-soft);   color: var(--green-text);  border: 1px solid var(--green-border); }
   &.BLOCKED     { background: var(--red-soft);     color: var(--red-text);    border: 1px solid var(--red-border); }

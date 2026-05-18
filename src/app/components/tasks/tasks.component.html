@@ -243,7 +243,7 @@
         <!-- Fecha vencimiento -->
         <ng-container matColumnDef="dueDate">
           <th mat-header-cell *matHeaderCellDef>
-            <div class="sort-header" (click)="handleSort('dueDate', $event)" [class.sorted]="getSortDirection('dueDate')">
+            <div class="sort-header" (click)="handleSort('dueDate', $event)" [class.sorted]="getSortDirection('dueDate')"> 
               <span>Vencimiento</span>
               <mat-icon class="sort-icon" *ngIf="getSortDirection('dueDate') === 'asc'">arrow_upward</mat-icon>
               <mat-icon class="sort-icon" *ngIf="getSortDirection('dueDate') === 'desc'">arrow_downward</mat-icon>
@@ -251,9 +251,9 @@
             </div>
           </th>
           <td mat-cell *matCellDef="let node">
-            @if (node.dueDate) {
-              <span class="due-date-cell" [class.overdue]="isOverdue(node)">
-                @if (isOverdue(node)) {
+            @if (node.dueDate) { 
+              <span class="due-date-cell" [class.overdue]="isTaskOverdue(node)">
+                @if (isTaskOverdue(node)) {
                   <mat-icon class="overdue-icon">schedule</mat-icon>
                 }
                 {{ node.dueDate | date:'dd/MM/yy' }}
@@ -339,7 +339,7 @@
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"
-            [class.overdue-row]="isOverdue(row)"
+            [class.overdue-row]="isRowCritical(row)"
             [class.parent-row]="row.hasChildren"
             [class.task-done-row]="row.status === 'DONE'"></tr>
 
@@ -401,7 +401,7 @@
             </div>
 
             <div class="card-footer">
-              <span class="due-date" *ngIf="task.dueDate" [class.overdue]="isOverdue(task)">
+              <span class="due-date" *ngIf="task.dueDate" [class.overdue]="isTaskOverdue(task)">
                 <mat-icon>schedule</mat-icon> {{ task.dueDate | date:'dd/MM/yy' }}
               </span>
               <span *ngIf="!task.dueDate"></span>

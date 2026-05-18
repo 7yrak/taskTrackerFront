@@ -80,11 +80,11 @@
   th.mat-mdc-header-cell {
     font-weight: 700;
     font-size: 10px;
-    color: var(--text-on-dark);
+    color: var(--text-primary);
     text-transform: uppercase;
     letter-spacing: 0.6px;
     white-space: nowrap;
-    background: var(--bg-nav);
+    background: var(--orange-border);
     border-bottom: none !important;
     padding: 0 8px;
 
@@ -139,8 +139,8 @@
   }
 
   // Fila vencida
-  tr.overdue-row td.mat-mdc-cell {
-    background-color: var(--red-soft);
+  tr.overdue-row { // Aplicar el fondo a toda la fila
+    background-color: var(--red-soft) !important; // Asegura que sobrescriba otros fondos de fila
   }
   tr.overdue-row td.mat-mdc-cell:first-of-type {
     box-shadow: inset 3px 0 0 var(--red);

@@ -565,7 +565,7 @@ export class TasksComponent {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
-  isOverdue(task: Task): boolean {
+  isTaskOverdue(task: Task): boolean {
     if (!task.dueDate || task.status === 'DONE' || task.progressActual >= 100) return false;
     const dueDate = this.parseLocalDate(task.dueDate);
     if (!dueDate) return false;
@@ -573,6 +573,29 @@ export class TasksComponent {
     today.setHours(0, 0, 0, 0);
     return dueDate < today;
   }
+
+  // Determina si la fila de una tarea debe resaltarse como crítica (rojo)
+  // Esto incluye tareas bloqueadas o vencidas, o si alguna de sus subtareas lo está.
+  isRowCritical(node: TaskNode): boolean {
+    // Si la tarea está COMPLETED, no se considera crítica para el resaltado de fila
+    if (node.status === 'DONE') {
+      return false;
+    }
+
+    // Si la tarea está BLOQUEADA, es crítica
+    if (node.status === 'BLOCKED') {
+      return true;
+    }
+
+    // Si la tarea está vencida, es crítica
+    if (this.isTaskOverdue(node)) {
+      return true;
+    }
+
+    // Recursivamente, si alguna subtarea es crítica, entonces esta tarea padre también lo es
+    return node.childrenNodes?.some(child => this.isRowCritical(child)) ?? false;
+  }
+
 
   progressStatus(task: Task): 'on-track' | 'at-risk' | 'behind' | 'done' | 'no-date' {
     if (task.status === 'DONE') return 'done';
