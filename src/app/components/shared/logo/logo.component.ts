@@ -31,9 +31,8 @@ import { CommonModule } from '@angular/common';
         <!-- Right T stem -->
         <rect x="30" y="11" width="5" height="22" rx="2.5" fill="white"/>
 
-        <!-- Teal milestone dot at base of right stem -->
-        <circle cx="32.5" cy="37" r="4.5" fill="#00C4E8"/>
-        <!-- Círculo de hito naranja -->
+        <!-- Orange milestone dot at base of right stem -->
+        <circle cx="32.5" cy="37" r="4.5" fill="#FF8C00"/>
         <!-- Small white ring inside teal dot -->
         <circle cx="32.5" cy="37" r="2" fill="white" opacity="0.6"/>
       </svg>
@@ -73,8 +72,8 @@ import { CommonModule } from '@angular/common';
     }
 
     /* On dark backgrounds: force white for "Task" */
-    .logo-on-dark .logo-word-task    { color: #fb4300; }
-    .logo-on-dark .logo-word-tracker { color: #00C4E8; }
+    .logo-on-dark .logo-word-task    { color: #EA580C; }
+    .logo-on-dark .logo-word-tracker { color: #FF8C00; }
   `]
 })
 export class LogoComponent {

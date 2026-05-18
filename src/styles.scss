@@ -30,27 +30,41 @@ body {
   --shadow-sm:      0 2px 8px rgba(12,31,74,0.07);
   --shadow-md:      0 6px 20px rgba(12,31,74,0.12);
 
-  --red:            #E65100; /* Naranja oscuro para "rojo" semántico */
-  --red-soft:       #FFF3E0; /* Naranja muy claro */
-  --red-border:     #FFCC80; /* Borde naranja claro */
-  --red-text:       #BF360C; /* Naranja más oscuro para texto */
+  // Colores semánticos clásicos para estados y prioridades
+  --red:            #DC2626;
+  --red-soft:       #FEF2F2;
+  --red-border:     #FECACA;
+  --red-text:       #991B1B;
 
-  --orange:         #FF8C00; /* Usar el acento principal para "naranja" semántico */
-  --orange-soft:    #FFF8F0;
-  --orange-border:  #FFDAB9;
-  --orange-text:    #994D00;
+  --orange:         #F97316;
+  --orange-soft:    #FFF7ED;
+  --orange-border:  #FED7AA;
+  --orange-text:    #9A3412;
 
-  --amber:          #FFB300; /* Naranja amarillento para "ámbar" semántico */
-  --amber-soft:     #FFFDE7;
-  --amber-border:   #FFE082;
-  --amber-text:     #FF8F00;
+  --amber:          #D97706;
+  --amber-soft:     #FFFBEB;
+  --amber-border:   #FDE68A;
+  --amber-text:     #92400E;
 
-  --green:          #FF8C00; /* Usar el acento principal para "verde" semántico */
-  --green-soft:     #FFF8F0;
-  --green-border:   #FFDAB9;
-  --green-text:     #994D00;
+  --green:          #059669;
+  --green-soft:     #ECFDF5;
+  --green-border:   #A7F3D0;
+  --green-text:     #065F46;
 
-  --pink:           #FF7043; /* Naranja rojizo para "rosa" semántico */
+  --blue:           #2563EB;
+  --blue-soft:      #EFF6FF;
+  --blue-border:    #BFDBFE;
+  --blue-text:      #1E40AF;
+
+  --purple:         #7C3AED;
+  --purple-soft:    #F5F3FF;
+  --purple-border:  #DDD6FE;
+  --purple-text:    #5B21B6;
+
+  --gray:           #64748B;
+  --gray-soft:      #F1F5F9;
+  --gray-border:    #E2E8F0;
+  --gray-text:      #475569;
 
   --transition: 0.22s ease;
 }
@@ -152,10 +166,10 @@ html, body {
   letter-spacing: 0.3px;
   text-transform: uppercase;
   transition: background var(--transition);
-  /* Todos los chips de estado ahora usan tonalidades naranjas */
-  &.TODO        { background: var(--accent-dim);   color: var(--accent-text); border: 1px solid var(--accent-dim); }
-  &.IN_PROGRESS { background: var(--orange-soft);  color: var(--orange-text); border: 1px solid var(--orange-border); }
-  &.IN_REVIEW   { background: var(--amber-soft);   color: var(--amber-text);  border: 1px solid var(--amber-border); }
+  /* Colores de estado clásicos */
+  &.TODO        { background: var(--gray-soft);    color: var(--gray-text);   border: 1px solid var(--gray-border); }
+  &.IN_PROGRESS { background: var(--blue-soft);    color: var(--blue-text);   border: 1px solid var(--blue-border); }
+  &.IN_REVIEW   { background: var(--purple-soft);  color: var(--purple-text); border: 1px solid var(--purple-border); }
   &.DONE        { background: var(--green-soft);   color: var(--green-text);  border: 1px solid var(--green-border); }
   &.BLOCKED     { background: var(--red-soft);     color: var(--red-text);    border: 1px solid var(--red-border); }
 }
@@ -172,10 +186,10 @@ html, body {
   text-transform: uppercase;
   letter-spacing: 0.5px;
 
-  &.LOW      { background: var(--green-soft);  color: var(--green-text);  }
-  &.MEDIUM   { background: var(--amber-soft);  color: var(--amber-text);  }
-  &.HIGH     { background: var(--orange-soft); color: var(--orange-text); }
-  &.CRITICAL { background: var(--red-soft);    color: var(--red-text);    }
+  &.LOW      { background: var(--green-soft);  color: var(--green-text); }
+  &.MEDIUM   { background: var(--blue-soft);   color: var(--blue-text);  }
+  &.HIGH     { background: var(--amber-soft);  color: var(--amber-text); }
+  &.CRITICAL { background: var(--red-soft);    color: var(--red-text);   }
 }
 
 // ── Color dot ────────────────────────────────────────────────────────────────
