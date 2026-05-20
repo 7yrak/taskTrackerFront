@@ -55,9 +55,9 @@ export class TasksComponent {
   private destroyRef     = inject(DestroyRef);
 
   viewMode: 'table' | 'kanban' = 'table';
-  kanbanColumns = ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'BLOCKED'] as TaskStatus[];
+  kanbanColumns = ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'BLOCKED', 'STOPPED'] as TaskStatus[];
   kanbanTasks: Record<TaskStatus, TaskNode[]> = {
-    TODO: [], IN_PROGRESS: [], IN_REVIEW: [], DONE: [], BLOCKED: []
+    TODO: [], IN_PROGRESS: [], IN_REVIEW: [], DONE: [], BLOCKED: [], STOPPED: []
   };
 
   filterProject  = this.filterService.filterProject;
@@ -78,7 +78,7 @@ export class TasksComponent {
   displayedColumns = ['title', 'project', 'assignee', 'status', 'priority', 'startDate', 'dueDate', 'progressActual', 'progressExpected', 'actions'];
   statusLabels: Record<string, string>   = STATUS_LABELS;
   priorityLabels: Record<string, string> = PRIORITY_LABELS;
-  statuses: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'BLOCKED'];
+  statuses: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'BLOCKED', 'STOPPED'];
   sorts: Sort[] = [{ active: 'startDate', direction: 'asc' }];
 
   editingTitleId = signal<number | null>(null);
@@ -207,7 +207,7 @@ export class TasksComponent {
     this.dataSource.data = visible;
     this.taskCount.set(this.countLeaves(filtered));
 
-    this.kanbanTasks = { TODO: [], IN_PROGRESS: [], IN_REVIEW: [], DONE: [], BLOCKED: [] };
+    this.kanbanTasks = { TODO: [], IN_PROGRESS: [], IN_REVIEW: [], DONE: [], BLOCKED: [], STOPPED: [] };
     const allFiltered = this.flattenAll(filtered);
     for (const task of allFiltered) {
       // Solo mostrar las tareas "hojas" en el Kanban (las que no tienen subtareas)
@@ -227,12 +227,12 @@ export class TasksComponent {
         event.previousIndex,
         event.currentIndex,
       );
-      
+
       const task = event.container.data[event.currentIndex];
       const newStatus = event.container.id as TaskStatus;
-      
+
       task.status = newStatus;
-      this.taskService.updateStatus(task.id, newStatus).subscribe({
+      this.taskService.update(task.id, { ...task, status: newStatus }).subscribe({
         next: () => {
           this.snack.open('Estado actualizado', 'OK', { duration: 2000 });
           this.refresh$.next();
@@ -240,7 +240,7 @@ export class TasksComponent {
         error: (e) => {
           this.snack.open(e.error?.message || 'Error al actualizar', 'OK', { duration: 3000 });
           this.refresh$.next();
-        }
+        },
       });
     }
   }
@@ -410,7 +410,7 @@ export class TasksComponent {
   applyFilter() { this.buildAndFilter(); }
 
   clearFilters() {
-    this.filterStatus.set(['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'BLOCKED']);
+    this.filterStatus.set(['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'BLOCKED', 'STOPPED']);
     this.filterPriority.set(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']);
     this.filterProject.set(this.projects().map(p => p.id));
     this.filterAssignee.set(this.members().map(m => m.id));
@@ -514,7 +514,7 @@ export class TasksComponent {
   updateTitle(node: TaskNode, event: Event) {
     const input = event.target as HTMLInputElement;
     const newTitle = input.value.trim();
-    
+
     if (this.editingTitleId() !== node.id) return; // Prevenir guardados duplicados
     this.editingTitleId.set(null);
 
@@ -533,7 +533,7 @@ export class TasksComponent {
       startDate: startDateRaw ? this.formatLocalDate(startDateRaw) : undefined,
       dueDate: dueDateRaw ? this.formatLocalDate(dueDateRaw) : undefined,
       progressActual: node.progressActual ?? 0,
-      parentId: node.parentId ?? undefined
+      parentId: node.parentId ?? undefined,
     };
 
     this.taskService.update(node.id, req).subscribe({
@@ -543,7 +543,7 @@ export class TasksComponent {
   }
 
   changeStatus(task: Task, status: TaskStatus) {
-    this.taskService.updateStatus(task.id, status).subscribe({
+    this.taskService.update(task.id, { ...task, status }).subscribe({
       next:  () => { this.refresh$.next(); this.snack.open('Estado actualizado', 'OK', { duration: 2000 }); },
       error: (e) => this.snack.open(e.error?.message || 'Error', 'OK', { duration: 3000 })
     });

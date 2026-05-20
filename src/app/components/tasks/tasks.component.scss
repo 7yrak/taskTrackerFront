@@ -637,3 +637,8 @@
 .column-content.cdk-drop-list-dragging .kanban-card:not(.cdk-drag-placeholder) {
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
+
+.status-stopped {
+  background-color: #e0e0e0;
+  color: #000000;
+}

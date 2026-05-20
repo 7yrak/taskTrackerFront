@@ -1,4 +1,4 @@
-export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE' | 'BLOCKED';
+export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE' | 'BLOCKED' | 'STOPPED';
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
 export interface TaskComment {
@@ -55,7 +55,8 @@ export const STATUS_LABELS: Record<TaskStatus, string> = {
   IN_PROGRESS: 'En progreso',
   IN_REVIEW: 'En revisión',
   DONE: 'Completada',
-  BLOCKED: 'Bloqueada'
+  BLOCKED: 'Bloqueada',
+  STOPPED: 'Detenido'
 };
 
 export const PRIORITY_LABELS: Record<TaskPriority, string> = {
