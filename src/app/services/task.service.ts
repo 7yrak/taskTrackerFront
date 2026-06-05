@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Task, TaskRequest } from '../models/task.model';
+import { API_BASE_URL } from '../config/api.config';
 
 export interface ImportResult {
   imported: number;
@@ -12,7 +13,7 @@ export interface ImportResult {
 @Injectable({ providedIn: 'root' })
 export class TaskService {
   private http = inject(HttpClient);
-  private base = 'http://10.51.9.17:8081/api/tasks';
+  private base = `${API_BASE_URL}/tasks`;
 
   getAll(filters?: { projectIds?: number[]; statuses?: string[]; priorities?: string[]; assigneeIds?: number[] }): Observable<Task[]> {
     let params = new HttpParams().set('_t', Date.now().toString());

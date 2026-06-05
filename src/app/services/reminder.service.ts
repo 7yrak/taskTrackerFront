@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Reminder, ReminderComment } from '../models/reminder.model';
+import { API_BASE_URL } from '../config/api.config';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ReminderService {
-  private apiUrl = 'http://10.51.9.17:8081/api/reminders';
+  private apiUrl = `${API_BASE_URL}/reminders`;
 
   constructor(private http: HttpClient) {}
 

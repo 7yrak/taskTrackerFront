@@ -2,11 +2,12 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Member, MemberRequest } from '../models/member.model';
+import { API_BASE_URL } from '../config/api.config';
 
 @Injectable({ providedIn: 'root' })
 export class MemberService {
   private http = inject(HttpClient);
-  private base = 'http://10.51.9.17:8081/api/members';
+  private base = `${API_BASE_URL}/members`;
 
   getAll(): Observable<Member[]> {
     return this.http.get<Member[]>(this.base);

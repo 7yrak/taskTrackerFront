@@ -32,12 +32,10 @@ export interface TaskDialogData {
     MatDatepickerModule, MatSliderModule, MatIconModule, MatTooltipModule
   ],
   template: `
-    <h2 mat-dialog-title style="margin-bottom: 0; padding-bottom: 10px;">{{ data.task ? 'Editar tarea' : 'Nueva tarea' }}</h2>
+    <h2 mat-dialog-title class="dialog-title">{{ data.task ? 'Editar tarea' : 'Nueva tarea' }}</h2>
     <mat-dialog-content class="custom-dialog-content">
       <form [formGroup]="form" class="dialog-form">
-
-        <!-- Fila 1: Proyecto y Tarea Padre -->
-        <div class="form-row">
+        <div class="form-grid form-grid-2">
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Proyecto *</mat-label>
             <mat-select formControlName="projectId">
@@ -50,7 +48,7 @@ export interface TaskDialogData {
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Tarea padre (opcional)</mat-label>
             <mat-select formControlName="parentId" [disabled]="!form.get('projectId')?.value || parentOptions.length === 0">
-              <mat-option [value]="null">— Ninguna (tarea raíz) —</mat-option>
+              <mat-option [value]="null">Ninguna (tarea raíz)</mat-option>
               @for (t of parentOptions; track t.id) {
                 <mat-option [value]="t.id">
                   {{ '·'.repeat(t['_level'] ?? 0) }} {{ t.title }}
@@ -61,7 +59,6 @@ export interface TaskDialogData {
           </mat-form-field>
         </div>
 
-        <!-- Fila 2: Título -->
         <mat-form-field appearance="outline" class="full-width" subscriptSizing="dynamic">
           <mat-label>Título *</mat-label>
           <input matInput formControlName="title" placeholder="Nombre de la tarea" />
@@ -70,10 +67,9 @@ export interface TaskDialogData {
           }
         </mat-form-field>
 
-        <!-- Fila 3: Descripción -->
         <mat-form-field appearance="outline" class="full-width" subscriptSizing="dynamic">
           <mat-label>Descripción</mat-label>
-          <textarea matInput formControlName="description" rows="3" placeholder="Descripción opcional"></textarea>
+          <textarea matInput formControlName="description" rows="2" placeholder="Descripción opcional"></textarea>
         </mat-form-field>
 
         @if (isDerivedTask) {
@@ -83,9 +79,8 @@ export interface TaskDialogData {
           </div>
         }
 
-        <!-- Fila 4: Estado, Prioridad y Progreso -->
-        <div class="form-row">
-          <mat-form-field appearance="outline" style="flex: 1;" subscriptSizing="dynamic">
+        <div class="form-grid form-grid-3">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Estado</mat-label>
             <mat-select formControlName="status">
               <mat-option value="TODO">Pendiente</mat-option>
@@ -93,10 +88,11 @@ export interface TaskDialogData {
               <mat-option value="IN_REVIEW">En revisión</mat-option>
               <mat-option value="DONE">Completada</mat-option>
               <mat-option value="BLOCKED">Bloqueada</mat-option>
+              <mat-option value="STOPPED">Detenido</mat-option>
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" style="flex: 1;" subscriptSizing="dynamic">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Prioridad</mat-label>
             <mat-select formControlName="priority">
               <mat-option value="LOW">Baja</mat-option>
@@ -106,15 +102,14 @@ export interface TaskDialogData {
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" style="flex: 1;" subscriptSizing="dynamic">
-            <mat-label>% Avance actual (0 - 100)</mat-label>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>% Avance actual</mat-label>
             <input matInput type="number" min="0" max="100" formControlName="progressActual" />
           </mat-form-field>
         </div>
 
-        <!-- Fila 5: Asignados y Fechas -->
-        <div class="form-row">
-          <mat-form-field appearance="outline" style="flex: 2;" subscriptSizing="dynamic">
+        <div class="form-grid form-grid-3">
+          <mat-form-field appearance="outline" class="span-2" subscriptSizing="dynamic">
             <mat-label>Asignado a *</mat-label>
             <mat-select formControlName="assigneeIds" multiple>
               @for (m of data.members; track m.id) {
@@ -126,14 +121,14 @@ export interface TaskDialogData {
             }
           </mat-form-field>
 
-          <mat-form-field appearance="outline" style="flex: 1;" subscriptSizing="dynamic">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Inicio *</mat-label>
             <input matInput [matDatepicker]="pickerStart" formControlName="startDate" />
             <mat-datepicker-toggle matIconSuffix [for]="pickerStart"></mat-datepicker-toggle>
             <mat-datepicker #pickerStart></mat-datepicker>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" style="flex: 1;" subscriptSizing="dynamic">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Vencimiento *</mat-label>
             <input matInput [matDatepicker]="pickerDue" formControlName="dueDate" />
             <mat-datepicker-toggle matIconSuffix [for]="pickerDue"></mat-datepicker-toggle>
@@ -141,14 +136,15 @@ export interface TaskDialogData {
           </mat-form-field>
         </div>
 
-        <!-- Fila 6: Comentarios -->
         <div class="comments-section">
           <div class="comments-title">
-            <mat-icon style="font-size: 18px; width: 18px; height: 18px;">forum</mat-icon> Comentarios
+            <mat-icon style="font-size: 18px; width: 18px; height: 18px;">forum</mat-icon>
+            Comentarios
           </div>
+
           <div class="comments-list">
             @if (comments.length === 0) {
-              <p class="no-comments">No hay comentarios todavía. ¡Sé el primero en aportar uno!</p>
+              <p class="no-comments">No hay comentarios todavía.</p>
             }
             @for (c of comments; track $index) {
               <div class="comment-item">
@@ -157,8 +153,9 @@ export interface TaskDialogData {
                     <mat-icon style="font-size: 16px; width: 16px; height: 16px; color: #94A3B8;">account_circle</mat-icon>
                     {{ c.author }}
                   </span>
-                  <div style="display: flex; align-items: center; gap: 4px;">
-                    <input type="datetime-local" class="comment-date-input"
+                  <div class="comment-tools">
+                    <input type="datetime-local"
+                           class="comment-date-input"
                            [value]="formatCommentDate(c.date)"
                            (change)="updateCommentDate(c, $event)" />
                     <button mat-icon-button class="delete-comment-btn" (click)="deleteComment(c)" matTooltip="Eliminar comentario">
@@ -170,19 +167,20 @@ export interface TaskDialogData {
               </div>
             }
           </div>
+
           <div class="add-comment-row">
-            <mat-form-field appearance="outline" style="flex: 1;" subscriptSizing="dynamic">
+            <mat-form-field appearance="outline" class="comment-input" subscriptSizing="dynamic">
               <mat-label>Agregar un comentario...</mat-label>
-              <textarea matInput [formControl]="newComment" rows="2" (keydown.enter)="$event.preventDefault(); addComment()" placeholder="Escribe aquí..."></textarea>
+              <textarea matInput [formControl]="newComment" rows="1" (keydown.enter)="$event.preventDefault(); addComment()" placeholder="Escribe aquí..."></textarea>
             </mat-form-field>
-            <button mat-flat-button color="primary" (click)="addComment()" type="button" style="margin-top: 4px;">
+            <button mat-flat-button color="primary" (click)="addComment()" type="button" class="comment-button">
               <mat-icon>send</mat-icon> Comentar
             </button>
           </div>
         </div>
       </form>
     </mat-dialog-content>
-    <mat-dialog-actions align="end" style="padding-bottom: 12px; margin-top: 8px;">
+    <mat-dialog-actions align="end" class="dialog-actions">
       <button mat-button mat-dialog-close>Cancelar</button>
       <button mat-flat-button color="primary" (click)="save()" [disabled]="form.invalid">
         {{ data.task ? 'Guardar Cambios' : 'Crear Tarea' }}
@@ -190,37 +188,147 @@ export interface TaskDialogData {
     </mat-dialog-actions>
   `,
   styles: [`
-    .dialog-form { display: flex; flex-direction: column; gap: 16px; min-width: 850px; }
+    .dialog-title { margin: 0; padding: 0 0 8px; }
+    .dialog-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: min(960px, calc(100vw - 64px));
+    }
     .full-width { width: 100%; }
-    .form-row { display: flex; gap: 16px; align-items: flex-start; }
-    .form-row > mat-form-field { flex: 1; }
-    .small-field { flex: 1; }
-    .custom-dialog-content { padding-top: 8px !important; }
-
-    .derived-note { margin: 0; color: #1E293B; font-size: 12.5px; line-height: 1.4; display: flex; align-items: center; gap: 6px; background: #E0F2FE; padding: 10px 14px; border-radius: 6px; border-left: 4px solid #3B82F6; }
-
-    /* Estilos para Comentarios */
-    .comments-section { margin-top: 8px; border-top: 1px solid #E2E8F0; padding-top: 20px; display: flex; flex-direction: column; gap: 16px; }
-    .comments-title { font-size: 14px; font-weight: 600; color: #334155; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; }
-    .comments-list { display: flex; flex-direction: column; gap: 12px; }
-    .comment-item { background: #F8FAFC; border-radius: 8px; padding: 12px 16px; border: 1px solid #E2E8F0; transition: background 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+    .form-grid { display: grid; gap: 12px; }
+    .form-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .form-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .span-2 { grid-column: span 2; }
+    .custom-dialog-content { padding: 4px 4px 0 !important; max-height: none !important; overflow: visible !important; }
+    .dialog-form mat-form-field { margin-bottom: 0; }
+    .derived-note {
+      margin: 0;
+      color: #1E293B;
+      font-size: 12px;
+      line-height: 1.35;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #E0F2FE;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border-left: 4px solid #3B82F6;
+    }
+    .comments-section {
+      margin-top: 4px;
+      border-top: 1px solid #E2E8F0;
+      padding-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .comments-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .comments-list { display: flex; flex-direction: column; gap: 8px; }
+    .comment-item {
+      background: #F8FAFC;
+      border-radius: 8px;
+      padding: 10px 12px;
+      border: 1px solid #E2E8F0;
+      transition: background 0.2s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
     .comment-item:hover { background: #F1F5F9; }
-    .comment-header { display: flex; justify-content: space-between; margin-bottom: 4px; align-items: center; }
-    .comment-author { font-weight: 600; font-size: 13px; color: #0F172A; display: flex; align-items: center; gap: 6px; }
-    .comment-date-input { border: 1px solid transparent; background: transparent; color: #64748B; font-size: 12px; font-family: inherit; padding: 4px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
-    .comment-date-input:hover, .comment-date-input:focus { border-color: #CBD5E1; background: #FFF; outline: none; }
-    .delete-comment-btn { --mdc-icon-button-state-layer-size: 28px; width: 28px !important; height: 28px !important; padding: 0 !important; margin-left: 8px; opacity: 0.4; transition: opacity 0.2s; }
+    .comment-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      align-items: center;
+      gap: 8px;
+    }
+    .comment-author {
+      font-weight: 600;
+      font-size: 12px;
+      color: #0F172A;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .comment-tools { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+    .comment-date-input {
+      border: 1px solid transparent;
+      background: transparent;
+      color: #64748B;
+      font-size: 11px;
+      font-family: inherit;
+      padding: 2px 4px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .comment-date-input:hover, .comment-date-input:focus {
+      border-color: #CBD5E1;
+      background: #FFF;
+      outline: none;
+    }
+    .delete-comment-btn {
+      --mdc-icon-button-state-layer-size: 28px;
+      width: 28px !important;
+      height: 28px !important;
+      padding: 0 !important;
+      opacity: 0.4;
+      transition: opacity 0.2s;
+    }
     .comment-item:hover .delete-comment-btn { opacity: 1; }
-    .delete-comment-btn mat-icon { font-size: 18px !important; width: 18px !important; height: 18px !important; line-height: 18px !important; color: #EF4444; }
-    .comment-body { font-size: 14px; color: #334155; white-space: pre-wrap; line-height: 1.5; }
-    .no-comments { font-size: 13px; color: #94A3B8; font-style: italic; margin: 0; text-align: center; padding: 20px; background: #F8FAFC; border-radius: 8px; border: 1px dashed #CBD5E1; }
-    .add-comment-row { display: flex; gap: 12px; align-items: stretch; background: #F8FAFC; padding: 16px; border-radius: 8px; border: 1px solid #E2E8F0; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+    .delete-comment-btn mat-icon {
+      font-size: 18px !important;
+      width: 18px !important;
+      height: 18px !important;
+      line-height: 18px !important;
+      color: #EF4444;
+    }
+    .comment-body { font-size: 13px; color: #334155; white-space: pre-wrap; line-height: 1.45; }
+    .no-comments {
+      font-size: 12px;
+      color: #94A3B8;
+      font-style: italic;
+      margin: 0;
+      text-align: center;
+      padding: 12px;
+      background: #F8FAFC;
+      border-radius: 8px;
+      border: 1px dashed #CBD5E1;
+    }
+    .add-comment-row {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+      background: #F8FAFC;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #E2E8F0;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .comment-input { flex: 1; }
+    .comment-button { margin-top: 4px; white-space: nowrap; }
+    .dialog-actions { padding-bottom: 8px; margin-top: 8px; }
+    @media (max-width: 900px) {
+      .dialog-form { width: calc(100vw - 48px); }
+      .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
+      .span-2 { grid-column: auto; }
+      .add-comment-row { flex-direction: column; }
+    }
   `]
 })
 export class TaskDialogComponent implements OnInit, OnDestroy {
   data: TaskDialogData = inject(MAT_DIALOG_DATA);
   private ref = inject(MatDialogRef<TaskDialogComponent>);
-  private fb  = inject(FormBuilder);
+  private fb = inject(FormBuilder);
   private sub = new Subscription();
 
   parentOptions: (Task & { _level?: number })[] = [];
@@ -239,12 +347,10 @@ export class TaskDialogComponent implements OnInit, OnDestroy {
     progressActual: [0]
   });
 
-  // Simulación de datos para el diseño
   comments: TaskComment[] = [];
   newComment = new FormControl('');
 
   ngOnInit() {
-    // Al cambiar de proyecto, recalcular opciones de padres
     this.sub.add(this.form.get('projectId')?.valueChanges.subscribe(projectId => {
       this.buildParentOptions(projectId);
       const currentParentId = this.form.get('parentId')?.value;
@@ -275,8 +381,6 @@ export class TaskDialogComponent implements OnInit, OnDestroy {
         this.form.get('dueDate')?.disable({ emitEvent: false });
         this.form.get('progressActual')?.disable({ emitEvent: false });
       }
-
-      // Cargar comentarios existentes desde el backend
       if (t.comments) {
         this.comments = t.comments.map((c: TaskComment) => ({
           author: c.author,
@@ -292,7 +396,6 @@ export class TaskDialogComponent implements OnInit, OnDestroy {
       this.form.patchValue({ parentId: this.data.defaultParentId });
     }
 
-    // Inicializar opciones de padre con el proyecto actual
     this.buildParentOptions(this.form.get('projectId')?.value);
   }
 
@@ -308,14 +411,11 @@ export class TaskDialogComponent implements OnInit, OnDestroy {
 
     const editingId = this.data.task?.id;
     const excludedIds = editingId != null ? this.getTaskAndDescendantIds(editingId) : new Set<number>();
-    
-    // Filtrar tareas que pertenecen al mismo proyecto y no son descendientes de la actual
     const all = this.data.allTasks.filter(t => t.projectId === projectId && !excludedIds.has(t.id));
     const map = new Map<number, Task & { _level: number; _children: number[] }>();
     const roots: number[] = [];
 
     for (const t of all) map.set(t.id, { ...t, _level: 0, _children: [] });
-
     for (const node of map.values()) {
       if (node.parentId != null && map.has(node.parentId)) {
         map.get(node.parentId)!._children.push(node.id);
@@ -340,7 +440,6 @@ export class TaskDialogComponent implements OnInit, OnDestroy {
   private getTaskAndDescendantIds(taskId: number): Set<number> {
     const excluded = new Set<number>([taskId]);
     let changed = true;
-
     while (changed) {
       changed = false;
       for (const task of this.data.allTasks) {
@@ -350,7 +449,6 @@ export class TaskDialogComponent implements OnInit, OnDestroy {
         }
       }
     }
-
     return excluded;
   }
 
@@ -372,7 +470,6 @@ export class TaskDialogComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Lógica simulada para agregar el comentario al presionar enter o hacer clic
   addComment() {
     const text = this.newComment.value;
     if (text && text.trim()) {
@@ -389,7 +486,7 @@ export class TaskDialogComponent implements OnInit, OnDestroy {
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
     const startDate = this.formatLocalDate(v.startDate);
-    const dueDate   = this.formatLocalDate(v.dueDate);
+    const dueDate = this.formatLocalDate(v.dueDate);
     const progressActual = Number(v.progressActual ?? 0);
     this.ref.close({
       parentId: v.parentId ?? null,
