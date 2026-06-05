@@ -108,8 +108,8 @@ export interface TaskDialogData {
           </mat-form-field>
         </div>
 
-        <div class="form-grid form-grid-3">
-          <mat-form-field appearance="outline" class="span-2" subscriptSizing="dynamic">
+        <div class="form-grid form-grid-3 dates-row">
+          <mat-form-field appearance="outline" class="assignee-field" subscriptSizing="dynamic">
             <mat-label>Asignado a *</mat-label>
             <mat-select formControlName="assigneeIds" multiple>
               @for (m of data.members; track m.id) {
@@ -199,7 +199,8 @@ export interface TaskDialogData {
     .form-grid { display: grid; gap: 12px; }
     .form-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .form-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .span-2 { grid-column: span 2; }
+    .assignee-field { grid-column: span 1; }
+    .dates-row { grid-template-columns: 1.3fr 1fr 1fr; }
     .custom-dialog-content { padding: 4px 4px 0 !important; max-height: none !important; overflow: visible !important; }
     .dialog-form mat-form-field { margin-bottom: 0; }
     .derived-note {
@@ -320,7 +321,8 @@ export interface TaskDialogData {
     @media (max-width: 900px) {
       .dialog-form { width: calc(100vw - 48px); }
       .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
-      .span-2 { grid-column: auto; }
+      .assignee-field { grid-column: auto; }
+      .dates-row { grid-template-columns: 1fr; }
       .add-comment-row { flex-direction: column; }
     }
   `]
