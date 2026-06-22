@@ -20,7 +20,7 @@ import { jsPDF } from 'jspdf';
 // @ts-ignore
 import autoTable from 'jspdf-autotable';
 import { TaskService, ImportResult } from '../../services/task.service';
-import { TaskFilterService } from '../../services/task-filter.service';
+import { TaskFilterService, TaskViewPreset, PersistedSortState } from '../../services/task-filter.service';
 import { ProjectService } from '../../services/project.service';
 import { MemberService } from '../../services/member.service';
 import { Task, TaskNode, TaskStatus, STATUS_LABELS, PRIORITY_LABELS } from '../../models/task.model';
@@ -54,7 +54,10 @@ export class TasksComponent {
   private snack          = inject(MatSnackBar);
   private destroyRef     = inject(DestroyRef);
 
-  viewMode: 'table' | 'kanban' = 'table';
+  viewMode: 'table' | 'kanban' = this.filterService.loadViewMode('table');
+  savedViews = signal<TaskViewPreset[]>(this.filterService.loadSavedViews());
+  selectedViewId = signal<string>('');
+  recentlyUpdatedTaskIds = signal<Set<number>>(new Set());
   kanbanColumns = ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'BLOCKED', 'STOPPED'] as TaskStatus[];
   kanbanTasks: Record<TaskStatus, TaskNode[]> = {
     TODO: [], IN_PROGRESS: [], IN_REVIEW: [], DONE: [], BLOCKED: [], STOPPED: []
@@ -79,7 +82,7 @@ export class TasksComponent {
   statusLabels: Record<string, string>   = STATUS_LABELS;
   priorityLabels: Record<string, string> = PRIORITY_LABELS;
   statuses: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'BLOCKED', 'STOPPED'];
-  sorts: Sort[] = [{ active: 'startDate', direction: 'asc' }];
+  sorts: Sort[] = this.filterService.loadSortState([{ active: 'startDate', direction: 'asc' }]);
 
   editingTitleId = signal<number | null>(null);
 
@@ -111,6 +114,90 @@ export class TasksComponent {
       this.allTasks = tasks;
       this.buildAndFilter();
     });
+  }
+
+  setViewMode(mode: 'table' | 'kanban') {
+    this.viewMode = mode;
+    this.filterService.saveViewMode(mode);
+  }
+
+  saveCurrentView() {
+    const name = prompt('Nombre para la vista guardada:', `Vista ${new Date().toLocaleDateString('es-AR')}`);
+    if (!name?.trim()) return;
+
+    const preset: TaskViewPreset = {
+      id: crypto.randomUUID(),
+      name: name.trim(),
+      filterProject: [...this.filterProject()],
+      filterStatus: [...this.filterStatus()],
+      filterPriority: [...this.filterPriority()],
+      filterAssignee: [...this.filterAssignee()],
+      viewMode: this.viewMode,
+      sortState: this.sorts.map(s => ({ active: s.active, direction: s.direction as PersistedSortState['direction'] }))
+    };
+
+    this.savedViews.update(list => {
+      const next = [preset, ...list].slice(0, 10);
+      this.filterService.saveSavedViews(next);
+      return next;
+    });
+    this.selectedViewId.set(preset.id);
+    this.openInfoSnack(`Vista "${preset.name}" guardada`, 'success');
+  }
+
+  applySavedView(presetId: string) {
+    const preset = this.savedViews().find(v => v.id === presetId);
+    if (!preset) {
+      this.selectedViewId.set('');
+      return;
+    }
+    this.filterProject.set([...preset.filterProject]);
+    this.filterStatus.set([...preset.filterStatus]);
+    this.filterPriority.set([...preset.filterPriority]);
+    this.filterAssignee.set([...preset.filterAssignee]);
+    this.sorts = preset.sortState.map(s => ({ active: s.active, direction: s.direction }));
+    this.viewMode = preset.viewMode;
+    this.selectedViewId.set(presetId);
+    this.filterService.saveViewMode(preset.viewMode);
+    this.filterService.saveSortState(this.sorts.map(s => ({ active: s.active, direction: s.direction })));
+    this.buildAndFilter();
+    this.openInfoSnack(`Vista "${preset.name}" aplicada`, 'info');
+  }
+
+  deleteSavedView(presetId: string) {
+    const next = this.savedViews().filter(v => v.id !== presetId);
+    this.savedViews.set(next);
+    this.filterService.saveSavedViews(next);
+    if (this.selectedViewId() === presetId) {
+      this.selectedViewId.set('');
+    }
+    this.openInfoSnack('Vista eliminada', 'warning');
+  }
+
+  private openInfoSnack(message: string, tone: 'success' | 'warning' | 'error' | 'info' = 'info') {
+    this.snack.open(message, 'OK', {
+      duration: 2500,
+      panelClass: [`snack-${tone}`]
+    });
+  }
+
+  private flashTaskUpdate(taskId: number) {
+    this.recentlyUpdatedTaskIds.update(set => {
+      const next = new Set(set);
+      next.add(taskId);
+      return next;
+    });
+    setTimeout(() => {
+      this.recentlyUpdatedTaskIds.update(set => {
+        const next = new Set(set);
+        next.delete(taskId);
+        return next;
+      });
+    }, 1600);
+  }
+
+  isRecentlyUpdated(taskId: number): boolean {
+    return this.recentlyUpdatedTaskIds().has(taskId);
   }
 
   // ── Tree building ──────────────────────────────────────────────────────────
@@ -234,11 +321,12 @@ export class TasksComponent {
       task.status = newStatus;
       this.taskService.update(task.id, { ...task, status: newStatus }).subscribe({
         next: () => {
-          this.snack.open('Estado actualizado', 'OK', { duration: 2000 });
+          this.flashTaskUpdate(task.id);
+          this.openInfoSnack('Estado actualizado', 'success');
           this.refresh$.next();
         },
         error: (e) => {
-          this.snack.open(e.error?.message || 'Error al actualizar', 'OK', { duration: 3000 });
+          this.openInfoSnack(e.error?.message || 'Error al actualizar', 'error');
           this.refresh$.next();
         },
       });
@@ -279,11 +367,13 @@ export class TasksComponent {
       this.sorts = [{ active: 'startDate', direction: 'asc' }];
     }
 
+    this.filterService.saveSortState(this.sorts.map(s => ({ active: s.active, direction: s.direction })));
     this.buildAndFilter();
   }
 
   clearSorting(): void {
     this.sorts = [{ active: 'startDate', direction: 'asc' }];
+    this.filterService.saveSortState(this.sorts);
     this.buildAndFilter();
   }
 
@@ -433,8 +523,8 @@ export class TasksComponent {
     }).afterClosed().subscribe(result => {
       if (result) {
         this.taskService.create(result).subscribe({
-          next:  () => { this.refresh$.next(); this.snack.open('Tarea creada', 'OK', { duration: 2500 }); },
-          error: (e) => this.snack.open(e.error?.message || 'Error', 'OK', { duration: 3000 })
+          next:  () => { this.refresh$.next(); this.openInfoSnack('Tarea creada', 'success'); },
+          error: (e) => this.openInfoSnack(e.error?.message || 'Error', 'error')
         });
       }
     });
@@ -449,8 +539,8 @@ export class TasksComponent {
     }).afterClosed().subscribe(result => {
       if (result) {
         this.taskService.update(task.id, result).subscribe({
-          next:  () => { this.refresh$.next(); this.snack.open('Tarea actualizada', 'OK', { duration: 2500 }); },
-          error: (e) => this.snack.open(e.error?.message || 'Error', 'OK', { duration: 3000 })
+          next:  () => { this.refresh$.next(); this.flashTaskUpdate(task.id); this.openInfoSnack('Tarea actualizada', 'success'); },
+          error: (e) => this.openInfoSnack(e.error?.message || 'Error', 'error')
         });
       }
     });
@@ -537,15 +627,23 @@ export class TasksComponent {
     };
 
     this.taskService.update(node.id, req).subscribe({
-      next:  () => { this.refresh$.next(); this.snack.open('Título actualizado', 'OK', { duration: 2000 }); },
-      error: (e) => this.snack.open(e.error?.message || 'Error al actualizar', 'OK', { duration: 3000 })
+      next:  () => {
+        this.refresh$.next();
+        this.flashTaskUpdate(node.id);
+        this.openInfoSnack('Título actualizado', 'success');
+      },
+      error: (e) => this.openInfoSnack(e.error?.message || 'Error al actualizar', 'error')
     });
   }
 
   changeStatus(task: Task, status: TaskStatus) {
     this.taskService.update(task.id, { ...task, status }).subscribe({
-      next:  () => { this.refresh$.next(); this.snack.open('Estado actualizado', 'OK', { duration: 2000 }); },
-      error: (e) => this.snack.open(e.error?.message || 'Error', 'OK', { duration: 3000 })
+      next:  () => {
+        this.refresh$.next();
+        this.flashTaskUpdate(task.id);
+        this.openInfoSnack('Estado actualizado', 'success');
+      },
+      error: (e) => this.openInfoSnack(e.error?.message || 'Error', 'error')
     });
   }
 
@@ -556,8 +654,8 @@ export class TasksComponent {
     }).afterClosed().subscribe(confirmed => {
       if (confirmed) {
         this.taskService.delete(task.id).subscribe({
-          next:  () => { this.refresh$.next(); this.snack.open('Tarea eliminada', 'OK', { duration: 2500 }); },
-          error: (e) => this.snack.open(e.error?.message || 'Error', 'OK', { duration: 3000 })
+          next:  () => { this.refresh$.next(); this.openInfoSnack('Tarea eliminada', 'success'); },
+          error: (e) => this.openInfoSnack(e.error?.message || 'Error', 'error')
         });
       }
     });
@@ -647,9 +745,9 @@ export class TasksComponent {
             this.rootNodes = [];
             this.dataSource.data = [];
             this.taskCount.set(0);
-            this.snack.open('Todas las tareas fueron eliminadas', 'OK', { duration: 3000 });
+            this.openInfoSnack('Todas las tareas fueron eliminadas', 'warning');
           },
-          error: (e) => this.snack.open(e.error?.message || 'Error al eliminar', 'OK', { duration: 3000 })
+          error: (e) => this.openInfoSnack(e.error?.message || 'Error al eliminar', 'error')
         });
       });
     });
@@ -658,7 +756,7 @@ export class TasksComponent {
   exportView() {
     const visibleTasks = this.dataSource.data;
     if (visibleTasks.length === 0) {
-      this.snack.open('No hay tareas en la vista actual para exportar', 'OK', { duration: 2500 });
+      this.openInfoSnack('No hay tareas en la vista actual para exportar', 'warning');
       return;
     }
 
@@ -698,16 +796,16 @@ export class TasksComponent {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `vista_tareas_${today}.csv`;
+    a.download = `tasktracker_tasks_view_${today}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    this.snack.open(`Exportando ${visibleTasks.length} tareas de la vista...`, 'OK', { duration: 3000 });
+    this.openInfoSnack(`Exportando ${visibleTasks.length} tareas de la vista...`, 'info');
   }
 
   exportPdf() {
     const visibleTasks = this.dataSource.data;
     if (visibleTasks.length === 0) {
-      this.snack.open('No hay tareas en la vista actual para exportar a PDF', 'OK', { duration: 2500 });
+      this.openInfoSnack('No hay tareas en la vista actual para exportar a PDF', 'warning');
       return;
     }
 
@@ -748,7 +846,7 @@ export class TasksComponent {
     });
 
     const today = this.formatLocalDate(new Date());
-    doc.save(`vista_tareas_${today}.pdf`);
+    doc.save(`tasktracker_tasks_view_${today}.pdf`);
   }
 
   exportTasks() {
@@ -756,7 +854,7 @@ export class TasksComponent {
     const tasksToExport = this.allTasks;
 
     if (tasksToExport.length === 0) {
-      this.snack.open('No hay tareas para exportar', 'OK', { duration: 2500 });
+      this.openInfoSnack('No hay tareas para exportar', 'warning');
       return;
     }
 
@@ -807,10 +905,10 @@ export class TasksComponent {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `tareas_backup_completo_${today}.csv`;
+    a.download = `tasktracker_tasks_backup_${today}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    this.snack.open(`Exportando ${tasksToExport.length} tareas para respaldo...`, 'OK', { duration: 3000 });
+    this.openInfoSnack(`Exportando ${tasksToExport.length} tareas para respaldo...`, 'info');
   }
 
   // ── Excel ─────────────────────────────────────────────────────────────────
@@ -819,7 +917,7 @@ export class TasksComponent {
     this.taskService.downloadTemplate().subscribe(blob => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = 'plantilla_tareas.xlsx'; a.click();
+      a.href = url; a.download = 'plantilla_tareas.csv'; a.click();
       URL.revokeObjectURL(url);
     });
   }
@@ -832,20 +930,17 @@ export class TasksComponent {
     if (!file) return;
     input.value = '';
 
-    // NOTA: Se está enviando un archivo CSV con la barra vertical (|) como separador.
-    // El método del servicio 'importExcel' y el endpoint del backend '/api/tasks/import-excel'
-    // deben ser adaptados para procesar este formato. El backend debe esperar '|' como delimitador.
     this.taskService.importExcel(file).subscribe({
       next: (result: ImportResult) => {
         this.refresh$.next();
         const msg = `${result.imported} tarea(s) importada(s)` +
           (result.skipped ? `, ${result.skipped} omitida(s)` : '');
-        this.snack.open(msg, 'OK', { duration: 4000 });
+        this.openInfoSnack(msg, 'success');
         if (result.warnings.length > 0) {
           this.dialog.open(ImportWarningsDialogComponent, { width: '520px', data: result.warnings });
         }
       },
-      error: (e) => this.snack.open(e.error?.message || 'Error al importar', 'OK', { duration: 4000 })
+      error: (e) => this.openInfoSnack(e.error?.message || 'Error al importar', 'error')
     });
   }
 }

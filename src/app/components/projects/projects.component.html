@@ -37,7 +37,7 @@
 
   <div class="projects-grid">
     @for (project of filteredProjects(); track project.id) {
-      <mat-card class="project-card">
+      <mat-card class="project-card" [class.recently-updated]="isRecentlyUpdated(project.id)">
         <mat-card-header>
           <div class="project-color-badge" [style.background-color]="project.color"></div>
           <div style="flex: 1;">

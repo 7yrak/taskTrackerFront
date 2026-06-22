@@ -23,7 +23,7 @@
             matTooltip="Importa un respaldo de tareas desde un archivo CSV.">
       <mat-icon>upload_file</mat-icon> Importar Respaldo
     </button-->
-    <mat-button-toggle-group [(ngModel)]="viewMode" style="margin-right:8px">
+    <mat-button-toggle-group [ngModel]="viewMode" (ngModelChange)="setViewMode($event)" style="margin-right:8px">
       <mat-button-toggle value="table" matTooltip="Vista de Tabla"><mat-icon>table_rows</mat-icon></mat-button-toggle>
       <mat-button-toggle value="kanban" matTooltip="Vista de Tablero Kanban"><mat-icon>view_column</mat-icon></mat-button-toggle>
     </mat-button-toggle-group>
@@ -87,6 +87,26 @@
       <span class="sort-info" *ngIf="sorts.length > 1">
         Orden múltiple activo. <small>Mantén Shift para añadir/quitar columnas.</small>
       </span>
+    </div>
+
+    <div class="saved-views">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Vistas guardadas</mat-label>
+        <mat-select [ngModel]="selectedViewId()" (ngModelChange)="applySavedView($event)">
+          <mat-option value="">Seleccionar</mat-option>
+          @for (view of savedViews(); track view.id) {
+            <mat-option [value]="view.id">{{ view.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <button mat-stroked-button (click)="saveCurrentView()">
+        <mat-icon>bookmark_add</mat-icon> Guardar vista
+      </button>
+      @if (selectedViewId()) {
+        <button mat-button color="warn" (click)="deleteSavedView(selectedViewId())">
+          <mat-icon>delete</mat-icon> Eliminar
+        </button>
+      }
     </div>
 
     <span class="spacer"></span>
@@ -341,7 +361,8 @@
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"
             [class.overdue-row]="isRowCritical(row)"
             [class.parent-row]="row.hasChildren"
-            [class.task-done-row]="row.status === 'DONE'"></tr>
+            [class.task-done-row]="row.status === 'DONE'"
+            [class.recently-updated]="isRecentlyUpdated(row.id)"></tr>
 
         <tr class="mat-row" *matNoDataRow>
           <td class="mat-cell no-data" [attr.colspan]="displayedColumns.length">

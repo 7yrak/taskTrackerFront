@@ -57,6 +57,7 @@ export class ProjectsComponent {
   private snack = inject(MatSnackBar);
 
   private refresh$ = new Subject<void>();
+  recentlyUpdatedProjectIds = signal<Set<number>>(new Set());
 
   projects = toSignal(
     this.refresh$.pipe(
@@ -99,16 +100,21 @@ export class ProjectsComponent {
     const oldStatus = project.status;
     project.status = newStatus; // Actualizamos la UI inmediatamente
 
-    const updatePayload = { ...project, status: newStatus };
+    const updatePayload = {
+      name: project.name,
+      description: project.description ?? undefined,
+      color: project.color ?? undefined,
+      status: newStatus
+    };
 
-    this.projectService.update(project.id, updatePayload as any).subscribe({
+    this.projectService.update(project.id, updatePayload).subscribe({
       next: () => {
-        this.snack.open('Estado del proyecto actualizado', 'OK', { duration: 2500 });
+        this.flashProject(project.id);
+        this.openInfoSnack('Estado del proyecto actualizado', 'success');
       },
       error: (err) => {
         project.status = oldStatus; // Revertir si hay error
-        this.snack.open('Error al guardar en el servidor', 'OK', { duration: 3000 });
-        console.error('Error actualizando estado:', err);
+        this.openInfoSnack('Error al guardar en el servidor', 'error');
       }
     });
   }
@@ -118,8 +124,8 @@ export class ProjectsComponent {
       .afterClosed().subscribe(result => {
         if (result) {
           this.projectService.create(result).subscribe({
-            next: () => { this.refresh$.next(); this.snack.open('Proyecto creado', 'OK', { duration: 2500 }); },
-            error: (e) => this.snack.open(e.error?.message || 'Error', 'OK', { duration: 3000 })
+            next: () => { this.refresh$.next(); this.openInfoSnack('Proyecto creado', 'success'); },
+            error: (e) => this.openInfoSnack(e.error?.message || 'Error', 'error')
           });
         }
       });
@@ -130,8 +136,8 @@ export class ProjectsComponent {
       .afterClosed().subscribe(result => {
         if (result) {
           this.projectService.update(project.id, result).subscribe({
-            next: () => { this.refresh$.next(); this.snack.open('Proyecto actualizado', 'OK', { duration: 2500 }); },
-            error: (e) => this.snack.open(e.error?.message || 'Error', 'OK', { duration: 3000 })
+            next: () => { this.refresh$.next(); this.flashProject(project.id); this.openInfoSnack('Proyecto actualizado', 'success'); },
+            error: (e) => this.openInfoSnack(e.error?.message || 'Error', 'error')
           });
         }
       });
@@ -143,8 +149,8 @@ export class ProjectsComponent {
     }).afterClosed().subscribe(confirmed => {
       if (confirmed) {
         this.projectService.delete(project.id).subscribe({
-          next: () => { this.refresh$.next(); this.snack.open('Proyecto eliminado', 'OK', { duration: 2500 }); },
-          error: (e) => this.snack.open(e.error?.message || 'Error', 'OK', { duration: 3000 })
+          next: () => { this.refresh$.next(); this.openInfoSnack('Proyecto eliminado', 'warning'); },
+          error: (e) => this.openInfoSnack(e.error?.message || 'Error', 'error')
         });
       }
     });
@@ -152,5 +158,31 @@ export class ProjectsComponent {
 
   getProgress(project: Project): number {
     return project.progressActual ?? 0;
+  }
+
+  private flashProject(projectId: number) {
+    this.recentlyUpdatedProjectIds.update(set => {
+      const next = new Set(set);
+      next.add(projectId);
+      return next;
+    });
+    setTimeout(() => {
+      this.recentlyUpdatedProjectIds.update(set => {
+        const next = new Set(set);
+        next.delete(projectId);
+        return next;
+      });
+    }, 1600);
+  }
+
+  isRecentlyUpdated(projectId: number): boolean {
+    return this.recentlyUpdatedProjectIds().has(projectId);
+  }
+
+  private openInfoSnack(message: string, tone: 'success' | 'warning' | 'error' | 'info' = 'info') {
+    this.snack.open(message, 'OK', {
+      duration: 2500,
+      panelClass: [`snack-${tone}`]
+    });
   }
 }

@@ -20,6 +20,7 @@ import { Project } from '../../models/project.model';
 import { Member } from '../../models/member.model';
 import { TaskDialogComponent } from '../shared/task-dialog/task-dialog.component';
 import { LogoComponent } from '../shared/logo/logo.component';
+import { Stats } from '../../models/stats.model';
 
 export type Health = 'blocked' | 'behind' | 'at-risk' | 'on-track' | 'done';
 
@@ -61,7 +62,41 @@ export interface CriticalTask {
   childrenNodes?: CriticalTask[];
 }
 
+interface WeeklyAlertPoint {
+  label: string;
+  blocked: number;
+  overdue: number;
+}
+
+interface TaskAgeAlert {
+  task: Task;
+  ageDays: number;
+  staleDays: number;
+}
+
 const HEALTH_ORDER: Record<Health, number> = { blocked: 0, behind: 1, 'at-risk': 2, 'on-track': 3, done: 4 };
+const DEFAULT_STATS: Stats = {
+  totalTasks: 0,
+  todoTasks: 0,
+  inProgressTasks: 0,
+  inReviewTasks: 0,
+  doneTasks: 0,
+  blockedTasks: 0,
+  totalProjects: 0,
+  totalMembers: 0,
+  overdueTasks: 0,
+  staleTasks7Days: 0,
+  staleTasks14Days: 0,
+  staleTasks30Days: 0,
+  blockedAverageAgeDays: 0,
+  blockedMaxAgeDays: 0,
+  tasksByProject: [],
+  tasksByPriority: {},
+  cycleTimeByStatus: [],
+  memberLoad: [],
+  slaByProject: [],
+  slaByMember: []
+};
 
 @Component({
   selector: 'app-dashboard',
@@ -77,6 +112,7 @@ const HEALTH_ORDER: Record<Health, number> = { blocked: 0, behind: 1, 'at-risk':
 })
 export class DashboardComponent implements OnInit {
   private taskService  = inject(TaskService);
+  private statsService = inject(StatsService);
   private projectService = inject(ProjectService);
   private memberService  = inject(MemberService);
   private dialog         = inject(MatDialog);
@@ -84,6 +120,7 @@ export class DashboardComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
 
   today = new Date();
+  stats = signal<Stats>(DEFAULT_STATS);
   filterHealthStatus = signal<Health | 'all'>('all');
   sortBy = signal<'risk' | 'name' | 'progress'>('risk');
 
@@ -96,6 +133,7 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit() {
     this.refreshData();
+    this.loadStats();
   }
 
   refreshData() {
@@ -104,17 +142,22 @@ export class DashboardComponent implements OnInit {
     
     this.taskService.getAll().subscribe({
       next: (tasks) => {
-        console.log('Tasks loaded successfully:', tasks.length);
         this.allTasks.set(tasks);
         this.isLoading.set(false);
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Tasks request failed:', err);
         this.allTasks.set([]);
         this.isLoading.set(false);
         this.cdr.detectChanges();
       }
+    });
+  }
+
+  loadStats() {
+    this.statsService.getStats().subscribe({
+      next: (stats) => this.stats.set(stats),
+      error: () => this.stats.set(DEFAULT_STATS)
     });
   }
 
@@ -137,6 +180,74 @@ export class DashboardComponent implements OnInit {
       : atRisk > 0 ? 'at-risk'
       : 'on-track';
     return { total: leafTasks.length, active: active.length, blocked, overdue, behind, atRisk, done, projectsAtRisk, globalHealth };
+  });
+
+  statusDistribution = computed(() => {
+    const s = this.stats();
+    const total = Math.max(1, s.totalTasks);
+    return [
+      { key: 'TODO', label: 'Pendientes', value: s.todoTasks, color: 'var(--blue)', percent: Math.round(s.todoTasks * 100 / total) },
+      { key: 'IN_PROGRESS', label: 'En progreso', value: s.inProgressTasks, color: 'var(--orange)', percent: Math.round(s.inProgressTasks * 100 / total) },
+      { key: 'IN_REVIEW', label: 'En revisión', value: s.inReviewTasks, color: 'var(--purple)', percent: Math.round(s.inReviewTasks * 100 / total) },
+      { key: 'DONE', label: 'Completadas', value: s.doneTasks, color: 'var(--green)', percent: Math.round(s.doneTasks * 100 / total) },
+      { key: 'BLOCKED', label: 'Bloqueadas', value: s.blockedTasks, color: 'var(--red)', percent: Math.round(s.blockedTasks * 100 / total) }
+    ];
+  });
+
+  projectProgressBars = computed(() => this.projectHealth()
+    .slice()
+    .sort((a, b) => (b.avgActual ?? 0) - (a.avgActual ?? 0))
+    .slice(0, 6)
+  );
+
+  weeklyTrend = computed((): WeeklyAlertPoint[] => {
+    const weeks = new Map<string, WeeklyAlertPoint>();
+    const now = new Date();
+    for (let i = 7; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i * 7);
+      const label = this.weekLabel(date);
+      weeks.set(label, { label, blocked: 0, overdue: 0 });
+    }
+
+    for (const task of this.allTasks()) {
+      const label = this.weekLabel(this.parseAnyDate(task.updatedAt));
+      if (!label || !weeks.has(label)) continue;
+      const bucket = weeks.get(label)!;
+      if (task.status === 'BLOCKED') bucket.blocked++;
+      if (this.isOverdue(task)) bucket.overdue++;
+    }
+
+    return [...weeks.values()];
+  });
+
+  memberRanking = computed(() => {
+    return this.stats().memberLoad.slice(0, 6);
+  });
+
+  slaProjects = computed(() => this.stats().slaByProject.slice(0, 5));
+  slaMembers = computed(() => this.stats().slaByMember.slice(0, 5));
+
+  cycleTimeByStatus = computed(() => {
+    return this.stats().cycleTimeByStatus;
+  });
+
+  staleTasks = computed(() => {
+    return this.allTasks()
+      .map(task => ({ task, ageDays: this.ageDays(task.updatedAt), staleDays: this.ageDays(task.updatedAt) }))
+      .filter(item => item.ageDays >= 7 && item.task.status !== 'DONE')
+      .sort((a, b) => b.ageDays - a.ageDays)
+      .slice(0, 6);
+  });
+
+  followUpAlerts = computed(() => {
+    const s = this.stats();
+    return [
+      { label: 'Sin actualizar 7+ días', value: s.staleTasks7Days, tone: 'warning' },
+      { label: 'Sin actualizar 14+ días', value: s.staleTasks14Days, tone: 'danger' },
+      { label: 'Sin actualizar 30+ días', value: s.staleTasks30Days, tone: 'danger' },
+      { label: 'Bloqueo promedio', value: `${s.blockedAverageAgeDays} días`, tone: 'info' }
+    ];
   });
 
   criticalProjects = computed((): ProjectHealth[] => {
@@ -489,6 +600,40 @@ export class DashboardComponent implements OnInit {
     return s === 'done' ? 'verified' : s === 'on-track' ? 'check_circle'
       : s === 'at-risk' ? 'warning' : s === 'behind' ? 'error' : '';
   }
+
+  barWidth(value: number, max = 100): number {
+    return Math.max(0, Math.min(100, Math.round((value / max) * 100)));
+  }
+
+  statusLabel(key: string): string {
+    return this.statusLabels[key as keyof typeof this.statusLabels] ?? key;
+  }
+
+  private ageDays(dateRaw?: string | Date | null): number {
+    const date = this.parseAnyDate(dateRaw);
+    if (!date) return 0;
+    const diff = Date.now() - date.getTime();
+    return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
+  }
+
+  private parseAnyDate(dateRaw?: string | Date | null): Date | null {
+    if (!dateRaw) return null;
+    if (dateRaw instanceof Date) return dateRaw;
+    if (typeof dateRaw === 'string') {
+      const parsed = new Date(dateRaw.includes('T') ? dateRaw : `${dateRaw}T00:00:00`);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    }
+    return null;
+  }
+
+  private weekLabel(date: Date | null): string {
+    if (!date) return '';
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    d.setDate(diff);
+    return d.toLocaleDateString('es-AR', { month: 'short', day: '2-digit' });
+  }
   progressTooltip(t: Task) {
     const s = this.progressStatus(t);
     return s === 'behind' ? 'Atrasado' : s === 'at-risk' ? 'En riesgo'
@@ -533,9 +678,8 @@ export class DashboardComponent implements OnInit {
       }
       
       const today = new Date().toISOString().split('T')[0];
-      pdf.save(`dashboard_reporte_${today}.pdf`);
+      pdf.save(`tasktracker_dashboard_${today}.pdf`);
     } catch (error) {
-      console.error('Error al generar el PDF del dashboard:', error);
       this.snack.open('Error al generar el PDF', 'OK', { duration: 3000 });
     } finally {
       this.isExportingPdf.set(false);

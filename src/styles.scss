@@ -122,12 +122,22 @@ body.dark-theme {
 html, body {
   height: 100%;
   margin: 0;
-  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  font-family: 'Inter', 'Roboto', 'Helvetica Neue', sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(14, 165, 233, 0.10), transparent 28%),
+    radial-gradient(circle at top right, rgba(251, 146, 60, 0.10), transparent 32%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-app) 94%, white), var(--bg-app));
   background-color: var(--bg-app);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background-color var(--transition), color var(--transition);
+}
+
+h1, h2, h3, h4, h5, h6,
+.page-title, .section-title, .mat-mdc-card-title {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  letter-spacing: -0.03em;
 }
 
 // ── Layout globals ────────────────────────────────────────────────────────────
@@ -249,4 +259,28 @@ mat-card {
 .mat-mdc-outlined-button.mat-primary {
   --mdc-outlined-button-label-text-color: var(--accent);
   --mdc-outlined-button-outline-color: var(--accent);
+}
+
+.snack-success {
+  --mdc-snackbar-container-color: #0f766e;
+  --mdc-snackbar-supporting-text-color: #fff;
+  --mat-snack-bar-button-color: #fff;
+}
+
+.snack-warning {
+  --mdc-snackbar-container-color: #b45309;
+  --mdc-snackbar-supporting-text-color: #fff;
+  --mat-snack-bar-button-color: #fff;
+}
+
+.snack-error {
+  --mdc-snackbar-container-color: #b91c1c;
+  --mdc-snackbar-supporting-text-color: #fff;
+  --mat-snack-bar-button-color: #fff;
+}
+
+.snack-info {
+  --mdc-snackbar-container-color: #0f172a;
+  --mdc-snackbar-supporting-text-color: #fff;
+  --mat-snack-bar-button-color: #fff;
 }

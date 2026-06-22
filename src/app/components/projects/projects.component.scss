@@ -113,6 +113,18 @@
   }
 }
 
+.recently-updated {
+  animation: projectPulse 1.4s ease;
+  border-color: var(--green-border) !important;
+  box-shadow: 0 0 0 1px rgba(5, 150, 105, 0.16), var(--shadow-md) !important;
+}
+
+@keyframes projectPulse {
+  0% { transform: scale(1); }
+  20% { transform: scale(1.01); }
+  100% { transform: scale(1); }
+}
+
 .empty-state {
   grid-column: 1 / -1;
   text-align: center;

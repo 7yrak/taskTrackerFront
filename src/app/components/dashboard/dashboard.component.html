@@ -30,6 +30,209 @@
     </div>
   } @else {
     <div id="dashboard-content">
+      <section class="executive-hero">
+        <div class="hero-copy">
+          <div class="eyebrow">Panel ejecutivo</div>
+          <h2>Salud, seguimiento y alertas del sistema en una sola vista</h2>
+          <p>
+            Vista consolidada de proyectos, tareas, miembros y alertas. Los tiempos de ciclo y antigüedad
+            de bloqueos son estimados desde las fechas disponibles en el sistema.
+          </p>
+        </div>
+        <div class="hero-metrics">
+          <div class="hero-metric metric-primary">
+            <span class="metric-label">Estado global</span>
+            <span class="metric-value" [ngClass]="'health-text-' + kpis().globalHealth">{{ healthLabel(kpis().globalHealth) }}</span>
+          </div>
+          <div class="hero-metric">
+            <span class="metric-label">Proyectos</span>
+            <span class="metric-value">{{ stats().totalProjects }}</span>
+          </div>
+          <div class="hero-metric">
+            <span class="metric-label">Tareas</span>
+            <span class="metric-value">{{ stats().totalTasks }}</span>
+          </div>
+          <div class="hero-metric">
+            <span class="metric-label">Miembros</span>
+            <span class="metric-value">{{ stats().totalMembers }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="insight-strip">
+        @for (item of followUpAlerts(); track item.label) {
+          <article class="insight-chip" [ngClass]="'tone-' + item.tone">
+            <span class="insight-label">{{ item.label }}</span>
+            <span class="insight-value">{{ item.value }}</span>
+          </article>
+        }
+      </section>
+
+      <section class="analytics-grid">
+        <article class="analysis-card">
+          <header class="analysis-card-header">
+            <div>
+              <span class="card-kicker">Distribución</span>
+              <h3>Tareas por estado</h3>
+            </div>
+          </header>
+          <div class="status-bars">
+            @for (item of statusDistribution(); track item.key) {
+              <div class="status-bar-row">
+                <div class="status-bar-meta">
+                  <span class="dot" [style.background]="item.color"></span>
+                  <span>{{ item.label }}</span>
+                </div>
+                <div class="status-bar-track">
+                  <div class="status-bar-fill" [style.width.%]="item.percent" [style.background]="item.color"></div>
+                </div>
+                <div class="status-bar-value">{{ item.value }}</div>
+              </div>
+            }
+          </div>
+        </article>
+
+        <article class="analysis-card">
+          <header class="analysis-card-header">
+            <div>
+              <span class="card-kicker">Proyectos</span>
+              <h3>Avance real vs esperado</h3>
+            </div>
+          </header>
+          <div class="comparison-list">
+            @for (p of projectProgressBars(); track p.projectName) {
+              <div class="comparison-item">
+                <div class="comparison-label">
+                  <span class="project-dot" [style.background]="p.projectColor"></span>
+                  {{ p.projectName }}
+                </div>
+                <div class="comparison-bars">
+                  <div class="comparison-track">
+                    <div class="comparison-actual" [style.width.%]="p.avgActual"></div>
+                    @if (p.avgExpected !== null) {
+                      <div class="comparison-expected" [style.left.%]="p.avgExpected"></div>
+                    }
+                  </div>
+                  <div class="comparison-values">
+                    <span>{{ p.avgActual }}% real</span>
+                    <span class="muted">{{ p.avgExpected ?? 0 }}% esperado</span>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </article>
+
+        <article class="analysis-card">
+          <header class="analysis-card-header">
+            <div>
+              <span class="card-kicker">Tendencia</span>
+              <h3>Bloqueadas y vencidas por semana</h3>
+            </div>
+          </header>
+          <div class="weekly-chart">
+            @for (point of weeklyTrend(); track point.label) {
+              <div class="weekly-column">
+                <div class="weekly-stacks">
+                  <div class="weekly-blocked" [style.height.%]="barWidth(point.blocked, 6)"></div>
+                  <div class="weekly-overdue" [style.height.%]="barWidth(point.overdue, 6)"></div>
+                </div>
+                <div class="weekly-label">{{ point.label }}</div>
+              </div>
+            }
+          </div>
+        </article>
+
+        <article class="analysis-card">
+          <header class="analysis-card-header">
+            <div>
+              <span class="card-kicker">Ranking</span>
+              <h3>Miembros con mayor carga</h3>
+            </div>
+          </header>
+          <div class="ranking-list">
+            @for (member of memberRanking(); track member.memberName) {
+              <div class="ranking-row">
+                <div class="ranking-name">{{ member.memberName }}</div>
+                <div class="ranking-track">
+                  <div class="ranking-fill" [style.width.%]="barWidth(member.taskCount, 12)"></div>
+                </div>
+                <div class="ranking-meta">{{ member.taskCount }} tareas</div>
+              </div>
+            }
+          </div>
+        </article>
+
+        <article class="analysis-card">
+          <header class="analysis-card-header">
+            <div>
+              <span class="card-kicker">Seguimiento</span>
+              <h3>Tiempo promedio por estado</h3>
+            </div>
+          </header>
+          <div class="cycle-list">
+            @for (cycle of cycleTimeByStatus(); track cycle.status) {
+              <div class="cycle-row">
+                <div class="cycle-name">{{ statusLabel(cycle.status) }}</div>
+                <div class="cycle-value">{{ cycle.averageDays }} días</div>
+                <div class="cycle-count">{{ cycle.taskCount }} tareas</div>
+              </div>
+            }
+          </div>
+        </article>
+
+        <article class="analysis-card">
+          <header class="analysis-card-header">
+            <div>
+              <span class="card-kicker">SLA</span>
+              <h3>Proyecto y responsables</h3>
+            </div>
+          </header>
+          <div class="sla-split">
+            <div class="sla-column">
+              <h4>Por proyecto</h4>
+              @for (item of slaProjects(); track item.projectName) {
+                <div class="sla-row">
+                  <span class="sla-dot" [style.background]="item.color"></span>
+                  <span class="sla-name">{{ item.projectName }}</span>
+                  <span class="sla-value">{{ item.slaPercent }}%</span>
+                </div>
+              }
+            </div>
+            <div class="sla-column">
+              <h4>Por miembro</h4>
+              @for (item of slaMembers(); track item.memberName) {
+                <div class="sla-row">
+                  <span class="sla-name">{{ item.memberName }}</span>
+                  <span class="sla-value">{{ item.slaPercent }}%</span>
+                </div>
+              }
+            </div>
+          </div>
+        </article>
+
+        <article class="analysis-card">
+          <header class="analysis-card-header">
+            <div>
+              <span class="card-kicker">Alertas</span>
+              <h3>Tareas sin actualización</h3>
+            </div>
+          </header>
+          <div class="stale-list">
+            @for (item of staleTasks(); track item.task.id) {
+              <div class="stale-row">
+                <div>
+                  <strong>{{ item.task.title }}</strong>
+                  <div class="muted">
+                  {{ item.task.projectName ?? 'Sin proyecto' }} · {{ item.ageDays }} días sin cambios
+                </div>
+              </div>
+                <span class="stale-badge">{{ statusLabel(item.task.status) }}</span>
+              </div>
+            }
+          </div>
+        </article>
+      </section>
       
     <!-- ── KPI SUMMARY (Critical Metrics) ────────────────────────────────────── -->
     <div class="kpi-summary">
