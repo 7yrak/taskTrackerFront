@@ -1,4 +1,4 @@
-import { Component, inject, signal, ViewChild, ElementRef, DestroyRef } from '@angular/core';
+import { Component, inject, signal, ViewChild, ElementRef, DestroyRef, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
@@ -23,8 +23,8 @@ import { TaskService, ImportResult } from '../../services/task.service';
 import { TaskFilterService, TaskViewPreset, PersistedSortState } from '../../services/task-filter.service';
 import { ProjectService } from '../../services/project.service';
 import { MemberService } from '../../services/member.service';
-import { Task, TaskNode, TaskStatus, STATUS_LABELS, PRIORITY_LABELS } from '../../models/task.model';
-import { Project } from '../../models/project.model';
+import { Task, TaskNode, TaskStatus, TaskPriority, STATUS_LABELS, PRIORITY_LABELS } from '../../models/task.model';
+import { Project, ProjectStatus } from '../../models/project.model';
 import { Member } from '../../models/member.model';
 import { TaskDialogComponent } from '../shared/task-dialog/task-dialog.component';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog/confirm-dialog.component';
@@ -71,6 +71,8 @@ export class TasksComponent {
   private refresh$ = new Subject<void>();
   private allTasks: Task[] = [];
   private rootNodes: TaskNode[] = [];
+  private projectStatusMap = computed(() => new Map(this.projects().map(p => [p.id, p.status])));
+  activeProjects = computed(() => this.projects().filter(p => !this.isArchivedProjectStatus(p.status)));
 
   dataSource = new MatTableDataSource<TaskNode>([]);
   taskCount  = signal(0);
@@ -82,6 +84,7 @@ export class TasksComponent {
   statusLabels: Record<string, string>   = STATUS_LABELS;
   priorityLabels: Record<string, string> = PRIORITY_LABELS;
   statuses: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'BLOCKED', 'STOPPED'];
+  priorities: TaskPriority[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
   sorts: Sort[] = this.filterService.loadSortState([{ active: 'startDate', direction: 'asc' }]);
 
   editingTitleId = signal<number | null>(null);
@@ -92,7 +95,7 @@ export class TasksComponent {
     ).subscribe(p => {
       if (!this.filterService.projectsInitialized) {
         this.filterService.projectsInitialized = true;
-        this.filterProject.set(p.map(x => x.id));
+        this.filterProject.set(p.filter(x => !this.isArchivedProjectStatus(x.status)).map(x => x.id));
       }
     });
 
@@ -151,7 +154,9 @@ export class TasksComponent {
       this.selectedViewId.set('');
       return;
     }
-    this.filterProject.set([...preset.filterProject]);
+    const activeProjectIds = new Set(this.activeProjects().map(p => p.id));
+    const safeProjectSelection = preset.filterProject.filter(id => activeProjectIds.has(id));
+    this.filterProject.set(safeProjectSelection.length > 0 ? safeProjectSelection : [...activeProjectIds]);
     this.filterStatus.set([...preset.filterStatus]);
     this.filterPriority.set([...preset.filterPriority]);
     this.filterAssignee.set([...preset.filterAssignee]);
@@ -237,13 +242,17 @@ export class TasksComponent {
   }
 
   private nodePassesFilter(node: TaskNode): boolean {
+    if (this.isArchivedProjectTask(node)) {
+      return false;
+    }
+
     const fp = this.filterProject();
     const fs = this.filterStatus();
     const fpr = this.filterPriority();
     const fa = this.filterAssignee();
 
     // Si están seleccionados todos los proyectos/miembros, no filtramos por ese campo (mostrando también los no asignados)
-    const allProjectsSelected = fp.length === 0 || fp.length === this.projects().length;
+    const allProjectsSelected = fp.length === 0 || fp.length === this.activeProjects().length;
     const allAssigneesSelected = fa.length === 0 || fa.length === this.members().length;
 
     const projectOk  = allProjectsSelected || (node.projectId != null && fp.includes(node.projectId));
@@ -253,6 +262,17 @@ export class TasksComponent {
       (node.assigneeIds != null && node.assigneeIds.some(id => fa.includes(id)));
 
     return projectOk && statusOk && priorityOk && assigneeOk;
+  }
+
+  private isArchivedProjectTask(node: TaskNode): boolean {
+    if (node.projectId == null) {
+      return false;
+    }
+
+    const projectStatus = this.projectStatusMap().get(node.projectId);
+    return projectStatus === ProjectStatus.ON_HOLD ||
+      projectStatus === ProjectStatus.COMPLETED ||
+      projectStatus === ProjectStatus.CLOSED;
   }
 
   private flatten(nodes: TaskNode[]): TaskNode[] {
@@ -502,9 +522,15 @@ export class TasksComponent {
   clearFilters() {
     this.filterStatus.set(['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'BLOCKED', 'STOPPED']);
     this.filterPriority.set(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']);
-    this.filterProject.set(this.projects().map(p => p.id));
+    this.filterProject.set(this.activeProjects().map(p => p.id));
     this.filterAssignee.set(this.members().map(m => m.id));
     this.buildAndFilter();
+  }
+
+  private isArchivedProjectStatus(status: ProjectStatus): boolean {
+    return status === ProjectStatus.ON_HOLD ||
+      status === ProjectStatus.COMPLETED ||
+      status === ProjectStatus.CLOSED;
   }
 
   trackById(index: number, node: TaskNode): number {
@@ -518,7 +544,7 @@ export class TasksComponent {
       width: '1000px',
       maxWidth: '95vw',
       maxHeight: '95vh',
-      data: { task: null, projects: this.projects(), members: this.members(),
+      data: { task: null, projects: this.activeProjects(), members: this.members(),
               allTasks: this.allTasks, defaultParentId: defaultParentId ?? null }
     }).afterClosed().subscribe(result => {
       if (result) {
@@ -535,7 +561,7 @@ export class TasksComponent {
       width: '1000px',
       maxWidth: '95vw',
       maxHeight: '95vh',
-      data: { task, projects: this.projects(), members: this.members(), allTasks: this.allTasks }
+      data: { task, projects: this.activeProjects(), members: this.members(), allTasks: this.allTasks }
     }).afterClosed().subscribe(result => {
       if (result) {
         this.taskService.update(task.id, result).subscribe({
@@ -637,11 +663,22 @@ export class TasksComponent {
   }
 
   changeStatus(task: Task, status: TaskStatus) {
-    this.taskService.update(task.id, { ...task, status }).subscribe({
+    this.taskService.update(task.id, this.buildTaskUpdatePayload(task, { status })).subscribe({
       next:  () => {
         this.refresh$.next();
         this.flashTaskUpdate(task.id);
         this.openInfoSnack('Estado actualizado', 'success');
+      },
+      error: (e) => this.openInfoSnack(e.error?.message || 'Error', 'error')
+    });
+  }
+
+  changePriority(task: Task, priority: TaskPriority) {
+    this.taskService.update(task.id, this.buildTaskUpdatePayload(task, { priority })).subscribe({
+      next:  () => {
+        this.refresh$.next();
+        this.flashTaskUpdate(task.id);
+        this.openInfoSnack('Prioridad actualizada', 'success');
       },
       error: (e) => this.openInfoSnack(e.error?.message || 'Error', 'error')
     });
@@ -711,6 +748,24 @@ export class TasksComponent {
     if (s === 'at-risk')  return 'warning';
     if (s === 'behind')   return 'error';
     return '';
+  }
+
+  private buildTaskUpdatePayload(task: Task, overrides: Partial<{ status: TaskStatus; priority: TaskPriority }>) {
+    const startDateRaw = task.startDate ? this.parseLocalDate(task.startDate) : null;
+    const dueDateRaw = task.dueDate ? this.parseLocalDate(task.dueDate) : null;
+
+    return {
+      title: task.title,
+      description: task.description,
+      status: overrides.status ?? task.status,
+      priority: overrides.priority ?? task.priority,
+      projectId: task.projectId ?? undefined,
+      assigneeIds: task.assigneeIds && task.assigneeIds.length > 0 ? task.assigneeIds : undefined,
+      startDate: startDateRaw ? this.formatLocalDate(startDateRaw) : undefined,
+      dueDate: dueDateRaw ? this.formatLocalDate(dueDateRaw) : undefined,
+      progressActual: task.progressActual ?? 0,
+      parentId: task.parentId ?? undefined
+    };
   }
 
   // ── Bulk actions ──────────────────────────────────────────────────────────

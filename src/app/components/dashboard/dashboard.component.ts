@@ -16,7 +16,7 @@ import { TaskService } from '../../services/task.service';
 import { ProjectService } from '../../services/project.service';
 import { MemberService } from '../../services/member.service';
 import { Task, TaskNode, STATUS_LABELS, PRIORITY_LABELS } from '../../models/task.model';
-import { Project } from '../../models/project.model';
+import { Project, ProjectStatus } from '../../models/project.model';
 import { Member } from '../../models/member.model';
 import { TaskDialogComponent } from '../shared/task-dialog/task-dialog.component';
 import { LogoComponent } from '../shared/logo/logo.component';
@@ -75,6 +75,11 @@ interface TaskAgeAlert {
 }
 
 const HEALTH_ORDER: Record<Health, number> = { blocked: 0, behind: 1, 'at-risk': 2, 'on-track': 3, done: 4 };
+const INACTIVE_PROJECT_STATUSES = new Set<ProjectStatus>([
+  ProjectStatus.ON_HOLD,
+  ProjectStatus.COMPLETED,
+  ProjectStatus.CLOSED
+]);
 const DEFAULT_STATS: Stats = {
   totalTasks: 0,
   todoTasks: 0,
@@ -130,6 +135,7 @@ export class DashboardComponent implements OnInit {
 
   projects = toSignal(this.projectService.getAll(), { initialValue: [] as Project[] });
   members  = toSignal(this.memberService.getAll(),  { initialValue: [] as Member[]  });
+  private projectStatusMap = computed(() => new Map(this.projects().map(p => [p.id, p.status])));
 
   ngOnInit() {
     this.refreshData();
@@ -162,7 +168,7 @@ export class DashboardComponent implements OnInit {
   }
 
   kpis = computed(() => {
-    const leafTasks = this.allTasks().filter(t => !t.hasChildren);
+    const leafTasks = this.allTasks().filter(t => !t.hasChildren && this.shouldIncludeInMonitoring(t));
     const active = leafTasks.filter(t => t.status !== 'DONE' && (t.progressActual ?? 0) < 100);
     let blocked = 0, overdue = 0, behind = 0, atRisk = 0, done = 0;
     for (const t of leafTasks) {
@@ -211,6 +217,7 @@ export class DashboardComponent implements OnInit {
     }
 
     for (const task of this.allTasks()) {
+      if (!this.shouldIncludeInMonitoring(task)) continue;
       const label = this.weekLabel(this.parseAnyDate(task.updatedAt));
       if (!label || !weeks.has(label)) continue;
       const bucket = weeks.get(label)!;
@@ -234,6 +241,7 @@ export class DashboardComponent implements OnInit {
 
   staleTasks = computed(() => {
     return this.allTasks()
+      .filter(task => this.shouldIncludeInMonitoring(task))
       .map(task => ({ task, ageDays: this.ageDays(task.updatedAt), staleDays: this.ageDays(task.updatedAt) }))
       .filter(item => item.ageDays >= 7 && item.task.status !== 'DONE')
       .sort((a, b) => b.ageDays - a.ageDays)
@@ -269,6 +277,7 @@ export class DashboardComponent implements OnInit {
     const map = new Map<string, ProjectHealth & { actualSum: number; expectedSum: number; leafCount: number }>();
 
     for (const t of this.allTasks()) {
+      if (!this.shouldIncludeInMonitoring(t)) continue;
       const key = t.projectName ?? '(Sin proyecto)';
       if (!map.has(key)) {
         map.set(key, {
@@ -347,6 +356,7 @@ export class DashboardComponent implements OnInit {
     const map = new Map<string, MemberHealth & { tasks: Task[], actualSum: number, leafCount: number }>();
 
     for (const t of this.allTasks()) {
+      if (!this.shouldIncludeInMonitoring(t)) continue;
       if (t.hasChildren) continue; // Solo consideramos las tareas finales para el desempeño
 
       const names = (t.assigneeNames && t.assigneeNames.length > 0) ? t.assigneeNames : ['Sin asignar'];
@@ -393,6 +403,7 @@ export class DashboardComponent implements OnInit {
     const criticalMap = new Map<number, { reason: 'blocked' | 'overdue' | 'behind' | 'at-risk', severity: number, lag: number }>();
     
     for (const t of this.allTasks()) {
+      if (!this.shouldIncludeInMonitoring(t)) continue;
       if (t.hasChildren) continue; // Las tareas padres heredan el riesgo visual en el árbol, pero no se evalúan solas
 
       if (t.status === 'DONE' || (t.progressActual ?? 0) >= 100) continue;
@@ -599,6 +610,19 @@ export class DashboardComponent implements OnInit {
     const s = this.progressStatus(t);
     return s === 'done' ? 'verified' : s === 'on-track' ? 'check_circle'
       : s === 'at-risk' ? 'warning' : s === 'behind' ? 'error' : '';
+  }
+
+  private shouldIncludeInMonitoring(task: Task): boolean {
+    if (task.status === 'STOPPED') {
+      return false;
+    }
+
+    if (task.projectId == null) {
+      return true;
+    }
+
+    const projectStatus = this.projectStatusMap().get(task.projectId);
+    return !projectStatus || !INACTIVE_PROJECT_STATUSES.has(projectStatus);
   }
 
   barWidth(value: number, max = 100): number {

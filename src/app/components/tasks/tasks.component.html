@@ -37,7 +37,7 @@
     <mat-form-field appearance="outline" subscriptSizing="dynamic">
       <mat-label>Proyecto</mat-label>
       <mat-select [ngModel]="filterProject()" (ngModelChange)="filterProject.set($event); applyFilter()" multiple>
-        @for (p of projects(); track p.id) {
+        @for (p of activeProjects(); track p.id) {
           <mat-option [value]="p.id">{{ p.name }}</mat-option>
         }
       </mat-select>
@@ -237,7 +237,23 @@
             </div>
           </th>
           <td mat-cell *matCellDef="let node">
-            <span class="priority-chip {{ node.priority }}">{{ priorityLabels[node.priority] }}</span>
+            @if (node.hasChildren) {
+              <span class="priority-chip {{ node.priority }}" matTooltip="Calculado de subtareas">
+                {{ priorityLabels[node.priority] }}
+              </span>
+            } @else {
+              <button mat-button [matMenuTriggerFor]="priorityMenu" class="priority-btn">
+                <span class="priority-chip {{ node.priority }}">{{ priorityLabels[node.priority] }}</span>
+                <mat-icon>arrow_drop_down</mat-icon>
+              </button>
+              <mat-menu #priorityMenu="matMenu">
+                @for (p of priorities; track p) {
+                  <button mat-menu-item (click)="changePriority(node, p)" [disabled]="node.priority === p">
+                    <span class="priority-chip {{ p }}">{{ priorityLabels[p] }}</span>
+                  </button>
+                }
+              </mat-menu>
+            }
           </td>
         </ng-container>
 

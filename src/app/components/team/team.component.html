@@ -1,26 +1,120 @@
-<div class="page-container">
-  <div class="page-header">
-    <h1 class="page-title">Equipo</h1>
-    <span class="spacer"></span>
-    <button mat-flat-button color="primary" (click)="openCreate()">
+<div class="page-container team-page">
+  <div class="page-header team-header">
+    <div>
+      <h1 class="page-title">Equipo</h1>
+      <p class="page-subtitle">Busca, identifica y gestiona a cada miembro por rol y carga de trabajo.</p>
+    </div>
+    <button mat-flat-button color="primary" class="add-member-btn" (click)="openCreate()">
       <mat-icon>person_add</mat-icon> Agregar miembro
     </button>
   </div>
 
-  <div class="members-grid">
-    @for (member of members(); track member.id) {
-      <mat-card class="member-card">
-        <mat-card-content>
-          <div class="member-header">
-            <div class="avatar">{{ getInitials(member.name) }}</div>
-            <div class="member-info">
-              <h3 class="member-name">{{ member.name }}</h3>
-              <p class="member-email">{{ member.email }}</p>
-              @if (member.role) {
-                <span class="member-role">{{ member.role }}</span>
-              }
+  <div class="team-toolbar">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search-field">
+      <mat-label>Buscar miembro</mat-label>
+      <input
+        matInput
+        type="text"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="setSearchTerm($event)"
+        placeholder="Nombre, correo, rol o proyecto" />
+      <button
+        mat-icon-button
+        matSuffix
+        type="button"
+        *ngIf="searchTerm()"
+        (click)="clearSearch()"
+        aria-label="Limpiar búsqueda">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-form-field>
+
+    <div class="team-summary">
+      <div class="summary-card">
+        <span class="summary-value">{{ filteredMembers().length }}</span>
+        <span class="summary-label">Mostrados</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-value">{{ members().length }}</span>
+        <span class="summary-label">Total equipo</span>
+      </div>
+    </div>
+  </div>
+
+  @if (sortedMembers().length > 0) {
+    <div class="table-shell">
+      <table
+        mat-table
+        [dataSource]="pagedMembers()"
+        class="team-table"
+        matSort
+        [matSortActive]="sortState().active"
+        [matSortDirection]="sortState().direction"
+        (matSortChange)="onSortChange($event)">
+        <ng-container matColumnDef="member">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="member">Miembro</th>
+          <td mat-cell *matCellDef="let member">
+            <div class="member-cell">
+              <div class="avatar">{{ getInitials(member.name) }}</div>
+              <div class="member-meta">
+                <div class="member-name">{{ member.name }}</div>
+                <div class="member-email">{{ member.email }}</div>
+              </div>
             </div>
-            <div class="member-actions">
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="role">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="role">Rol</th>
+          <td mat-cell *matCellDef="let member">
+            @if (member.role) {
+              <span
+                class="role-badge"
+                [style.background-color]="roleTone(member.role).bg"
+                [style.color]="roleTone(member.role).fg"
+                [style.border-color]="roleTone(member.role).border">
+                {{ member.role }}
+              </span>
+            } @else {
+              <span class="role-badge role-muted">Sin rol</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="projects">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="projects">Proyectos</th>
+          <td mat-cell *matCellDef="let member">
+            <div class="count-block">
+              <mat-icon>folder</mat-icon>
+              <span>{{ member.projectNames.length }}</span>
+            </div>
+            @if (member.projectNames.length > 0) {
+              <div class="project-chips">
+                @for (proj of member.projectNames.slice(0, 3); track proj) {
+                  <mat-chip>{{ proj }}</mat-chip>
+                }
+                @if (member.projectNames.length > 3) {
+                  <span class="more-projects">+{{ member.projectNames.length - 3 }}</span>
+                }
+              </div>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="tasks">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="tasks">Tareas</th>
+          <td mat-cell *matCellDef="let member">
+            <div class="count-block">
+              <mat-icon>task_alt</mat-icon>
+              <span>{{ member.taskCount }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let member">
+            <div class="actions-cell">
               <button mat-icon-button color="primary" matTooltip="Editar" (click)="openEdit(member)">
                 <mat-icon>edit</mat-icon>
               </button>
@@ -28,35 +122,27 @@
                 <mat-icon>delete</mat-icon>
               </button>
             </div>
-          </div>
+          </td>
+        </ng-container>
 
-          <div class="member-stats">
-            <div class="stat">
-              <mat-icon>task_alt</mat-icon>
-              <span>{{ member.taskCount }} tarea(s)</span>
-            </div>
-            <div class="stat">
-              <mat-icon>folder</mat-icon>
-              <span>{{ member.projectNames.length }} proyecto(s)</span>
-            </div>
-          </div>
-
-          @if (member.projectNames.length > 0) {
-            <div class="projects-chips">
-              @for (proj of member.projectNames; track proj) {
-                <mat-chip>{{ proj }}</mat-chip>
-              }
-            </div>
-          }
-        </mat-card-content>
-      </mat-card>
-    } @empty {
-      <div class="empty-state">
-        <mat-icon>group_off</mat-icon>
-        <h3>No hay miembros</h3>
-        <p>Agrega miembros a tu equipo para asignarles tareas.</p>
-        <button mat-flat-button color="primary" (click)="openCreate()">Agregar miembro</button>
-      </div>
-    }
-  </div>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="team-row"></tr>
+      </table>
+      <mat-paginator
+        [length]="sortedMembers().length"
+        [pageIndex]="pageIndex()"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPageChange($event)"
+        showFirstLastButtons>
+      </mat-paginator>
+    </div>
+  } @else {
+    <div class="empty-state">
+      <mat-icon>search_off</mat-icon>
+      <h3>No hay miembros para este filtro</h3>
+      <p>Prueba con otro término de búsqueda o agrega un nuevo integrante al equipo.</p>
+      <button mat-flat-button color="primary" (click)="openCreate()">Agregar miembro</button>
+    </div>
+  }
 </div>
