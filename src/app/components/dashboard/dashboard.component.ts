@@ -19,6 +19,7 @@ import { Task, TaskNode, STATUS_LABELS, PRIORITY_LABELS } from '../../models/tas
 import { Project, ProjectStatus } from '../../models/project.model';
 import { Member } from '../../models/member.model';
 import { TaskDialogComponent } from '../shared/task-dialog/task-dialog.component';
+import { DashboardTasksDialogComponent, DashboardTaskBucket } from './dashboard-tasks-dialog.component';
 import { LogoComponent } from '../shared/logo/logo.component';
 import { Stats } from '../../models/stats.model';
 
@@ -494,6 +495,109 @@ export class DashboardComponent implements OnInit {
           error: (e) => this.snack.open(e?.error?.message || 'Error al actualizar', 'OK', { duration: 3000 })
         });
       }
+    });
+  }
+
+  openTaskBucket(bucket: DashboardTaskBucket) {
+    const tasks = this.tasksForBucket(bucket);
+    const config = this.taskBucketConfig(bucket, tasks.length);
+    this.dialog.open(DashboardTasksDialogComponent, {
+      width: '1120px',
+      maxWidth: '96vw',
+      maxHeight: '92vh',
+      data: {
+        title: config.title,
+        subtitle: config.subtitle,
+        bucket,
+        tasks,
+        projects: this.projects(),
+        members: this.members(),
+        allTasks: this.allTasks(),
+        emptyText: config.emptyText,
+        onSaved: () => {
+          this.refreshData();
+          this.loadStats();
+        }
+      }
+    });
+  }
+
+  private taskBucketConfig(bucket: DashboardTaskBucket, count: number) {
+    switch (bucket) {
+      case 'blocked':
+        return {
+          title: 'Tareas bloqueadas',
+          subtitle: `${count} tarea${count === 1 ? '' : 's'} con bloqueo activo`,
+          emptyText: 'No hay tareas bloqueadas en este momento.'
+        };
+      case 'behind':
+        return {
+          title: 'Tareas atrasadas',
+          subtitle: `${count} tarea${count === 1 ? '' : 's'} por debajo del avance esperado`,
+          emptyText: 'No hay tareas atrasadas en este momento.'
+        };
+      case 'overdue':
+        return {
+          title: 'Tareas vencidas',
+          subtitle: `${count} tarea${count === 1 ? '' : 's'} con fecha comprometida`,
+          emptyText: 'No hay tareas vencidas en este momento.'
+        };
+      case 'active':
+        return {
+          title: 'Tareas activas',
+          subtitle: `${count} tarea${count === 1 ? '' : 's'} en curso`,
+          emptyText: 'No hay tareas activas en este momento.'
+        };
+      case 'done':
+        return {
+          title: 'Tareas completadas',
+          subtitle: `${count} tarea${count === 1 ? '' : 's'} finalizada${count === 1 ? '' : 's'}`,
+          emptyText: 'No hay tareas completadas todavía.'
+        };
+      case 'global':
+      default:
+        return {
+          title: 'Tareas críticas',
+          subtitle: `${count} tarea${count === 1 ? '' : 's'} que hoy marcan el estado del panel`,
+          emptyText: 'No hay tareas críticas para mostrar.'
+        };
+    }
+  }
+
+  private tasksForBucket(bucket: DashboardTaskBucket): Task[] {
+    const leafTasks = this.allTasks().filter(t => !t.hasChildren && this.shouldIncludeInMonitoring(t));
+    const active = leafTasks.filter(t => t.status !== 'DONE' && (t.progressActual ?? 0) < 100);
+
+    let tasks: Task[] = [];
+    switch (bucket) {
+      case 'blocked':
+        tasks = active.filter(t => t.status === 'BLOCKED');
+        break;
+      case 'behind':
+        tasks = active.filter(t => this.progressStatus(t) === 'behind');
+        break;
+      case 'overdue':
+        tasks = active.filter(t => this.isOverdue(t));
+        break;
+      case 'active':
+        tasks = active.filter(t => t.status !== 'BLOCKED');
+        break;
+      case 'done':
+        tasks = leafTasks.filter(t => t.status === 'DONE' || (t.progressActual ?? 0) >= 100);
+        break;
+      case 'global':
+      default:
+        tasks = this.criticalTasks().map(ct => ct.task);
+        break;
+    }
+
+    const uniqueTasks = Array.from(new Map(tasks.map(task => [task.id, task])).values());
+    return uniqueTasks.sort((a, b) => {
+      const dateA = new Date(a.updatedAt).getTime();
+      const dateB = new Date(b.updatedAt).getTime();
+      if (bucket === 'done') return dateB - dateA;
+      if (bucket === 'active') return (a.progressActual ?? 0) - (b.progressActual ?? 0) || dateA - dateB;
+      return dateB - dateA;
     });
   }
 

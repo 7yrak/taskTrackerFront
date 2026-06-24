@@ -223,6 +223,30 @@ mat-card {
   transition: background var(--transition), border-color var(--transition), box-shadow var(--transition) !important;
 }
 
+// ── Dialogs ───────────────────────────────────────────────────────────────────
+.cdk-overlay-pane.mat-mdc-dialog-panel {
+  margin: 16px;
+  max-width: calc(100vw - 32px) !important;
+}
+
+.mat-mdc-dialog-surface {
+  border-radius: 24px !important;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.22) !important;
+  overflow: hidden;
+}
+
+.mat-mdc-dialog-container {
+  padding: 0 !important;
+}
+
+@media (max-width: 640px) {
+  .cdk-overlay-pane.mat-mdc-dialog-panel {
+    margin: 10px;
+    max-width: calc(100vw - 20px) !important;
+  }
+}
+
 // ── Filter bar ───────────────────────────────────────────────────────────────
 .filter-bar {
   display: flex;

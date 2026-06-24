@@ -30,6 +30,75 @@
     </div>
   } @else {
     <div id="dashboard-content">
+      <div class="dashboard-ambient" aria-hidden="true">
+        <span class="orb orb-blue"></span>
+        <span class="orb orb-orange"></span>
+        <span class="orb orb-purple"></span>
+      </div>
+
+      <!-- ── KPI SUMMARY (Critical Metrics) ────────────────────────────────────── -->
+      <div class="kpi-summary">
+        <button type="button" class="kpi-card kpi-health" (click)="openTaskBucket('global')" matTooltip="Ver tareas críticas">
+          <div class="kpi-icon" [ngClass]="'health-' + kpis().globalHealth">
+            <mat-icon>{{ healthIcon(kpis().globalHealth) }}</mat-icon>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-label">ESTADO GLOBAL</div>
+            <div class="kpi-value" [ngClass]="'health-text-' + kpis().globalHealth">{{ healthLabel(kpis().globalHealth) }}</div>
+          </div>
+        </button>
+
+        <button type="button" class="kpi-card kpi-projects-at-risk" (click)="openTaskBucket('global')" matTooltip="Ver tareas críticas">
+          <div class="kpi-icon">
+            <mat-icon>warning</mat-icon>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-label">PROYECTOS EN RIESGO</div>
+            <div class="kpi-value">{{ kpis().projectsAtRisk }}/{{ projectHealth().length }}</div>
+          </div>
+        </button>
+
+        <button type="button" class="kpi-card kpi-blocked" (click)="openTaskBucket('blocked')" matTooltip="Ver tareas bloqueadas">
+          <div class="kpi-icon"><mat-icon>block</mat-icon></div>
+          <div class="kpi-content">
+            <div class="kpi-label">TAREAS BLOQUEADAS</div>
+            <div class="kpi-value">{{ kpis().blocked }}</div>
+          </div>
+        </button>
+
+        <button type="button" class="kpi-card kpi-behind" (click)="openTaskBucket('behind')" matTooltip="Ver tareas atrasadas">
+          <div class="kpi-icon"><mat-icon>trending_down</mat-icon></div>
+          <div class="kpi-content">
+            <div class="kpi-label">ATRASADAS</div>
+            <div class="kpi-value">{{ kpis().behind }}</div>
+          </div>
+        </button>
+
+        <button type="button" class="kpi-card kpi-overdue" (click)="openTaskBucket('overdue')" matTooltip="Ver tareas vencidas">
+          <div class="kpi-icon"><mat-icon>schedule</mat-icon></div>
+          <div class="kpi-content">
+            <div class="kpi-label">VENCIDAS</div>
+            <div class="kpi-value">{{ kpis().overdue }}</div>
+          </div>
+        </button>
+
+        <button type="button" class="kpi-card kpi-active" (click)="openTaskBucket('active')" matTooltip="Ver tareas activas">
+          <div class="kpi-icon"><mat-icon>pending</mat-icon></div>
+          <div class="kpi-content">
+            <div class="kpi-label">ACTIVAS</div>
+            <div class="kpi-value">{{ kpis().active }}</div>
+          </div>
+        </button>
+
+        <button type="button" class="kpi-card kpi-done" (click)="openTaskBucket('done')" matTooltip="Ver tareas completadas">
+          <div class="kpi-icon"><mat-icon>check_circle</mat-icon></div>
+          <div class="kpi-content">
+            <div class="kpi-label">COMPLETADAS</div>
+            <div class="kpi-value">{{ kpis().done }}</div>
+          </div>
+        </button>
+      </div>
+
       <section class="executive-hero">
         <div class="hero-metrics">
           <div class="hero-metric metric-primary">
@@ -61,7 +130,7 @@
       </section>
 
       <section class="analytics-grid">
-        <article class="analysis-card">
+        <article class="analysis-card accent-blue">
           <header class="analysis-card-header">
             <div>
               <span class="card-kicker">Distribución</span>
@@ -84,7 +153,7 @@
           </div>
         </article>
 
-        <article class="analysis-card">
+        <article class="analysis-card accent-orange">
           <header class="analysis-card-header">
             <div>
               <span class="card-kicker">Proyectos</span>
@@ -115,7 +184,7 @@
           </div>
         </article>
 
-        <article class="analysis-card">
+        <article class="analysis-card accent-pink">
           <header class="analysis-card-header">
             <div>
               <span class="card-kicker">Tendencia</span>
@@ -135,7 +204,7 @@
           </div>
         </article>
 
-        <article class="analysis-card">
+        <article class="analysis-card accent-purple">
           <header class="analysis-card-header">
             <div>
               <span class="card-kicker">Ranking</span>
@@ -155,7 +224,7 @@
           </div>
         </article>
 
-        <article class="analysis-card">
+        <article class="analysis-card accent-teal">
           <header class="analysis-card-header">
             <div>
               <span class="card-kicker">Seguimiento</span>
@@ -173,7 +242,7 @@
           </div>
         </article>
 
-        <article class="analysis-card">
+        <article class="analysis-card accent-green">
           <header class="analysis-card-header">
             <div>
               <span class="card-kicker">SLA</span>
@@ -203,91 +272,7 @@
           </div>
         </article>
 
-        <article class="analysis-card">
-          <header class="analysis-card-header">
-            <div>
-              <span class="card-kicker">Alertas</span>
-              <h3>Tareas sin actualización</h3>
-            </div>
-          </header>
-          <div class="stale-list">
-            @for (item of staleTasks(); track item.task.id) {
-              <div class="stale-row">
-                <div>
-                  <strong>{{ item.task.title }}</strong>
-                  <div class="muted">
-                  {{ item.task.projectName ?? 'Sin proyecto' }} · {{ item.ageDays }} días sin cambios
-                </div>
-              </div>
-                <span class="stale-badge">{{ statusLabel(item.task.status) }}</span>
-              </div>
-            }
-          </div>
-        </article>
       </section>
-      
-    <!-- ── KPI SUMMARY (Critical Metrics) ────────────────────────────────────── -->
-    <div class="kpi-summary">
-      <div class="kpi-card kpi-health">
-        <div class="kpi-icon" [ngClass]="'health-' + kpis().globalHealth">
-          <mat-icon>{{ healthIcon(kpis().globalHealth) }}</mat-icon>
-        </div>
-        <div class="kpi-content">
-          <div class="kpi-label">ESTADO GLOBAL</div>
-          <div class="kpi-value" [ngClass]="'health-text-' + kpis().globalHealth">{{ healthLabel(kpis().globalHealth) }}</div>
-        </div>
-      </div>
-
-    <div class="kpi-card kpi-projects-at-risk">
-      <div class="kpi-icon">
-        <mat-icon>warning</mat-icon>
-      </div>
-      <div class="kpi-content">
-        <div class="kpi-label">PROYECTOS EN RIESGO</div>
-        <div class="kpi-value">{{ kpis().projectsAtRisk }}/{{ projectHealth().length }}</div>
-      </div>
-    </div>
-
-    <div class="kpi-card kpi-blocked">
-      <div class="kpi-icon"><mat-icon>block</mat-icon></div>
-      <div class="kpi-content">
-        <div class="kpi-label">TAREAS BLOQUEADAS</div>
-        <div class="kpi-value">{{ kpis().blocked }}</div>
-      </div>
-    </div>
-
-    <div class="kpi-card kpi-behind">
-      <div class="kpi-icon"><mat-icon>trending_down</mat-icon></div>
-      <div class="kpi-content">
-        <div class="kpi-label">ATRASADAS</div>
-        <div class="kpi-value">{{ kpis().behind }}</div>
-      </div>
-    </div>
-
-    <div class="kpi-card kpi-overdue">
-      <div class="kpi-icon"><mat-icon>schedule</mat-icon></div>
-      <div class="kpi-content">
-        <div class="kpi-label">VENCIDAS</div>
-        <div class="kpi-value">{{ kpis().overdue }}</div>
-      </div>
-    </div>
-
-    <div class="kpi-card kpi-active">
-      <div class="kpi-icon"><mat-icon>pending</mat-icon></div>
-      <div class="kpi-content">
-        <div class="kpi-label">ACTIVAS</div>
-        <div class="kpi-value">{{ kpis().active }}</div>
-      </div>
-    </div>
-
-    <div class="kpi-card kpi-done">
-      <div class="kpi-icon"><mat-icon>check_circle</mat-icon></div>
-      <div class="kpi-content">
-        <div class="kpi-label">COMPLETADAS</div>
-        <div class="kpi-value">{{ kpis().done }}</div>
-      </div>
-    </div>
-  </div>
 
   <!-- ── PROYECTOS CRÍTICOS (Red Alert Section) ──────────────────────────────── -->
   @if (criticalProjects().length > 0) {
@@ -631,6 +616,28 @@
       </mat-card-content>
     </mat-card>
   }
+
+      <article class="analysis-card accent-red stale-alerts-card">
+        <header class="analysis-card-header">
+          <div>
+            <span class="card-kicker">Alertas</span>
+            <h3>Tareas sin actualización</h3>
+          </div>
+        </header>
+        <div class="stale-list">
+          @for (item of staleTasks(); track item.task.id) {
+            <div class="stale-row">
+              <div>
+                <strong>{{ item.task.title }}</strong>
+                <div class="muted">
+                  {{ item.task.projectName ?? 'Sin proyecto' }} · {{ item.ageDays }} días sin cambios
+                </div>
+              </div>
+              <span class="stale-badge">{{ statusLabel(item.task.status) }}</span>
+            </div>
+          }
+        </div>
+      </article>
 
     </div>
   }
