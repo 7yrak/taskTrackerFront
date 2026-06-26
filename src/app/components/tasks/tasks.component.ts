@@ -29,6 +29,7 @@ import { Project, ProjectStatus } from '../../models/project.model';
 import { Member } from '../../models/member.model';
 import { TaskDialogComponent } from '../shared/task-dialog/task-dialog.component';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog/confirm-dialog.component';
+import { TaskCommentsDialogComponent } from '../shared/task-comments-dialog/task-comments-dialog.component';
 
 interface TaskEditFormValue {
   title: string;
@@ -789,6 +790,19 @@ export class TasksComponent {
     });
   }
 
+  openCommentsDialog(task: Task, event?: MouseEvent) {
+    event?.stopPropagation();
+    event?.preventDefault();
+
+    this.dialog.open(TaskCommentsDialogComponent, {
+      width: '760px',
+      maxWidth: '96vw',
+      maxHeight: '92vh',
+      autoFocus: false,
+      data: { task }
+    });
+  }
+
   startInlineEdit(task: TaskNode, event?: MouseEvent) {
     event?.stopPropagation();
     this.editSub.unsubscribe();
@@ -966,6 +980,27 @@ export class TasksComponent {
       },
       error: (e) => this.openInfoSnack(e.error?.message || 'Error', 'error')
     });
+  }
+
+  commentCount(task: Task): number {
+    return task.comments?.length ?? 0;
+  }
+
+  commentTriggerLabel(task: Task): string {
+    const count = this.commentCount(task);
+    return count > 0 ? String(count) : 'Comentar';
+  }
+
+  commentTriggerIcon(task: Task): string {
+    return this.commentCount(task) > 0 ? 'forum' : 'add_comment';
+  }
+
+  commentTriggerTooltip(task: Task): string {
+    const count = this.commentCount(task);
+    if (count === 1) {
+      return '1 comentario';
+    }
+    return count > 1 ? `${count} comentarios` : 'Abrir comentarios';
   }
 
   confirmDelete(task: Task) {

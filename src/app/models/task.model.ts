@@ -2,9 +2,16 @@ export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE' | 'BLOCKE
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
 export interface TaskComment {
+  id?: number;
   author: string;
   text: string;
   date: Date | string;
+}
+
+export interface TaskCommentRequest {
+  author?: string;
+  text: string;
+  date?: Date | string;
 }
 
 export interface Task {
@@ -47,7 +54,7 @@ export interface TaskRequest {
   dueDate?: string;
   progressActual?: number;
   parentId?: number | null;
-  comments?: TaskComment[];
+  comments?: TaskCommentRequest[];
 }
 
 export const STATUS_LABELS: Record<TaskStatus, string> = {

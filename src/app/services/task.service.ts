@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Task, TaskRequest } from '../models/task.model';
+import { Task, TaskCommentRequest, TaskRequest } from '../models/task.model';
 import { API_BASE_URL } from '../config/api.config';
 
 export interface ImportResult {
@@ -38,6 +38,18 @@ export class TaskService {
 
   updateStatus(id: number, status: string): Observable<Task> {
     return this.http.patch<Task>(`${this.base}/${id}/status`, { status });
+  }
+
+  addComment(id: number, comment: TaskCommentRequest): Observable<Task> {
+    return this.http.post<Task>(`${this.base}/${id}/comments`, comment);
+  }
+
+  updateComment(taskId: number, commentId: number, comment: TaskCommentRequest): Observable<Task> {
+    return this.http.put<Task>(`${this.base}/${taskId}/comments/${commentId}`, comment);
+  }
+
+  deleteComment(taskId: number, commentId: number): Observable<Task> {
+    return this.http.delete<Task>(`${this.base}/${taskId}/comments/${commentId}`);
   }
 
   delete(id: number): Observable<void> {

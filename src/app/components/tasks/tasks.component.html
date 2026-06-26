@@ -136,10 +136,16 @@
                       (dblclick)="startEditingTitle(node, $event)">
                   {{ node.title }}
                 </span>
-                <span class="comments-badge" *ngIf="node.comments?.length" matTooltip="{{ node.comments?.length }} comentario(s)">
-                  <mat-icon>chat_bubble_outline</mat-icon>
-                  {{ node.comments?.length }}
-                </span>
+                <button type="button"
+                        class="comments-trigger comments-trigger-table"
+                        [class.is-empty]="commentCount(node) === 0"
+                        [matTooltip]="commentTriggerTooltip(node)"
+                        [attr.aria-label]="commentTriggerTooltip(node)"
+                        (pointerdown)="$event.stopPropagation()"
+                        (click)="openCommentsDialog(node, $event)">
+                  <mat-icon>{{ commentTriggerIcon(node) }}</mat-icon>
+                  <span>{{ commentTriggerLabel(node) }}</span>
+                </button>
               }
             </div>
           </td>
@@ -507,12 +513,18 @@
               </span>
               <span *ngIf="!task.dueDate"></span>
               
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <div class="comments-indicator" *ngIf="task.comments?.length" matTooltip="{{ task.comments?.length }} comentario(s)">
-                  <mat-icon>chat_bubble_outline</mat-icon>
-                  {{ task.comments?.length }}
-                </div>
-                
+              <div class="card-footer-actions">
+                <button type="button"
+                        class="comments-trigger comments-trigger-card"
+                        [class.is-empty]="commentCount(task) === 0"
+                        [matTooltip]="commentTriggerTooltip(task)"
+                        [attr.aria-label]="commentTriggerTooltip(task)"
+                        (pointerdown)="$event.stopPropagation()"
+                        (click)="openCommentsDialog(task, $event)">
+                  <mat-icon>{{ commentTriggerIcon(task) }}</mat-icon>
+                  <span>{{ commentTriggerLabel(task) }}</span>
+                </button>
+
                 <div class="assignee-info" *ngIf="task.assigneeNames?.length" [matTooltip]="task.assigneeNames!.join(', ')">
                   <mat-icon>person</mat-icon>
                   <span class="assignee-name">{{ task.assigneeNames!.join(', ') }}</span>

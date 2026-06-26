@@ -346,21 +346,62 @@
       transition: background var(--transition);
     }
 
-    .comments-badge {
+    .comments-trigger {
       display: inline-flex;
       align-items: center;
-      gap: 2px;
-      margin-left: 6px;
+      gap: 4px;
+      margin-left: 8px;
       margin-top: 1px;
       align-self: flex-start;
-      color: var(--text-secondary);
-      font-size: 10px;
-      font-weight: 600;
-      background: var(--bg-surface);
-      padding: 1px 5px;
-      border-radius: 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      appearance: none;
+      font-family: inherit;
+      text-transform: none;
+      border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      line-height: 1;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent-dim) 28%, var(--bg-card));
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: transform var(--transition), background var(--transition),
+        border-color var(--transition), color var(--transition), box-shadow var(--transition);
 
-      mat-icon { font-size: 11px; width: 11px; height: 11px; }
+      &:hover {
+        transform: translateY(-1px);
+        border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+        background: color-mix(in srgb, var(--accent-dim) 40%, var(--bg-card));
+        box-shadow: var(--shadow-md);
+      }
+
+      &:focus-visible {
+        outline: 2px solid color-mix(in srgb, var(--accent) 60%, white);
+        outline-offset: 2px;
+      }
+
+      mat-icon {
+        font-size: 13px;
+        width: 13px;
+        height: 13px;
+      }
+
+      &.is-empty {
+        color: var(--text-secondary);
+        border-color: var(--border);
+        background: var(--bg-surface);
+        box-shadow: none;
+
+        &:hover {
+          color: var(--accent);
+          border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+          background: color-mix(in srgb, var(--accent-dim) 22%, var(--bg-surface));
+        }
+      }
     }
   }
 
@@ -666,7 +707,7 @@
   }
 }
 
-.kanban-card {
+  .kanban-card {
   background: var(--bg-card);
   border-radius: 8px;
   padding: 12px;
@@ -794,6 +835,8 @@
     margin-top: 10px;
     border-top: 1px solid var(--border-subtle);
     padding-top: 8px;
+    gap: 10px;
+    flex-wrap: wrap;
 
     .due-date {
       display: flex;
@@ -813,15 +856,13 @@
       }
     }
 
-    .comments-indicator {
-      display: flex;
+    .card-footer-actions {
+      display: inline-flex;
       align-items: center;
-      gap: 3px;
-      color: var(--text-secondary);
-      font-size: 11px;
-      font-weight: 600;
-
-      mat-icon { font-size: 13px; width: 13px; height: 13px; }
+      gap: 8px;
+      margin-left: auto;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .assignee-info {
@@ -842,6 +883,61 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+    }
+  }
+
+  .comments-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    appearance: none;
+    font-family: inherit;
+    text-transform: none;
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
+    border-radius: 999px;
+    padding: 4px 9px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent-dim) 28%, var(--bg-card));
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    transition: transform var(--transition), background var(--transition),
+      border-color var(--transition), color var(--transition), box-shadow var(--transition);
+
+    &:hover {
+      transform: translateY(-1px);
+      border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+      background: color-mix(in srgb, var(--accent-dim) 40%, var(--bg-card));
+      box-shadow: var(--shadow-md);
+    }
+
+    &:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--accent) 60%, white);
+      outline-offset: 2px;
+    }
+
+    mat-icon {
+      font-size: 13px;
+      width: 13px;
+      height: 13px;
+    }
+
+    &.is-empty {
+      color: var(--text-secondary);
+      border-color: var(--border);
+      background: var(--bg-surface);
+      box-shadow: none;
+
+      &:hover {
+        color: var(--accent);
+        border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+        background: color-mix(in srgb, var(--accent-dim) 22%, var(--bg-surface));
       }
     }
   }
