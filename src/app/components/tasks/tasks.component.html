@@ -88,27 +88,6 @@
         Orden múltiple activo. <small>Mantén Shift para añadir/quitar columnas.</small>
       </span>
     </div>
-
-    <div class="saved-views">
-      <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <mat-label>Vistas guardadas</mat-label>
-        <mat-select [ngModel]="selectedViewId()" (ngModelChange)="applySavedView($event)">
-          <mat-option value="">Seleccionar</mat-option>
-          @for (view of savedViews(); track view.id) {
-            <mat-option [value]="view.id">{{ view.name }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <button mat-stroked-button (click)="saveCurrentView()">
-        <mat-icon>bookmark_add</mat-icon> Guardar vista
-      </button>
-      @if (selectedViewId()) {
-        <button mat-button color="warn" (click)="deleteSavedView(selectedViewId())">
-          <mat-icon>delete</mat-icon> Eliminar
-        </button>
-      }
-    </div>
-
     <span class="spacer"></span>
     <span class="task-count">{{ taskCount() }} tarea(s)</span>
   </div>
@@ -116,7 +95,7 @@
   <!-- Tabla árbol -->
   <div class="table-wrapper" *ngIf="viewMode === 'table'">
     <div class="table-scroll">
-      <table mat-table [dataSource]="dataSource" class="tasks-table" [trackBy]="trackById">
+      <table mat-table [dataSource]="dataSource" class="tasks-table" [trackBy]="trackById" [formGroup]="editForm">
 
         <!-- Columna Tarea (con árbol) -->
         <ng-container matColumnDef="title">
@@ -138,7 +117,12 @@
               } @else {
                 <span class="leaf-indent"></span>
               }
-              @if (editingTitleId() === node.id) {
+              @if (editingTaskId() === node.id) {
+                <input type="text" [id]="'inline-title-' + node.id" class="title-inline-input"
+                       formControlName="title"
+                       placeholder="Título"
+                       (click)="$event.stopPropagation()" />
+              } @else if (editingTitleId() === node.id) {
                 <input type="text" [id]="'title-input-' + node.id" class="title-inline-input"
                        [value]="node.title"
                        (blur)="updateTitle(node, $event)"
@@ -171,11 +155,46 @@
             </div>
           </th>
           <td mat-cell *matCellDef="let node">
-            @if (node.projectName) {
-              <span class="color-dot" [style.background-color]="node.projectColor"></span>
-              {{ node.projectName }}
+            @if (editingTaskId() === node.id) {
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="inline-cell-field">
+                <mat-select formControlName="projectId" aria-label="Proyecto">
+                  @for (p of activeProjects(); track p.id) {
+                    <mat-option [value]="p.id">{{ p.name }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
             } @else {
-              <span class="no-value">—</span>
+              @if (node.projectName) {
+                <span class="color-dot" [style.background-color]="node.projectColor"></span>
+                {{ node.projectName }}
+              } @else {
+                <span class="no-value">—</span>
+              }
+            }
+          </td>
+        </ng-container>
+
+        <!-- Padre -->
+        <ng-container matColumnDef="parent">
+          <th mat-header-cell *matHeaderCellDef>
+            <span>Padre</span>
+          </th>
+          <td mat-cell *matCellDef="let node">
+            @if (editingTaskId() === node.id) {
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="inline-cell-field">
+                <mat-select formControlName="parentId" aria-label="Padre">
+                  <mat-option [value]="null">Ninguna (tarea raíz)</mat-option>
+                  @for (t of editParentOptions; track t.id) {
+                    <mat-option [value]="t.id">
+                      {{ '·'.repeat(t['_level'] ?? 0) }} {{ t.title }}
+                    </mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            } @else {
+              <span class="cell-text" [matTooltip]="getTaskTitle(node.parentId) || 'Tarea raíz'" matTooltipShowDelay="600">
+                {{ getTaskTitle(node.parentId) || '—' }}
+              </span>
             }
           </td>
         </ng-container>
@@ -191,7 +210,17 @@
             </div>
           </th>
           <td mat-cell *matCellDef="let node">
-            {{ (node.assigneeNames && node.assigneeNames.length > 0) ? node.assigneeNames.join(', ') : '—' }}
+            @if (editingTaskId() === node.id) {
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="inline-cell-field">
+                <mat-select formControlName="assigneeIds" multiple aria-label="Asignado a">
+                  @for (m of members(); track m.id) {
+                    <mat-option [value]="m.id">{{ m.name }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            } @else {
+              {{ (node.assigneeNames && node.assigneeNames.length > 0) ? node.assigneeNames.join(', ') : '—' }}
+            }
           </td>
         </ng-container>
 
@@ -206,22 +235,32 @@
             </div>
           </th>
           <td mat-cell *matCellDef="let node">
-            @if (node.hasChildren) {
-              <span class="status-chip {{ node.status }}" matTooltip="Calculado de subtareas">
-                {{ statusLabels[node.status] }}
-              </span>
+            @if (editingTaskId() === node.id) {
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="inline-cell-field">
+                <mat-select formControlName="status" aria-label="Estado">
+                  @for (s of statuses; track s) {
+                    <mat-option [value]="s">{{ statusLabels[s] }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
             } @else {
-              <button mat-button [matMenuTriggerFor]="statusMenu" class="status-btn">
-                <span class="status-chip {{ node.status }}">{{ statusLabels[node.status] }}</span>
-                <mat-icon>arrow_drop_down</mat-icon>
-              </button>
-              <mat-menu #statusMenu="matMenu">
-                @for (s of statuses; track s) {
-                  <button mat-menu-item (click)="changeStatus(node, s)" [disabled]="node.status === s">
-                    <span class="status-chip {{ s }}">{{ statusLabels[s] }}</span>
-                  </button>
-                }
-              </mat-menu>
+              @if (node.hasChildren) {
+                <span class="status-chip {{ node.status }}" matTooltip="Calculado de subtareas">
+                  {{ statusLabels[node.status] }}
+                </span>
+              } @else {
+                <button mat-button [matMenuTriggerFor]="statusMenu" class="status-btn">
+                  <span class="status-chip {{ node.status }}">{{ statusLabels[node.status] }}</span>
+                  <mat-icon>arrow_drop_down</mat-icon>
+                </button>
+                <mat-menu #statusMenu="matMenu">
+                  @for (s of statuses; track s) {
+                    <button mat-menu-item (click)="changeStatus(node, s)" [disabled]="node.status === s">
+                      <span class="status-chip {{ s }}">{{ statusLabels[s] }}</span>
+                    </button>
+                  }
+                </mat-menu>
+              }
             }
           </td>
         </ng-container>
@@ -237,22 +276,32 @@
             </div>
           </th>
           <td mat-cell *matCellDef="let node">
-            @if (node.hasChildren) {
-              <span class="priority-chip {{ node.priority }}" matTooltip="Calculado de subtareas">
-                {{ priorityLabels[node.priority] }}
-              </span>
+            @if (editingTaskId() === node.id) {
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="inline-cell-field">
+                <mat-select formControlName="priority" aria-label="Prioridad">
+                  @for (p of priorities; track p) {
+                    <mat-option [value]="p">{{ priorityLabels[p] }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
             } @else {
-              <button mat-button [matMenuTriggerFor]="priorityMenu" class="priority-btn">
-                <span class="priority-chip {{ node.priority }}">{{ priorityLabels[node.priority] }}</span>
-                <mat-icon>arrow_drop_down</mat-icon>
-              </button>
-              <mat-menu #priorityMenu="matMenu">
-                @for (p of priorities; track p) {
-                  <button mat-menu-item (click)="changePriority(node, p)" [disabled]="node.priority === p">
-                    <span class="priority-chip {{ p }}">{{ priorityLabels[p] }}</span>
-                  </button>
-                }
-              </mat-menu>
+              @if (node.hasChildren) {
+                <span class="priority-chip {{ node.priority }}" matTooltip="Calculado de subtareas">
+                  {{ priorityLabels[node.priority] }}
+                </span>
+              } @else {
+                <button mat-button [matMenuTriggerFor]="priorityMenu" class="priority-btn">
+                  <span class="priority-chip {{ node.priority }}">{{ priorityLabels[node.priority] }}</span>
+                  <mat-icon>arrow_drop_down</mat-icon>
+                </button>
+                <mat-menu #priorityMenu="matMenu">
+                  @for (p of priorities; track p) {
+                    <button mat-menu-item (click)="changePriority(node, p)" [disabled]="node.priority === p">
+                      <span class="priority-chip {{ p }}">{{ priorityLabels[p] }}</span>
+                    </button>
+                  }
+                </mat-menu>
+              }
             }
           </td>
         </ng-container>
@@ -268,10 +317,16 @@
             </div>
           </th>
           <td mat-cell *matCellDef="let node">
-            @if (node.startDate) {
-              {{ node.startDate | date:'dd/MM/yy' }}
+            @if (editingTaskId() === node.id) {
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="inline-cell-field">
+                <input matInput type="date" formControlName="startDate" aria-label="Inicio" />
+              </mat-form-field>
             } @else {
-              <span class="no-value">—</span>
+              @if (node.startDate) {
+                {{ node.startDate | date:'dd/MM/yy' }}
+              } @else {
+                <span class="no-value">—</span>
+              }
             }
           </td>
         </ng-container>
@@ -287,15 +342,21 @@
             </div>
           </th>
           <td mat-cell *matCellDef="let node">
-            @if (node.dueDate) { 
-              <span class="due-date-cell" [class.overdue]="isTaskOverdue(node)">
-                @if (isTaskOverdue(node)) {
-                  <mat-icon class="overdue-icon">schedule</mat-icon>
-                }
-                {{ node.dueDate | date:'dd/MM/yy' }}
-              </span>
+            @if (editingTaskId() === node.id) {
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="inline-cell-field">
+                <input matInput type="date" formControlName="dueDate" aria-label="Vencimiento" />
+              </mat-form-field>
             } @else {
-              <span class="no-value">—</span>
+              @if (node.dueDate) { 
+                <span class="due-date-cell" [class.overdue]="isTaskOverdue(node)">
+                  @if (isTaskOverdue(node)) {
+                    <mat-icon class="overdue-icon">schedule</mat-icon>
+                  }
+                  {{ node.dueDate | date:'dd/MM/yy' }}
+                </span>
+              } @else {
+                <span class="no-value">—</span>
+              }
             }
           </td>
         </ng-container>
@@ -313,15 +374,22 @@
           <td mat-cell *matCellDef="let node">
             <div class="progress-cell">
               <div class="pct-container">
-                @if (node.hasChildren) {
-                  <span class="bar-pct" matTooltip="Calculado de subtareas">{{ node.progressActual }}%</span>
-                } @else {
-                  <input type="number" class="progress-inline-input" min="0" max="100"
-                         [value]="node.progressActual"
-                         (change)="updateProgress(node, $event)"
-                         (click)="$event.stopPropagation()"
-                         matTooltip="Editar % real" />
+                @if (editingTaskId() === node.id) {
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="inline-cell-field progress-edit-field">
+                    <input matInput type="number" min="0" max="100" formControlName="progressActual" aria-label="% Real" />
+                  </mat-form-field>
                   <span class="pct-symbol">%</span>
+                } @else {
+                  @if (node.hasChildren) {
+                    <span class="bar-pct" matTooltip="Calculado de subtareas">{{ node.progressActual }}%</span>
+                  } @else {
+                    <input type="number" class="progress-inline-input" min="0" max="100"
+                           [value]="node.progressActual"
+                           (change)="updateProgress(node, $event)"
+                           (click)="$event.stopPropagation()"
+                           matTooltip="Editar % real" />
+                    <span class="pct-symbol">%</span>
+                  }
                 }
               </div>
               @if (progressIcon(node)) {
@@ -359,16 +427,25 @@
           <th mat-header-cell *matHeaderCellDef></th>
           <td mat-cell *matCellDef="let node">
             <div class="actions-cell">
-              <button mat-icon-button class="action-btn" color="primary" matTooltip="Editar" (click)="openEdit(node)">
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button mat-icon-button class="action-btn" matTooltip="Agregar subtarea" (click)="openCreate(node.id)"
-                      style="color:#6366F1">
-                <mat-icon>add_circle_outline</mat-icon>
-              </button>
-              <button mat-icon-button class="action-btn" color="warn" matTooltip="Eliminar" (click)="confirmDelete(node)">
-                <mat-icon>delete</mat-icon>
-              </button>
+              @if (editingTaskId() === node.id) {
+                <button mat-icon-button class="action-btn" color="primary" matTooltip="Guardar cambios" (click)="saveInlineEdit(node)">
+                  <mat-icon>check</mat-icon>
+                </button>
+                <button mat-icon-button class="action-btn" matTooltip="Cancelar edición" (click)="cancelInlineEdit()">
+                  <mat-icon>close</mat-icon>
+                </button>
+              } @else {
+                <button mat-icon-button class="action-btn" color="primary" matTooltip="Editar en la tabla" (click)="startInlineEdit(node, $event)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button class="action-btn" matTooltip="Agregar subtarea" (click)="openCreate(node.id)"
+                        style="color:#6366F1">
+                  <mat-icon>add_circle_outline</mat-icon>
+                </button>
+                <button mat-icon-button class="action-btn" color="warn" matTooltip="Eliminar" (click)="confirmDelete(node)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              }
             </div>
           </td>
         </ng-container>
@@ -378,7 +455,8 @@
             [class.overdue-row]="isRowCritical(row)"
             [class.parent-row]="row.hasChildren"
             [class.task-done-row]="row.status === 'DONE'"
-            [class.recently-updated]="isRecentlyUpdated(row.id)"></tr>
+            [class.recently-updated]="isRecentlyUpdated(row.id)"
+            [class.editing-row]="editingTaskId() === row.id"></tr>
 
         <tr class="mat-row" *matNoDataRow>
           <td class="mat-cell no-data" [attr.colspan]="displayedColumns.length">

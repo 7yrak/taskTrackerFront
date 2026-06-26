@@ -1317,3 +1317,145 @@
     gap: 8px;
   }
 }
+
+body.dark-theme {
+  .executive-hero,
+  .analysis-card,
+  .insight-chip,
+  .kpi-card,
+  .critical-project-card,
+  .critical-projects-section,
+  .projects-summary-card,
+  .team-card,
+  .critical-tasks-card {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(17, 24, 39, 0.96)) !important;
+    border-color: var(--border) !important;
+    box-shadow: var(--shadow-md) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .executive-hero::after {
+    opacity: 0.14;
+  }
+
+  .hero-metric {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(17, 24, 39, 0.92)) !important;
+    border-color: rgba(148, 163, 184, 0.18) !important;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+
+    .metric-label {
+      color: var(--text-secondary) !important;
+    }
+
+    .metric-value {
+      color: var(--text-primary) !important;
+    }
+  }
+
+  .insight-chip {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(17, 24, 39, 0.94)) !important;
+
+    .insight-label {
+      color: var(--text-secondary) !important;
+    }
+  }
+
+  .analysis-card {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(17, 24, 39, 0.96)) !important;
+
+    h3 {
+      color: var(--text-primary) !important;
+    }
+
+    .card-kicker {
+      color: var(--text-secondary) !important;
+    }
+  }
+
+  .projects-summary-card mat-card-header,
+  .team-card mat-card-header,
+  .critical-tasks-card mat-card-header {
+    background: transparent;
+  }
+
+  .projects-summary-card mat-card-title,
+  .team-card mat-card-title,
+  .critical-tasks-card mat-card-title {
+    color: var(--text-primary) !important;
+  }
+
+  .projects-summary-card .table-header,
+  .critical-tasks-card .table-header {
+    background: #0B1220 !important;
+    color: #F8FAFC !important;
+  }
+
+  .projects-summary-card .table-row,
+  .critical-tasks-card .table-row {
+    background: rgba(15, 23, 42, 0.88) !important;
+    border-bottom-color: var(--border-subtle) !important;
+  }
+
+  .projects-summary-card .table-row:hover,
+  .critical-tasks-card .table-row:hover,
+  .team-card-item:hover {
+    background: rgba(30, 41, 59, 0.95) !important;
+  }
+
+  .critical-project-card,
+  .team-card-item {
+    background: rgba(15, 23, 42, 0.96) !important;
+    border-color: var(--border) !important;
+  }
+
+  .critical-project-section,
+  .critical-projects-section {
+    color: var(--text-primary) !important;
+  }
+
+  .critical-project-card .progress-number,
+  .critical-project-card .metric-label,
+  .critical-project-card .card-title h3,
+  .team-card-item .member-name,
+  .team-card-item .status-label,
+  .team-card-item .stat-value,
+  .team-card-item .worst-label,
+  .critical-tasks-card .task-info strong,
+  .critical-tasks-card .pct,
+  .critical-tasks-card .col-project,
+  .critical-tasks-card .col-assignee,
+  .critical-tasks-card .col-dates {
+    color: var(--text-primary) !important;
+  }
+
+  .team-card-item .stat,
+  .team-card-item .task-chip,
+  .critical-project-card .actual,
+  .critical-project-card .expected {
+    background: rgba(30, 41, 59, 0.92) !important;
+    border-color: var(--border) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .team-card-item .member-stats-row,
+  .critical-project-card .card-progress-bar .bar-track,
+  .projects-summary-card .progress-bar,
+  .critical-tasks-card .progress-mini .bar {
+    background: var(--bg-surface-2) !important;
+  }
+
+  .critical-project-card .card-progress-bar .bar-track .bar-expected-line,
+  .projects-summary-card .table-row .fill,
+  .critical-tasks-card .progress-mini .bar .fill {
+    opacity: 0.95;
+  }
+
+  .projects-summary-card .card-controls button {
+    color: var(--text-secondary) !important;
+  }
+
+  .projects-summary-card .card-controls button.active {
+    color: var(--text-on-dark) !important;
+    background: rgba(14, 165, 233, 0.16) !important;
+  }
+}

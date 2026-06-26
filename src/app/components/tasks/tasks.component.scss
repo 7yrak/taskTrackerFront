@@ -38,6 +38,14 @@
     }
   }
 
+  .filter-bar {
+    mat-form-field {
+      flex: 1 1 190px;
+      min-width: 190px;
+      max-width: 250px;
+    }
+  }
+
   .sort-info {
     font-size: 12px;
     color: var(--text-secondary);
@@ -94,11 +102,25 @@
 // ─── Tabla ────────────────────────────────────────────────────────────────
 .tasks-table {
   width: 100%;
+  table-layout: fixed;
+  min-width: 100%;
   --mat-table-header-container-height: 36px;
   --mat-table-row-item-container-height: 36px;
   --mat-table-background-color: var(--bg-card);
   --mat-table-row-item-label-text-color: var(--text-primary);
   --mat-table-header-headline-color: var(--text-secondary);
+
+  .mat-column-title { width: 220px; }
+  .mat-column-project { width: 140px; }
+  .mat-column-parent { width: 145px; }
+  .mat-column-assignee { width: 170px; }
+  .mat-column-status { width: 160px; }
+  .mat-column-priority { width: 130px; }
+  .mat-column-startDate { width: 104px; }
+  .mat-column-dueDate { width: 110px; }
+  .mat-column-progressActual { width: 92px; }
+  .mat-column-progressExpected { width: 96px; }
+  .mat-column-actions { width: 112px; }
 
   th.mat-mdc-header-cell {
     font-weight: 700;
@@ -147,6 +169,8 @@
     font-size: 13px;
     padding: 0 8px;
     transition: background var(--transition), color var(--transition);
+    overflow: hidden;
+    text-overflow: ellipsis;
 
     &:first-of-type { padding-left: 12px; }
     &:last-of-type  { padding-right: 4px; }
@@ -172,6 +196,14 @@
   // Hover de fila
   tr.mat-mdc-row:hover td.mat-mdc-cell {
     background-color: var(--bg-surface);
+  }
+
+  tr.editing-row td.mat-mdc-cell {
+    background-color: color-mix(in srgb, var(--accent-dim) 35%, var(--bg-card));
+  }
+
+  tr.editing-row:hover td.mat-mdc-cell {
+    background-color: color-mix(in srgb, var(--accent-dim) 45%, var(--bg-card));
   }
 
   // ── Celda título ──────────────────────────────────────────────────────
@@ -273,6 +305,34 @@
     }
   }
 
+  .cell-text {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .cell-text-wrap {
+    white-space: normal;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .inline-cell-field {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .progress-edit-field {
+    min-width: 0;
+    max-width: 100%;
+  }
+
   // ── Acciones ────────────────────────────────────────────────────────
   .actions-cell {
     display: flex;
@@ -303,6 +363,62 @@
     color: var(--text-secondary);
     font-size: 13px;
   }
+
+}
+
+.tasks-table ::ng-deep .inline-cell-field {
+  margin: 0;
+}
+
+.tasks-table ::ng-deep .inline-cell-field .mat-mdc-text-field-wrapper {
+  padding: 0 8px;
+  margin: 0;
+}
+
+.tasks-table ::ng-deep .inline-cell-field .mat-mdc-form-field-flex {
+  align-items: center;
+}
+
+.tasks-table ::ng-deep .inline-cell-field .mat-mdc-form-field-infix {
+  min-height: 32px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+  width: auto;
+}
+
+.tasks-table ::ng-deep .inline-cell-field .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+.tasks-table ::ng-deep .inline-cell-field .mat-mdc-select-value,
+.tasks-table ::ng-deep .inline-cell-field .mat-mdc-input-element {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.tasks-table ::ng-deep .inline-cell-field .mat-mdc-select-trigger {
+  min-height: 20px;
+}
+
+.tasks-table ::ng-deep .inline-cell-field .mat-mdc-select-arrow {
+  margin-left: 4px;
+}
+
+.tasks-table ::ng-deep .inline-cell-field .mat-mdc-text-field-wrapper .mdc-notched-outline__leading,
+.tasks-table ::ng-deep .inline-cell-field .mat-mdc-text-field-wrapper .mdc-notched-outline__notch,
+.tasks-table ::ng-deep .inline-cell-field .mat-mdc-text-field-wrapper .mdc-notched-outline__trailing {
+  border-color: var(--border);
+}
+
+.tasks-table ::ng-deep .inline-cell-field .mat-mdc-text-field-wrapper:hover .mdc-notched-outline__leading,
+.tasks-table ::ng-deep .inline-cell-field .mat-mdc-text-field-wrapper:hover .mdc-notched-outline__notch,
+.tasks-table ::ng-deep .inline-cell-field .mat-mdc-text-field-wrapper:hover .mdc-notched-outline__trailing {
+  border-color: var(--accent);
+}
+
+.tasks-table ::ng-deep .inline-cell-field textarea.mat-mdc-input-element,
+.tasks-table ::ng-deep .inline-cell-field input.mat-mdc-input-element {
+  margin: 0;
 }
 
 .task-count {
@@ -395,6 +511,31 @@
   overflow-x: auto;
   overflow-y: hidden;
   padding-bottom: 8px;
+}
+
+@media (max-width: 1200px) {
+  .tasks-table {
+    .mat-column-title { width: 200px; }
+    .mat-column-project { width: 122px; }
+    .mat-column-parent { width: 130px; }
+    .mat-column-assignee { width: 145px; }
+    .mat-column-status { width: 132px; }
+    .mat-column-priority { width: 116px; }
+    .mat-column-startDate { width: 92px; }
+    .mat-column-dueDate { width: 98px; }
+    .mat-column-progressActual { width: 84px; }
+    .mat-column-progressExpected { width: 88px; }
+    .mat-column-actions { width: 96px; }
+  }
+}
+
+@media (max-width: 900px) {
+  .tasks-table {
+    .mat-column-parent,
+    .mat-column-progressExpected {
+      width: 120px;
+    }
+  }
 }
 
 .kanban-board {

@@ -1,7 +1,7 @@
 import { Component, inject, signal, ViewChild, ElementRef, DestroyRef, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Subject } from 'rxjs';
+import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { Subject, Subscription } from 'rxjs';
 import { filter, startWith, switchMap, take } from 'rxjs/operators';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
@@ -9,6 +9,7 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -23,20 +24,35 @@ import { TaskService, ImportResult } from '../../services/task.service';
 import { TaskFilterService, TaskViewPreset, PersistedSortState } from '../../services/task-filter.service';
 import { ProjectService } from '../../services/project.service';
 import { MemberService } from '../../services/member.service';
-import { Task, TaskNode, TaskStatus, TaskPriority, STATUS_LABELS, PRIORITY_LABELS } from '../../models/task.model';
+import { Task, TaskNode, TaskStatus, TaskPriority, TaskRequest, STATUS_LABELS, PRIORITY_LABELS } from '../../models/task.model';
 import { Project, ProjectStatus } from '../../models/project.model';
 import { Member } from '../../models/member.model';
 import { TaskDialogComponent } from '../shared/task-dialog/task-dialog.component';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog/confirm-dialog.component';
+
+interface TaskEditFormValue {
+  title: string;
+  description: string;
+  projectId: number | null;
+  parentId: number | null;
+  status: TaskStatus;
+  priority: TaskPriority;
+  assigneeIds: number[];
+  startDate: string | null;
+  dueDate: string | null;
+  progressActual: number;
+}
 
 
 @Component({
   selector: 'app-tasks',
   imports: [
     CommonModule, FormsModule,
+    ReactiveFormsModule,
     MatTableModule, MatSortModule,
     MatButtonModule, MatIconModule,
     MatDialogModule, MatSelectModule, MatFormFieldModule,
+    MatInputModule,
     MatSnackBarModule, MatTooltipModule, MatMenuModule, MatButtonToggleModule,
     CdkDropListGroup, CdkDropList, CdkDrag
   ],
@@ -50,9 +66,11 @@ export class TasksComponent {
   private filterService  = inject(TaskFilterService);
   private projectService = inject(ProjectService);
   private memberService  = inject(MemberService);
+  private fb             = inject(FormBuilder);
   private dialog         = inject(MatDialog);
   private snack          = inject(MatSnackBar);
   private destroyRef     = inject(DestroyRef);
+  private editSub        = new Subscription();
 
   viewMode: 'table' | 'kanban' = this.filterService.loadViewMode('table');
   savedViews = signal<TaskViewPreset[]>(this.filterService.loadSavedViews());
@@ -80,7 +98,19 @@ export class TasksComponent {
   projects = toSignal(this.projectService.getAll(), { initialValue: [] as Project[] });
   members  = toSignal(this.memberService.getAll(),  { initialValue: [] as Member[]  });
 
-  displayedColumns = ['title', 'project', 'assignee', 'status', 'priority', 'startDate', 'dueDate', 'progressActual', 'progressExpected', 'actions'];
+  displayedColumns = [
+    'title',
+    'project',
+    'parent',
+    'assignee',
+    'status',
+    'priority',
+    'startDate',
+    'dueDate',
+    'progressActual',
+    'progressExpected',
+    'actions'
+  ];
   statusLabels: Record<string, string>   = STATUS_LABELS;
   priorityLabels: Record<string, string> = PRIORITY_LABELS;
   statuses: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'BLOCKED', 'STOPPED'];
@@ -88,6 +118,20 @@ export class TasksComponent {
   sorts: Sort[] = this.filterService.loadSortState([{ active: 'startDate', direction: 'asc' }]);
 
   editingTitleId = signal<number | null>(null);
+  editingTaskId = signal<number | null>(null);
+  editParentOptions: (TaskNode & { _level?: number })[] = [];
+  editForm = this.fb.group({
+    title: ['', Validators.required],
+    description: [''],
+    projectId: [null as number | null, Validators.required],
+    parentId: [null as number | null],
+    status: ['TODO' as TaskStatus, Validators.required],
+    priority: ['MEDIUM' as TaskPriority, Validators.required],
+    assigneeIds: [[] as number[]],
+    startDate: [null as string | null, Validators.required],
+    dueDate: [null as string | null, Validators.required],
+    progressActual: [0, [Validators.required, Validators.min(0), Validators.max(100)]]
+  });
 
   constructor() {
     toObservable(this.projects).pipe(
@@ -117,6 +161,10 @@ export class TasksComponent {
       this.allTasks = tasks;
       this.buildAndFilter();
     });
+  }
+
+  ngOnDestroy() {
+    this.editSub.unsubscribe();
   }
 
   setViewMode(mode: 'table' | 'kanban') {
@@ -212,7 +260,7 @@ export class TasksComponent {
     const roots: TaskNode[] = [];
 
     for (const task of tasks) {
-      map.set(task.id, { ...task, level: 0, expanded: false, childrenNodes: [] });
+      map.set(task.id, { ...task, level: 0, expanded: true, childrenNodes: [] });
     }
 
     for (const node of map.values()) {
@@ -572,6 +620,73 @@ export class TasksComponent {
     });
   }
 
+  startInlineEdit(task: TaskNode, event?: MouseEvent) {
+    event?.stopPropagation();
+    this.editSub.unsubscribe();
+    this.editSub = new Subscription();
+
+    this.editingTitleId.set(null);
+    this.editingTaskId.set(task.id);
+    this.editParentOptions = this.buildParentOptionsForEdit(task.projectId, task.id);
+
+    this.editForm.reset({
+      title: task.title,
+      description: task.description ?? '',
+      projectId: task.projectId ?? null,
+      parentId: task.parentId ?? null,
+      status: task.status,
+      priority: task.priority,
+      assigneeIds: task.assigneeIds ?? [],
+      startDate: task.startDate ?? null,
+      dueDate: task.dueDate ?? null,
+      progressActual: task.progressActual ?? 0
+    });
+
+    this.syncInlineEditState(task.hasChildren);
+
+    this.editSub.add(
+      this.editForm.get('projectId')!.valueChanges.subscribe(projectId => {
+        this.editParentOptions = this.buildParentOptionsForEdit(projectId ?? null, task.id);
+        const currentParentId = this.editForm.get('parentId')!.value;
+        if (currentParentId != null && !this.editParentOptions.some(p => p.id === currentParentId)) {
+          this.editForm.patchValue({ parentId: null }, { emitEvent: false });
+        }
+      })
+    );
+
+    setTimeout(() => {
+      const input = document.getElementById(`inline-title-${task.id}`) as HTMLInputElement | null;
+      input?.focus();
+      input?.select();
+    });
+  }
+
+  cancelInlineEdit() {
+    this.editSub.unsubscribe();
+    this.editSub = new Subscription();
+    this.editingTaskId.set(null);
+    this.editParentOptions = [];
+  }
+
+  saveInlineEdit(task: TaskNode) {
+    if (this.editingTaskId() !== task.id || this.editForm.invalid) {
+      return;
+    }
+
+    const v = this.editForm.getRawValue() as TaskEditFormValue;
+    const req = this.buildTaskRequestFromValues(task, v);
+
+    this.taskService.update(task.id, req).subscribe({
+      next: () => {
+        this.refresh$.next();
+        this.flashTaskUpdate(task.id);
+        this.cancelInlineEdit();
+        this.openInfoSnack('Tarea actualizada', 'success');
+      },
+      error: (e) => this.openInfoSnack(e.error?.message || 'Error al actualizar', 'error')
+    });
+  }
+
   updateProgress(node: TaskNode, event: Event) {
     const input = event.target as HTMLInputElement;
     const newProgress = parseInt(input.value, 10);
@@ -750,22 +865,110 @@ export class TasksComponent {
     return '';
   }
 
-  private buildTaskUpdatePayload(task: Task, overrides: Partial<{ status: TaskStatus; priority: TaskPriority }>) {
-    const startDateRaw = task.startDate ? this.parseLocalDate(task.startDate) : null;
-    const dueDateRaw = task.dueDate ? this.parseLocalDate(task.dueDate) : null;
-
-    return {
+  private buildTaskUpdatePayload(task: Task, overrides: Partial<{ status: TaskStatus; priority: TaskPriority }>): TaskRequest {
+    return this.buildTaskRequestFromValues(task, {
       title: task.title,
-      description: task.description,
+      description: task.description ?? '',
+      projectId: task.projectId ?? null,
+      parentId: task.parentId ?? null,
       status: overrides.status ?? task.status,
       priority: overrides.priority ?? task.priority,
-      projectId: task.projectId ?? undefined,
-      assigneeIds: task.assigneeIds && task.assigneeIds.length > 0 ? task.assigneeIds : undefined,
-      startDate: startDateRaw ? this.formatLocalDate(startDateRaw) : undefined,
-      dueDate: dueDateRaw ? this.formatLocalDate(dueDateRaw) : undefined,
-      progressActual: task.progressActual ?? 0,
-      parentId: task.parentId ?? undefined
+      assigneeIds: task.assigneeIds ?? [],
+      startDate: task.startDate ?? null,
+      dueDate: task.dueDate ?? null,
+      progressActual: task.progressActual ?? 0
+    });
+  }
+
+  private buildTaskRequestFromValues(task: Task, values: TaskEditFormValue): TaskRequest {
+    return {
+      title: values.title?.trim() || task.title,
+      description: values.description?.trim() || undefined,
+      status: values.status,
+      priority: values.priority,
+      projectId: values.projectId ?? undefined,
+      assigneeIds: values.assigneeIds && values.assigneeIds.length > 0 ? values.assigneeIds : undefined,
+      startDate: values.startDate || undefined,
+      dueDate: values.dueDate || undefined,
+      progressActual: Math.max(0, Math.min(100, Number(values.progressActual ?? 0))),
+      parentId: values.parentId ?? undefined
     };
+  }
+
+  getTaskTitle(taskId: number | null | undefined): string {
+    if (taskId == null) {
+      return '';
+    }
+    return this.allTasks.find(task => task.id === taskId)?.title ?? '';
+  }
+
+  private syncInlineEditState(hasChildren: boolean) {
+    const toggle = (controlName: keyof TaskEditFormValue, enabled: boolean) => {
+      const control = this.editForm.get(String(controlName));
+      if (!control) return;
+      if (enabled) {
+        control.enable({ emitEvent: false });
+      } else {
+        control.disable({ emitEvent: false });
+      }
+    };
+
+    toggle('status', !hasChildren);
+    toggle('priority', !hasChildren);
+    toggle('assigneeIds', !hasChildren);
+    toggle('startDate', !hasChildren);
+    toggle('dueDate', !hasChildren);
+    toggle('progressActual', !hasChildren);
+  }
+
+  private buildParentOptionsForEdit(projectId: number | null | undefined, editingId: number): (TaskNode & { _level?: number })[] {
+    if (!projectId) {
+      return [];
+    }
+
+    const excludedIds = this.getTaskAndDescendantIds(editingId);
+    const all = this.allTasks.filter(t => t.projectId === projectId && !excludedIds.has(t.id));
+    const map = new Map<number, TaskNode & { _level?: number; _children: number[] }>();
+    const roots: number[] = [];
+
+    for (const task of all) {
+      map.set(task.id, { ...(task as TaskNode), _level: 0, _children: [] });
+    }
+
+    for (const node of map.values()) {
+      if (node.parentId != null && map.has(node.parentId)) {
+        map.get(node.parentId)!._children.push(node.id);
+      } else {
+        roots.push(node.id);
+      }
+    }
+
+    const result: (TaskNode & { _level?: number })[] = [];
+    const walk = (ids: number[], level: number) => {
+      for (const id of ids) {
+        const node = map.get(id)!;
+        node._level = level;
+        result.push(node);
+        walk(node._children, level + 1);
+      }
+    };
+    walk(roots, 0);
+    return result;
+  }
+
+  private getTaskAndDescendantIds(taskId: number): Set<number> {
+    const excluded = new Set<number>([taskId]);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const task of this.allTasks) {
+        if (task.parentId != null && excluded.has(task.parentId) && !excluded.has(task.id)) {
+          excluded.add(task.id);
+          changed = true;
+        }
+      }
+    }
+    return excluded;
   }
 
   // ── Bulk actions ──────────────────────────────────────────────────────────
