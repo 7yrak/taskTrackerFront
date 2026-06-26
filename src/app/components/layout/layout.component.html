@@ -27,7 +27,7 @@
     </div>
   </header>
 
-  <main class="content-area">
+  <main class="content-area" [class.tasks-route]="isTasksRoute()">
     <router-outlet />
   </main>
 </div>

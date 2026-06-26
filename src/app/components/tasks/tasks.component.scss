@@ -3,6 +3,7 @@
   display: flex;
   flex-direction: column;
   flex: 1;
+  height: 100%;
   min-height: 0;
   overflow: hidden;
 
@@ -10,10 +11,12 @@
     display: flex;
     flex-direction: column;
     flex: 1;
+    height: 100%;
     min-height: 0;
     overflow: hidden;
     max-width: none;
     padding-bottom: 0;
+    min-width: 0;
   }
 
   .page-header { flex-shrink: 0; margin-bottom: 16px; }
@@ -118,7 +121,7 @@
   --task-col-dueDate: 122px;
   --task-col-progressActual: 100px;
   --task-col-progressExpected: 112px;
-  --task-col-actions: 120px;
+  --task-col-actions: 150px;
 
   .mat-column-title {
     width: var(--task-col-title);

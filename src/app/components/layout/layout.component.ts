@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -20,6 +20,7 @@ import { LogoComponent } from '../shared/logo/logo.component';
 })
 export class LayoutComponent {
   theme = inject(ThemeService);
+  private router = inject(Router);
 
   navItems = [
     { label: 'Dashboard',     icon: 'dashboard',     route: '/dashboard' },
@@ -28,4 +29,8 @@ export class LayoutComponent {
     { label: 'Equipo',        icon: 'group',         route: '/team' },
     { label: 'Recordatorios', icon: 'notifications', route: '/reminders' }
   ];
+
+  isTasksRoute(): boolean {
+    return this.router.url.includes('/tasks');
+  }
 }

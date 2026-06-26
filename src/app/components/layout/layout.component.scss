@@ -10,7 +10,8 @@
 .app-shell {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100%;
+  min-height: 0;
   overflow: hidden;
   background: var(--bg-app);
 }
@@ -119,8 +120,15 @@
 .content-area {
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   overflow: auto;
   background: var(--bg-app);
+
+  &.tasks-route {
+    overflow: hidden;
+  }
 }
 
 body.dark-theme {

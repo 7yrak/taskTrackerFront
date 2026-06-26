@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { finalize } from 'rxjs';
-import { Task, TaskComment } from '../../../models/task.model';
+import { Task, TaskComment, TaskCommentRequest, TaskRequest } from '../../../models/task.model';
 import { TaskService } from '../../../services/task.service';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 
@@ -591,7 +591,16 @@ export class TaskCommentsDialogComponent implements AfterViewInit {
     this.saving = true;
     this.errorMessage = '';
 
-    this.taskService.addComment(this.data.task.id, { text }).pipe(
+    const nextComments = [
+      ...this.comments,
+      {
+        author: 'Tú',
+        text,
+        date: new Date()
+      }
+    ];
+
+    this.taskService.update(this.data.task.id, this.buildTaskRequest(nextComments)).pipe(
       finalize(() => {
         this.saving = false;
       })
@@ -658,7 +667,18 @@ export class TaskCommentsDialogComponent implements AfterViewInit {
     this.editingSaving = true;
     this.errorMessage = '';
 
-    this.taskService.updateComment(this.data.task.id, comment.id, { text }).pipe(
+    const nextComments = this.comments.map(current => {
+      if (current.id !== comment.id) {
+        return current;
+      }
+
+      return {
+        ...current,
+        text
+      };
+    });
+
+    this.taskService.update(this.data.task.id, this.buildTaskRequest(nextComments)).pipe(
       finalize(() => {
         this.editingSaving = false;
       })
@@ -712,7 +732,9 @@ export class TaskCommentsDialogComponent implements AfterViewInit {
     this.deletingCommentId = comment.id;
     this.errorMessage = '';
 
-    this.taskService.deleteComment(this.data.task.id, comment.id).pipe(
+    const nextComments = this.comments.filter(current => current.id !== comment.id);
+
+    this.taskService.update(this.data.task.id, this.buildTaskRequest(nextComments)).pipe(
       finalize(() => {
         this.deletingCommentId = null;
       })
@@ -795,5 +817,51 @@ export class TaskCommentsDialogComponent implements AfterViewInit {
     }
 
     list.scrollTop = list.scrollHeight;
+  }
+
+  private buildTaskRequest(comments: TaskComment[]): TaskRequest {
+    return {
+      title: this.data.task.title,
+      description: this.data.task.description ?? undefined,
+      status: this.data.task.status,
+      priority: this.data.task.priority,
+      projectId: this.data.task.projectId ?? undefined,
+      assigneeIds: this.data.task.assigneeIds ?? undefined,
+      startDate: this.data.task.startDate,
+      dueDate: this.data.task.dueDate,
+      progressActual: this.data.task.progressActual,
+      parentId: this.data.task.parentId ?? null,
+      comments: comments.map(comment => this.toCommentRequest(comment))
+    };
+  }
+
+  private toCommentRequest(comment: TaskComment): TaskCommentRequest {
+    return {
+      author: comment.author,
+      text: comment.text,
+      date: this.formatCommentDateForRequest(comment.date)
+    };
+  }
+
+  private formatCommentDateForRequest(date: Date | string): string | undefined {
+    if (!date) {
+      return undefined;
+    }
+
+    const parsed = date instanceof Date ? date : new Date(date);
+    if (Number.isNaN(parsed.getTime())) {
+      return undefined;
+    }
+
+    const pad = (value: number): string => value.toString().padStart(2, '0');
+    return [
+      parsed.getFullYear(),
+      pad(parsed.getMonth() + 1),
+      pad(parsed.getDate())
+    ].join('-') + 'T' + [
+      pad(parsed.getHours()),
+      pad(parsed.getMinutes()),
+      pad(parsed.getSeconds())
+    ].join(':');
   }
 }

@@ -71,7 +71,7 @@ const DEFAULT_TASK_TABLE_COLUMN_WIDTHS: TaskTableColumnWidths = {
   dueDate: 122,
   progressActual: 100,
   progressExpected: 112,
-  actions: 120
+  actions: 150
 };
 
 const MIN_TASK_TABLE_COLUMN_WIDTHS: TaskTableColumnWidths = {
@@ -84,7 +84,7 @@ const MIN_TASK_TABLE_COLUMN_WIDTHS: TaskTableColumnWidths = {
   dueDate: 96,
   progressActual: 84,
   progressExpected: 90,
-  actions: 96
+  actions: 128
 };
 
 function normalizeTaskTableColumnWidths(raw: Partial<TaskTableColumnWidths> | null | undefined): TaskTableColumnWidths {
@@ -774,7 +774,10 @@ export class TasksComponent {
     });
   }
 
-  openEdit(task: Task) {
+  openEdit(task: Task, event?: MouseEvent) {
+    event?.stopPropagation();
+    event?.preventDefault();
+
     this.dialog.open(TaskDialogComponent, {
       width: '1000px',
       maxWidth: '95vw',

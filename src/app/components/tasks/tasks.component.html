@@ -430,6 +430,9 @@
                 <button mat-icon-button class="action-btn" color="primary" matTooltip="Editar en la tabla" (click)="startInlineEdit(node, $event)">
                   <mat-icon>edit</mat-icon>
                 </button>
+                <button mat-icon-button class="action-btn" matTooltip="Editar en modal" (click)="openEdit(node, $event)">
+                  <mat-icon>edit_note</mat-icon>
+                </button>
                 <button mat-icon-button class="action-btn" matTooltip="Agregar subtarea" (click)="openCreate(node.id)"
                         style="color:#6366F1">
                   <mat-icon>add_circle_outline</mat-icon>
@@ -483,7 +486,7 @@
                   {{ task.projectName }}
                 </span>
               </div>
-              <button mat-icon-button class="kanban-edit-btn" (click)="openEdit(task)" matTooltip="Editar tarea">
+              <button mat-icon-button class="kanban-edit-btn" (click)="openEdit(task, $event)" matTooltip="Editar tarea">
                 <mat-icon>edit</mat-icon>
               </button>
             </div>

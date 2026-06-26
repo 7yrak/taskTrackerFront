@@ -124,6 +124,7 @@ body.dark-theme {
 html, body {
   height: 100%;
   margin: 0;
+  overflow: hidden;
   font-family: 'Inter', 'Roboto', 'Helvetica Neue', sans-serif;
   background:
     radial-gradient(circle at top left, rgba(14, 165, 233, 0.10), transparent 28%),
