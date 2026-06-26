@@ -7,6 +7,9 @@
 
   table {
     background: transparent;
+    --mat-table-header-headline-color: var(--text-primary);
+    --mat-table-row-item-label-text-color: var(--text-primary);
+    --mat-table-background-color: transparent;
   }
 
   th.mat-header-cell {
@@ -28,12 +31,22 @@
     font-size: 13px;
   }
 
+  .mat-column-actions {
+    width: 156px;
+    min-width: 156px;
+    white-space: nowrap;
+  }
+
   tr.mat-row {
     background: var(--bg-card);
     transition: background var(--transition);
 
     &:hover td { background: var(--bg-surface); }
     &:last-child td { border-bottom: none; }
+  }
+
+  tr.editing-row td {
+    background: color-mix(in srgb, var(--accent-dim) 38%, var(--bg-card));
   }
 }
 
@@ -48,4 +61,130 @@
   &.IN_PROGRESS { background: var(--accent-dim); color: var(--accent); }
   &.COMPLETED   { background: rgba(5,150,105,0.12); color: var(--green); }
   &.OVERDUE     { background: var(--red-soft); color: var(--red); }
+}
+
+.cell-text {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  color: var(--text-primary);
+}
+
+.inline-cell-field {
+  width: 100%;
+  margin: 0;
+}
+
+.inline-cell-field input,
+.inline-cell-field mat-select {
+  font-size: 13px;
+}
+
+.inline-cell-field ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+.inline-cell-field ::ng-deep .mat-mdc-text-field-wrapper {
+  background: var(--bg-card);
+}
+
+.actions-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  white-space: nowrap;
+}
+
+.actions-cell .mat-mdc-icon-button,
+.actions-cell .mat-icon-button {
+  flex: 0 0 auto;
+}
+
+body.dark-theme app-reminders {
+  .table-wrapper {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(17, 24, 39, 0.96));
+    border-color: var(--border);
+    box-shadow: var(--shadow-md);
+  }
+
+  .table-wrapper table {
+    background: transparent;
+    --mat-table-header-headline-color: #F8FAFC;
+    --mat-table-row-item-label-text-color: #F8FAFC;
+    --mat-table-background-color: transparent;
+    color: var(--text-primary) !important;
+  }
+
+  .table-wrapper th.mat-header-cell,
+  .table-wrapper th.mat-mdc-header-cell {
+    background: #0B1220 !important;
+    color: #F8FAFC !important;
+    border-bottom: 1px solid var(--border-subtle) !important;
+  }
+
+  .table-wrapper td.mat-cell,
+  .table-wrapper td.mat-mdc-cell {
+    background: rgba(15, 23, 42, 0.92) !important;
+    color: var(--text-primary) !important;
+    border-bottom-color: var(--border-subtle) !important;
+  }
+
+  .table-wrapper tbody,
+  .table-wrapper tr,
+  .table-wrapper th,
+  .table-wrapper td,
+  .table-wrapper th *,
+  .table-wrapper td * {
+    color: #F8FAFC !important;
+  }
+
+  .table-wrapper th,
+  .table-wrapper td,
+  .table-wrapper .mat-mdc-table,
+  .table-wrapper .mat-mdc-cell,
+  .table-wrapper .mat-mdc-header-cell,
+  .table-wrapper .mdc-data-table__cell,
+  .table-wrapper .mdc-data-table__header-cell {
+    color: var(--text-primary) !important;
+  }
+
+  .table-wrapper tr.mat-row:hover td,
+  .table-wrapper tr.mat-mdc-row:hover td {
+    background: rgba(30, 41, 59, 0.95) !important;
+  }
+
+  .status-chip {
+    &.PENDING     { background: rgba(71, 85, 105, 0.34); color: #CBD5E1; }
+    &.IN_PROGRESS { background: rgba(14, 165, 233, 0.20); color: #7DD3FC; }
+    &.COMPLETED   { background: rgba(16, 185, 129, 0.20); color: #6EE7B7; }
+    &.OVERDUE     { background: rgba(239, 68, 68, 0.20); color: #FCA5A5; }
+  }
+
+  .table-wrapper .mat-mdc-icon-button,
+  .table-wrapper .mat-icon-button {
+    color: var(--text-secondary);
+  }
+
+  .table-wrapper .mat-icon {
+    color: var(--text-primary);
+  }
+
+  .cell-text {
+    color: #F8FAFC;
+  }
+
+  .inline-cell-field ::ng-deep .mat-mdc-text-field-wrapper {
+    background: rgba(15, 23, 42, 0.96);
+  }
+
+  .inline-cell-field ::ng-deep .mat-mdc-input-element,
+  .inline-cell-field ::ng-deep .mat-mdc-select-value,
+  .inline-cell-field ::ng-deep .mat-mdc-select-arrow,
+  .inline-cell-field ::ng-deep .mat-mdc-select-placeholder,
+  .inline-cell-field ::ng-deep .mat-mdc-floating-label,
+  .inline-cell-field ::ng-deep .mat-mdc-form-field-infix {
+    color: #F8FAFC !important;
+  }
 }

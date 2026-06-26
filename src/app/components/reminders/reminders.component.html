@@ -11,40 +11,87 @@
     <table mat-table [dataSource]="reminders()" style="width: 100%;">
       <ng-container matColumnDef="title">
         <th mat-header-cell *matHeaderCellDef> Título </th>
-        <td mat-cell *matCellDef="let r"> {{r.title}} </td>
+        <td mat-cell *matCellDef="let r">
+          @if (isEditing(r)) {
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="inline-cell-field">
+              <input matInput type="text" [formControl]="editForm.controls.title" placeholder="Título" />
+            </mat-form-field>
+          } @else {
+            <span class="cell-text">{{ r.title }}</span>
+          }
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="status">
         <th mat-header-cell *matHeaderCellDef> Estado </th>
         <td mat-cell *matCellDef="let r">
-          <span class="status-chip {{r.status}}">{{getStatusLabel(r.status)}}</span>
+          @if (isEditing(r)) {
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="inline-cell-field">
+              <mat-select [formControl]="editForm.controls.status">
+                <mat-option value="PENDING">Pendiente</mat-option>
+                <mat-option value="IN_PROGRESS">En Progreso</mat-option>
+                <mat-option value="COMPLETED">Completado</mat-option>
+                <mat-option value="OVERDUE">Vencido</mat-option>
+              </mat-select>
+            </mat-form-field>
+          } @else {
+            <span class="status-chip {{r.status}}">{{getStatusLabel(r.status)}}</span>
+          }
         </td>
       </ng-container>
 
       <ng-container matColumnDef="startDate">
         <th mat-header-cell *matHeaderCellDef> Fecha Inicio </th>
-        <td mat-cell *matCellDef="let r"> {{r.startDate | date:'dd/MM/yy'}} </td>
+        <td mat-cell *matCellDef="let r">
+          @if (isEditing(r)) {
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="inline-cell-field">
+              <input matInput type="date" [formControl]="editForm.controls.startDate" />
+            </mat-form-field>
+          } @else {
+            <span class="cell-text">{{ r.startDate | date:'dd/MM/yy' }}</span>
+          }
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="dueDate">
         <th mat-header-cell *matHeaderCellDef> Fecha Vencimiento </th>
-        <td mat-cell *matCellDef="let r"> {{r.dueDate | date:'dd/MM/yy'}} </td>
+        <td mat-cell *matCellDef="let r">
+          @if (isEditing(r)) {
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="inline-cell-field">
+              <input matInput type="date" [formControl]="editForm.controls.dueDate" />
+            </mat-form-field>
+          } @else {
+            <span class="cell-text">{{ r.dueDate | date:'dd/MM/yy' }}</span>
+          }
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef> Acciones </th>
-        <td mat-cell *matCellDef="let r">
-          <button mat-icon-button color="primary" (click)="openEdit(r)">
-            <mat-icon>edit</mat-icon>
-          </button>
-          <button mat-icon-button color="warn" (click)="delete(r.id)">
-            <mat-icon>delete</mat-icon>
-          </button>
+        <td mat-cell *matCellDef="let r" class="actions-cell">
+          @if (isEditing(r)) {
+            <button mat-icon-button color="primary" [disabled]="savingReminder || editForm.invalid" (click)="saveInlineEdit(r, $event)" matTooltip="Guardar">
+              <mat-icon>{{ savingReminder ? 'sync' : 'check' }}</mat-icon>
+            </button>
+            <button mat-icon-button (click)="cancelInlineEdit($event)" matTooltip="Cancelar">
+              <mat-icon>close</mat-icon>
+            </button>
+          } @else {
+            <button mat-icon-button color="primary" (click)="startInlineEdit(r, $event)" matTooltip="Editar en tabla">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="accent" (click)="openEditDialog(r)" matTooltip="Editar completo">
+              <mat-icon>open_in_new</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="delete(r.id!)" matTooltip="Eliminar">
+              <mat-icon>delete</mat-icon>
+            </button>
+          }
         </td>
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;" [class.editing-row]="isEditing(row)"></tr>
     </table>
   </div>
 </div>
