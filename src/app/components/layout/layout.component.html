@@ -1,36 +1,33 @@
-<mat-sidenav-container class="sidenav-container">
-  <mat-sidenav mode="side" opened class="sidenav">
+<div class="app-shell">
+  <header class="app-topbar">
+    <a class="brand-link" routerLink="/dashboard" aria-label="TaskTracker">
+      <app-logo [size]="34" [showText]="true" [onDark]="theme.isDark()" />
+    </a>
 
-    <div class="sidenav-header">
-      <app-logo [size]="38" [showText]="true" [onDark]="true" style="font-size:18px" />
-    </div>
-
-    <mat-nav-list>
+    <nav class="top-nav" aria-label="Navegación principal">
       @for (item of navItems; track item.route) {
-        <a mat-list-item
+        <a mat-button
            [routerLink]="item.route"
-           class="nav-item"
+           class="nav-link"
            routerLinkActive="active-link"
            [routerLinkActiveOptions]="{ exact: false }">
-          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
-          <span matListItemTitle>{{ item.label }}</span>
+          <mat-icon>{{ item.icon }}</mat-icon>
+          <span>{{ item.label }}</span>
         </a>
       }
-    </mat-nav-list>
+    </nav>
 
-    <div class="sidenav-footer">
+    <div class="topbar-actions">
       <button mat-icon-button
               class="theme-toggle"
               (click)="theme.toggle()"
               [matTooltip]="theme.isDark() ? 'Modo claro' : 'Modo oscuro'">
         <mat-icon>{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
       </button>
-      <span class="theme-label">{{ theme.isDark() ? 'Modo oscuro' : 'Modo claro' }}</span>
     </div>
+  </header>
 
-  </mat-sidenav>
-
-  <mat-sidenav-content class="content-area">
+  <main class="content-area">
     <router-outlet />
-  </mat-sidenav-content>
-</mat-sidenav-container>
+  </main>
+</div>

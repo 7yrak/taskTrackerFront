@@ -43,6 +43,62 @@ interface TaskEditFormValue {
   progressActual: number;
 }
 
+interface TaskTableColumnWidths {
+  title: number;
+  project: number;
+  assignee: number;
+  status: number;
+  priority: number;
+  startDate: number;
+  dueDate: number;
+  progressActual: number;
+  progressExpected: number;
+  actions: number;
+}
+
+type TaskTableColumn = keyof TaskTableColumnWidths;
+
+const TASK_TABLE_COLUMN_WIDTHS_STORAGE_KEY = 'tasks.tableColumnWidths';
+
+const DEFAULT_TASK_TABLE_COLUMN_WIDTHS: TaskTableColumnWidths = {
+  title: 430,
+  project: 160,
+  assignee: 210,
+  status: 170,
+  priority: 150,
+  startDate: 112,
+  dueDate: 122,
+  progressActual: 100,
+  progressExpected: 112,
+  actions: 120
+};
+
+const MIN_TASK_TABLE_COLUMN_WIDTHS: TaskTableColumnWidths = {
+  title: 260,
+  project: 130,
+  assignee: 160,
+  status: 145,
+  priority: 125,
+  startDate: 96,
+  dueDate: 96,
+  progressActual: 84,
+  progressExpected: 90,
+  actions: 96
+};
+
+function normalizeTaskTableColumnWidths(raw: Partial<TaskTableColumnWidths> | null | undefined): TaskTableColumnWidths {
+  const widths: TaskTableColumnWidths = { ...DEFAULT_TASK_TABLE_COLUMN_WIDTHS };
+
+  (Object.keys(widths) as TaskTableColumn[]).forEach(column => {
+    const value = Number(raw?.[column]);
+    if (Number.isFinite(value)) {
+      widths[column] = Math.max(MIN_TASK_TABLE_COLUMN_WIDTHS[column], Math.round(value));
+    }
+  });
+
+  return widths;
+}
+
 
 @Component({
   selector: 'app-tasks',
@@ -97,11 +153,12 @@ export class TasksComponent {
 
   projects = toSignal(this.projectService.getAll(), { initialValue: [] as Project[] });
   members  = toSignal(this.memberService.getAll(),  { initialValue: [] as Member[]  });
+  columnWidths = signal<TaskTableColumnWidths>(this.loadColumnWidths());
+  tableStyleVars = computed(() => this.buildTableStyleVars(this.columnWidths()));
 
   displayedColumns = [
     'title',
     'project',
-    'parent',
     'assignee',
     'status',
     'priority',
@@ -120,6 +177,8 @@ export class TasksComponent {
   editingTitleId = signal<number | null>(null);
   editingTaskId = signal<number | null>(null);
   editParentOptions: (TaskNode & { _level?: number })[] = [];
+  private resizingColumn: TaskTableColumn | null = null;
+  private resizeCleanup: (() => void) | null = null;
   editForm = this.fb.group({
     title: ['', Validators.required],
     description: [''],
@@ -165,6 +224,7 @@ export class TasksComponent {
 
   ngOnDestroy() {
     this.editSub.unsubscribe();
+    this.resizeCleanup?.();
   }
 
   setViewMode(mode: 'table' | 'kanban') {
@@ -253,6 +313,79 @@ export class TasksComponent {
     return this.recentlyUpdatedTaskIds().has(taskId);
   }
 
+  startColumnResize(column: TaskTableColumn, event: PointerEvent): void {
+    if (event.button > 0) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const handle = event.currentTarget as HTMLElement | null;
+    if (!handle) {
+      return;
+    }
+
+    this.resizeCleanup?.();
+
+    const startX = event.clientX;
+    const startWidth = this.columnWidths()[column];
+    let active = true;
+
+    const finish = () => {
+      if (!active) {
+        return;
+      }
+      active = false;
+
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', finish);
+      handle.removeEventListener('pointercancel', finish);
+
+      try {
+        if (handle.hasPointerCapture(event.pointerId)) {
+          handle.releasePointerCapture(event.pointerId);
+        }
+      } catch {
+        // Ignorar si el puntero ya se liberó.
+      }
+
+      this.resizingColumn = null;
+      this.saveColumnWidths(this.columnWidths());
+      this.resizeCleanup = null;
+    };
+
+    const onMove = (moveEvent: PointerEvent) => {
+      if (moveEvent.pointerId !== event.pointerId) {
+        return;
+      }
+
+      const delta = moveEvent.clientX - startX;
+      const nextWidth = this.clampColumnWidth(column, startWidth + delta);
+
+      this.columnWidths.update(current => (
+        current[column] === nextWidth ? current : { ...current, [column]: nextWidth }
+      ));
+    };
+
+    this.resizingColumn = column;
+    this.resizeCleanup = finish;
+
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', finish);
+    handle.addEventListener('pointercancel', finish);
+
+    try {
+      handle.setPointerCapture(event.pointerId);
+    } catch {
+      // No todos los navegadores permiten capturar el puntero en todos los casos.
+    }
+  }
+
+  isColumnResizing(column: TaskTableColumn): boolean {
+    return this.resizingColumn === column;
+  }
+
   // ── Tree building ──────────────────────────────────────────────────────────
 
   private buildTree(tasks: Task[]): TaskNode[] {
@@ -276,6 +409,42 @@ export class TasksComponent {
     };
     assignLevels(roots, 0);
     return roots;
+  }
+
+  private buildTableStyleVars(widths: TaskTableColumnWidths): Record<string, string> {
+    return {
+      '--task-col-title': `${widths.title}px`,
+      '--task-col-project': `${widths.project}px`,
+      '--task-col-assignee': `${widths.assignee}px`,
+      '--task-col-status': `${widths.status}px`,
+      '--task-col-priority': `${widths.priority}px`,
+      '--task-col-startDate': `${widths.startDate}px`,
+      '--task-col-dueDate': `${widths.dueDate}px`,
+      '--task-col-progressActual': `${widths.progressActual}px`,
+      '--task-col-progressExpected': `${widths.progressExpected}px`,
+      '--task-col-actions': `${widths.actions}px`
+    };
+  }
+
+  private loadColumnWidths(): TaskTableColumnWidths {
+    try {
+      const raw = localStorage.getItem(TASK_TABLE_COLUMN_WIDTHS_STORAGE_KEY);
+      return normalizeTaskTableColumnWidths(raw ? JSON.parse(raw) as Partial<TaskTableColumnWidths> : null);
+    } catch {
+      return { ...DEFAULT_TASK_TABLE_COLUMN_WIDTHS };
+    }
+  }
+
+  private saveColumnWidths(widths: TaskTableColumnWidths): void {
+    try {
+      localStorage.setItem(TASK_TABLE_COLUMN_WIDTHS_STORAGE_KEY, JSON.stringify(widths));
+    } catch {
+      // Ignorar errores de almacenamiento en entornos restringidos.
+    }
+  }
+
+  private clampColumnWidth(column: TaskTableColumn, width: number): number {
+    return Math.max(MIN_TASK_TABLE_COLUMN_WIDTHS[column], Math.round(width));
   }
 
   private filterTree(nodes: TaskNode[]): TaskNode[] {

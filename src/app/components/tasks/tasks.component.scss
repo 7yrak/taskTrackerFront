@@ -101,26 +101,65 @@
 
 // ─── Tabla ────────────────────────────────────────────────────────────────
 .tasks-table {
-  width: 100%;
+  width: max-content;
   table-layout: fixed;
   min-width: 100%;
-  --mat-table-header-container-height: 36px;
-  --mat-table-row-item-container-height: 36px;
+  --mat-table-header-container-height: 44px;
+  --mat-table-row-item-container-height: auto;
   --mat-table-background-color: var(--bg-card);
   --mat-table-row-item-label-text-color: var(--text-primary);
   --mat-table-header-headline-color: var(--text-secondary);
+  --task-col-title: 430px;
+  --task-col-project: 160px;
+  --task-col-assignee: 210px;
+  --task-col-status: 170px;
+  --task-col-priority: 150px;
+  --task-col-startDate: 112px;
+  --task-col-dueDate: 122px;
+  --task-col-progressActual: 100px;
+  --task-col-progressExpected: 112px;
+  --task-col-actions: 120px;
 
-  .mat-column-title { width: 220px; }
-  .mat-column-project { width: 140px; }
-  .mat-column-parent { width: 145px; }
-  .mat-column-assignee { width: 170px; }
-  .mat-column-status { width: 160px; }
-  .mat-column-priority { width: 130px; }
-  .mat-column-startDate { width: 104px; }
-  .mat-column-dueDate { width: 110px; }
-  .mat-column-progressActual { width: 92px; }
-  .mat-column-progressExpected { width: 96px; }
-  .mat-column-actions { width: 112px; }
+  .mat-column-title {
+    width: var(--task-col-title);
+    min-width: var(--task-col-title);
+  }
+  .mat-column-project {
+    width: var(--task-col-project);
+    min-width: var(--task-col-project);
+  }
+  .mat-column-assignee {
+    width: var(--task-col-assignee);
+    min-width: var(--task-col-assignee);
+  }
+  .mat-column-status {
+    width: var(--task-col-status);
+    min-width: var(--task-col-status);
+  }
+  .mat-column-priority {
+    width: var(--task-col-priority);
+    min-width: var(--task-col-priority);
+  }
+  .mat-column-startDate {
+    width: var(--task-col-startDate);
+    min-width: var(--task-col-startDate);
+  }
+  .mat-column-dueDate {
+    width: var(--task-col-dueDate);
+    min-width: var(--task-col-dueDate);
+  }
+  .mat-column-progressActual {
+    width: var(--task-col-progressActual);
+    min-width: var(--task-col-progressActual);
+  }
+  .mat-column-progressExpected {
+    width: var(--task-col-progressExpected);
+    min-width: var(--task-col-progressExpected);
+  }
+  .mat-column-actions {
+    width: var(--task-col-actions);
+    min-width: var(--task-col-actions);
+  }
 
   th.mat-mdc-header-cell {
     font-weight: 700;
@@ -132,6 +171,9 @@
     background: var(--orange-border);
     border-bottom: none !important;
     padding: 0 8px;
+    padding-right: 16px;
+    position: relative;
+    overflow: visible;
 
     &:first-of-type { padding-left: 16px; }
     &:last-of-type  { padding-right: 4px; }
@@ -163,17 +205,56 @@
     }
   }
 
+  .column-resize-handle {
+    position: absolute;
+    top: 0;
+    right: -2px;
+    width: 12px;
+    height: 100%;
+    cursor: col-resize;
+    touch-action: none;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &::before {
+      content: '';
+      width: 2px;
+      height: calc(100% - 14px);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--border) 80%, var(--accent));
+      opacity: 0.8;
+    }
+
+    &:hover::before {
+      background: var(--accent);
+    }
+  }
+
+  th.mat-mdc-header-cell:hover .column-resize-handle,
+  .column-resize-handle:focus-visible {
+    opacity: 1;
+  }
+
   td.mat-mdc-cell {
     color: var(--text-primary);
     border-bottom-color: var(--border-subtle) !important;
     font-size: 13px;
-    padding: 0 8px;
+    padding: 6px 8px;
     transition: background var(--transition), color var(--transition);
     overflow: hidden;
     text-overflow: ellipsis;
 
     &:first-of-type { padding-left: 12px; }
     &:last-of-type  { padding-right: 4px; }
+  }
+
+  .mat-column-title {
+    overflow: visible;
+    text-overflow: clip;
   }
 
   // Fila padre
@@ -209,9 +290,12 @@
   // ── Celda título ──────────────────────────────────────────────────────
   .task-title-cell {
     display: flex;
-    align-items: center;
-    overflow: hidden;
+    align-items: flex-start;
+    overflow: visible;
     gap: 2px;
+    width: 100%;
+    min-width: 0;
+    flex: 1 1 auto;
 
     .toggle-btn {
       --mdc-icon-button-state-layer-size: 26px;
@@ -233,11 +317,14 @@
       font-size: 13px;
       font-weight: 500;
       color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+      overflow-wrap: anywhere;
+      word-break: break-word;
       flex: 1;
       min-width: 0;
+      line-height: 1.35;
 
       &.parent-name { font-weight: 700; }
     }
@@ -264,6 +351,8 @@
       align-items: center;
       gap: 2px;
       margin-left: 6px;
+      margin-top: 1px;
+      align-self: flex-start;
       color: var(--text-secondary);
       font-size: 10px;
       font-weight: 600;
@@ -511,31 +600,6 @@
   overflow-x: auto;
   overflow-y: hidden;
   padding-bottom: 8px;
-}
-
-@media (max-width: 1200px) {
-  .tasks-table {
-    .mat-column-title { width: 200px; }
-    .mat-column-project { width: 122px; }
-    .mat-column-parent { width: 130px; }
-    .mat-column-assignee { width: 145px; }
-    .mat-column-status { width: 132px; }
-    .mat-column-priority { width: 116px; }
-    .mat-column-startDate { width: 92px; }
-    .mat-column-dueDate { width: 98px; }
-    .mat-column-progressActual { width: 84px; }
-    .mat-column-progressExpected { width: 88px; }
-    .mat-column-actions { width: 96px; }
-  }
-}
-
-@media (max-width: 900px) {
-  .tasks-table {
-    .mat-column-parent,
-    .mat-column-progressExpected {
-      width: 120px;
-    }
-  }
 }
 
 .kanban-board {

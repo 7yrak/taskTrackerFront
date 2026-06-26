@@ -95,7 +95,7 @@
   <!-- Tabla árbol -->
   <div class="table-wrapper" *ngIf="viewMode === 'table'">
     <div class="table-scroll">
-      <table mat-table [dataSource]="dataSource" class="tasks-table" [trackBy]="trackById" [formGroup]="editForm">
+      <table mat-table [dataSource]="dataSource" class="tasks-table" [trackBy]="trackById" [formGroup]="editForm" [ngStyle]="tableStyleVars()">
 
         <!-- Columna Tarea (con árbol) -->
         <ng-container matColumnDef="title">
@@ -106,6 +106,7 @@
               <mat-icon class="sort-icon" *ngIf="getSortDirection('title') === 'desc'">arrow_downward</mat-icon>
               <span class="sort-order-badge" *ngIf="getSortOrder('title')">{{ getSortOrder('title') }}</span>
             </div>
+            <span class="column-resize-handle" (pointerdown)="startColumnResize('title', $event)" aria-label="Redimensionar columna Tarea"></span>
           </th>
           <td mat-cell *matCellDef="let node">
             <div class="task-title-cell" [style.paddingLeft.px]="node.level * 20">
@@ -153,6 +154,7 @@
               <mat-icon class="sort-icon" *ngIf="getSortDirection('project') === 'desc'">arrow_downward</mat-icon>
               <span class="sort-order-badge" *ngIf="getSortOrder('project')">{{ getSortOrder('project') }}</span>
             </div>
+            <span class="column-resize-handle" (pointerdown)="startColumnResize('project', $event)" aria-label="Redimensionar columna Proyecto"></span>
           </th>
           <td mat-cell *matCellDef="let node">
             @if (editingTaskId() === node.id) {
@@ -174,31 +176,6 @@
           </td>
         </ng-container>
 
-        <!-- Padre -->
-        <ng-container matColumnDef="parent">
-          <th mat-header-cell *matHeaderCellDef>
-            <span>Padre</span>
-          </th>
-          <td mat-cell *matCellDef="let node">
-            @if (editingTaskId() === node.id) {
-              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="inline-cell-field">
-                <mat-select formControlName="parentId" aria-label="Padre">
-                  <mat-option [value]="null">Ninguna (tarea raíz)</mat-option>
-                  @for (t of editParentOptions; track t.id) {
-                    <mat-option [value]="t.id">
-                      {{ '·'.repeat(t['_level'] ?? 0) }} {{ t.title }}
-                    </mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-            } @else {
-              <span class="cell-text" [matTooltip]="getTaskTitle(node.parentId) || 'Tarea raíz'" matTooltipShowDelay="600">
-                {{ getTaskTitle(node.parentId) || '—' }}
-              </span>
-            }
-          </td>
-        </ng-container>
-
         <!-- Asignado a -->
         <ng-container matColumnDef="assignee">
           <th mat-header-cell *matHeaderCellDef>
@@ -208,6 +185,7 @@
               <mat-icon class="sort-icon" *ngIf="getSortDirection('assignee') === 'desc'">arrow_downward</mat-icon>
               <span class="sort-order-badge" *ngIf="getSortOrder('assignee')">{{ getSortOrder('assignee') }}</span>
             </div>
+            <span class="column-resize-handle" (pointerdown)="startColumnResize('assignee', $event)" aria-label="Redimensionar columna Asignado a"></span>
           </th>
           <td mat-cell *matCellDef="let node">
             @if (editingTaskId() === node.id) {
@@ -233,6 +211,7 @@
               <mat-icon class="sort-icon" *ngIf="getSortDirection('status') === 'desc'">arrow_downward</mat-icon>
               <span class="sort-order-badge" *ngIf="getSortOrder('status')">{{ getSortOrder('status') }}</span>
             </div>
+            <span class="column-resize-handle" (pointerdown)="startColumnResize('status', $event)" aria-label="Redimensionar columna Estado"></span>
           </th>
           <td mat-cell *matCellDef="let node">
             @if (editingTaskId() === node.id) {
@@ -274,6 +253,7 @@
               <mat-icon class="sort-icon" *ngIf="getSortDirection('priority') === 'desc'">arrow_downward</mat-icon>
               <span class="sort-order-badge" *ngIf="getSortOrder('priority')">{{ getSortOrder('priority') }}</span>
             </div>
+            <span class="column-resize-handle" (pointerdown)="startColumnResize('priority', $event)" aria-label="Redimensionar columna Prioridad"></span>
           </th>
           <td mat-cell *matCellDef="let node">
             @if (editingTaskId() === node.id) {
@@ -315,6 +295,7 @@
               <mat-icon class="sort-icon" *ngIf="getSortDirection('startDate') === 'desc'">arrow_downward</mat-icon>
               <span class="sort-order-badge" *ngIf="getSortOrder('startDate')">{{ getSortOrder('startDate') }}</span>
             </div>
+            <span class="column-resize-handle" (pointerdown)="startColumnResize('startDate', $event)" aria-label="Redimensionar columna Inicio"></span>
           </th>
           <td mat-cell *matCellDef="let node">
             @if (editingTaskId() === node.id) {
@@ -340,6 +321,7 @@
               <mat-icon class="sort-icon" *ngIf="getSortDirection('dueDate') === 'desc'">arrow_downward</mat-icon>
               <span class="sort-order-badge" *ngIf="getSortOrder('dueDate')">{{ getSortOrder('dueDate') }}</span>
             </div>
+            <span class="column-resize-handle" (pointerdown)="startColumnResize('dueDate', $event)" aria-label="Redimensionar columna Vencimiento"></span>
           </th>
           <td mat-cell *matCellDef="let node">
             @if (editingTaskId() === node.id) {
@@ -370,6 +352,7 @@
               <mat-icon class="sort-icon" *ngIf="getSortDirection('progressActual') === 'desc'">arrow_downward</mat-icon>
               <span class="sort-order-badge" *ngIf="getSortOrder('progressActual')">{{ getSortOrder('progressActual') }}</span>
             </div>
+            <span class="column-resize-handle" (pointerdown)="startColumnResize('progressActual', $event)" aria-label="Redimensionar columna % Real"></span>
           </th>
           <td mat-cell *matCellDef="let node">
             <div class="progress-cell">
@@ -408,6 +391,7 @@
               <mat-icon class="sort-icon" *ngIf="getSortDirection('progressExpected') === 'desc'">arrow_downward</mat-icon>
               <span class="sort-order-badge" *ngIf="getSortOrder('progressExpected')">{{ getSortOrder('progressExpected') }}</span>
             </div>
+            <span class="column-resize-handle" (pointerdown)="startColumnResize('progressExpected', $event)" aria-label="Redimensionar columna % Esperado"></span>
           </th>
           <td mat-cell *matCellDef="let node">
             @if (node.progressExpected !== null && node.progressExpected !== undefined) {
@@ -424,7 +408,9 @@
 
         <!-- Acciones -->
         <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef></th>
+          <th mat-header-cell *matHeaderCellDef>
+            <span class="column-resize-handle" (pointerdown)="startColumnResize('actions', $event)" aria-label="Redimensionar columna Acciones"></span>
+          </th>
           <td mat-cell *matCellDef="let node">
             <div class="actions-cell">
               @if (editingTaskId() === node.id) {
