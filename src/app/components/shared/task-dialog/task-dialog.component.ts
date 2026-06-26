@@ -10,7 +10,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Subscription } from 'rxjs';
+import { Subscription, distinctUntilChanged, startWith } from 'rxjs';
 import { Task, TaskComment, STATUS_LABELS, PRIORITY_LABELS } from '../../../models/task.model';
 import { Project } from '../../../models/project.model';
 import { Member } from '../../../models/member.model';
@@ -332,6 +332,7 @@ export class TaskDialogComponent implements OnInit, OnDestroy {
   private ref = inject(MatDialogRef<TaskDialogComponent>);
   private fb = inject(FormBuilder);
   private sub = new Subscription();
+  private projectIdControl!: FormControl<number | null>;
 
   parentOptions: (Task & { _level?: number })[] = [];
   isDerivedTask = !!this.data.task?.hasChildren;
@@ -353,13 +354,12 @@ export class TaskDialogComponent implements OnInit, OnDestroy {
   newComment = new FormControl('');
 
   ngOnInit() {
-    this.sub.add(this.form.get('projectId')?.valueChanges.subscribe(projectId => {
-      this.buildParentOptions(projectId);
-      const currentParentId = this.form.get('parentId')?.value;
-      if (currentParentId && !this.parentOptions.some(p => p.id === currentParentId)) {
-        this.form.patchValue({ parentId: null }, { emitEvent: false });
-      }
-    }));
+    this.projectIdControl = this.form.get('projectId') as FormControl<number | null>;
+    this.sub.add(this.projectIdControl.valueChanges
+      .pipe(startWith(this.projectIdControl.value), distinctUntilChanged())
+      .subscribe(projectId => {
+        this.updateParentOptions(projectId);
+      }));
 
     if (this.data.task) {
       const t = this.data.task;
@@ -398,14 +398,14 @@ export class TaskDialogComponent implements OnInit, OnDestroy {
       this.form.patchValue({ parentId: this.data.defaultParentId });
     }
 
-    this.buildParentOptions(this.form.get('projectId')?.value);
+    this.updateParentOptions(this.form.get('projectId')?.value);
   }
 
   ngOnDestroy() {
     this.sub.unsubscribe();
   }
 
-  private buildParentOptions(projectId: number | null | undefined) {
+  private updateParentOptions(projectId: number | null | undefined) {
     if (!projectId) {
       this.parentOptions = [];
       return;
@@ -413,11 +413,28 @@ export class TaskDialogComponent implements OnInit, OnDestroy {
 
     const editingId = this.data.task?.id;
     const excludedIds = editingId != null ? this.getTaskAndDescendantIds(editingId) : new Set<number>();
-    const all = this.data.allTasks.filter(t => t.projectId === projectId && !excludedIds.has(t.id));
+    const projectTasks = this.data.allTasks.filter(t => t.projectId === projectId && !excludedIds.has(t.id));
+    const childCounts = new Map<number, number>();
+
+    for (const task of projectTasks) {
+      childCounts.set(task.id, 0);
+    }
+    for (const task of projectTasks) {
+      if (task.parentId != null && childCounts.has(task.parentId)) {
+        childCounts.set(task.parentId, (childCounts.get(task.parentId) ?? 0) + 1);
+      }
+    }
+
+    const eligible = projectTasks.filter(task =>
+      task.parentId == null || (childCounts.get(task.id) ?? 0) > 0
+    );
+
     const map = new Map<number, Task & { _level: number; _children: number[] }>();
     const roots: number[] = [];
 
-    for (const t of all) map.set(t.id, { ...t, _level: 0, _children: [] });
+    for (const task of eligible) {
+      map.set(task.id, { ...task, _level: 0, _children: [] });
+    }
     for (const node of map.values()) {
       if (node.parentId != null && map.has(node.parentId)) {
         map.get(node.parentId)!._children.push(node.id);
@@ -437,6 +454,11 @@ export class TaskDialogComponent implements OnInit, OnDestroy {
     };
     walk(roots, 0);
     this.parentOptions = result;
+
+    const currentParentId = this.form.get('parentId')?.value;
+    if (currentParentId != null && !this.parentOptions.some(p => p.id === currentParentId)) {
+      this.form.patchValue({ parentId: null }, { emitEvent: false });
+    }
   }
 
   private getTaskAndDescendantIds(taskId: number): Set<number> {

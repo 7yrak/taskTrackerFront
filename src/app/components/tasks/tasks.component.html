@@ -433,7 +433,10 @@
                 <button mat-icon-button class="action-btn" matTooltip="Editar en modal" (click)="openEdit(node, $event)">
                   <mat-icon>edit_note</mat-icon>
                 </button>
-                <button mat-icon-button class="action-btn" matTooltip="Agregar subtarea" (click)="openCreate(node.id)"
+                <button mat-icon-button class="action-btn"
+                        [disabled]="!canBeParent(node)"
+                        [matTooltip]="canBeParent(node) ? 'Agregar subtarea' : 'Solo las tareas raíz o con subtareas pueden tener subtareas'"
+                        (click)="openCreate(node.id)"
                         style="color:#6366F1">
                   <mat-icon>add_circle_outline</mat-icon>
                 </button>

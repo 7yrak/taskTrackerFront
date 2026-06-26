@@ -30,12 +30,6 @@
     </div>
   } @else {
     <div id="dashboard-content">
-      <div class="dashboard-ambient" aria-hidden="true">
-        <span class="orb orb-blue"></span>
-        <span class="orb orb-orange"></span>
-        <span class="orb orb-purple"></span>
-      </div>
-
       <!-- ── KPI SUMMARY (Critical Metrics) ────────────────────────────────────── -->
       <div class="kpi-summary">
         <button type="button" class="kpi-card kpi-health" (click)="openTaskBucket('global')" matTooltip="Ver tareas críticas">
@@ -98,27 +92,6 @@
           </div>
         </button>
       </div>
-
-      <section class="executive-hero">
-        <div class="hero-metrics">
-          <div class="hero-metric metric-primary">
-            <span class="metric-label">Estado global</span>
-            <span class="metric-value" [ngClass]="'health-text-' + kpis().globalHealth">{{ healthLabel(kpis().globalHealth) }}</span>
-          </div>
-          <div class="hero-metric">
-            <span class="metric-label">Proyectos</span>
-            <span class="metric-value">{{ stats().totalProjects }}</span>
-          </div>
-          <div class="hero-metric">
-            <span class="metric-label">Tareas</span>
-            <span class="metric-value">{{ stats().totalTasks }}</span>
-          </div>
-          <div class="hero-metric">
-            <span class="metric-label">Miembros</span>
-            <span class="metric-value">{{ stats().totalMembers }}</span>
-          </div>
-        </div>
-      </section>
 
       <section class="insight-strip">
         @for (item of followUpAlerts(); track item.label) {
@@ -183,27 +156,9 @@
             }
           </div>
         </article>
+      </section>
 
-        <article class="analysis-card accent-pink">
-          <header class="analysis-card-header">
-            <div>
-              <span class="card-kicker">Tendencia</span>
-              <h3>Bloqueadas y vencidas por semana</h3>
-            </div>
-          </header>
-          <div class="weekly-chart">
-            @for (point of weeklyTrend(); track point.label) {
-              <div class="weekly-column">
-                <div class="weekly-stacks">
-                  <div class="weekly-blocked" [style.height.%]="barWidth(point.blocked, 6)"></div>
-                  <div class="weekly-overdue" [style.height.%]="barWidth(point.overdue, 6)"></div>
-                </div>
-                <div class="weekly-label">{{ point.label }}</div>
-              </div>
-            }
-          </div>
-        </article>
-
+      <section class="analytics-grid analytics-grid-lower">
         <article class="analysis-card accent-purple">
           <header class="analysis-card-header">
             <div>
@@ -271,7 +226,6 @@
             </div>
           </div>
         </article>
-
       </section>
 
   <!-- ── PROYECTOS CRÍTICOS (Red Alert Section) ──────────────────────────────── -->

@@ -63,12 +63,6 @@ export interface CriticalTask {
   childrenNodes?: CriticalTask[];
 }
 
-interface WeeklyAlertPoint {
-  label: string;
-  blocked: number;
-  overdue: number;
-}
-
 interface TaskAgeAlert {
   task: Task;
   ageDays: number;
@@ -206,28 +200,6 @@ export class DashboardComponent implements OnInit {
     .sort((a, b) => (b.avgActual ?? 0) - (a.avgActual ?? 0))
     .slice(0, 6)
   );
-
-  weeklyTrend = computed((): WeeklyAlertPoint[] => {
-    const weeks = new Map<string, WeeklyAlertPoint>();
-    const now = new Date();
-    for (let i = 7; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i * 7);
-      const label = this.weekLabel(date);
-      weeks.set(label, { label, blocked: 0, overdue: 0 });
-    }
-
-    for (const task of this.allTasks()) {
-      if (!this.shouldIncludeInMonitoring(task)) continue;
-      const label = this.weekLabel(this.parseAnyDate(task.updatedAt));
-      if (!label || !weeks.has(label)) continue;
-      const bucket = weeks.get(label)!;
-      if (task.status === 'BLOCKED') bucket.blocked++;
-      if (this.isOverdue(task)) bucket.overdue++;
-    }
-
-    return [...weeks.values()];
-  });
 
   memberRanking = computed(() => {
     return this.stats().memberLoad.slice(0, 6);
@@ -752,15 +724,6 @@ export class DashboardComponent implements OnInit {
       return isNaN(parsed.getTime()) ? null : parsed;
     }
     return null;
-  }
-
-  private weekLabel(date: Date | null): string {
-    if (!date) return '';
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    d.setDate(diff);
-    return d.toLocaleDateString('es-AR', { month: 'short', day: '2-digit' });
   }
   progressTooltip(t: Task) {
     const s = this.progressStatus(t);

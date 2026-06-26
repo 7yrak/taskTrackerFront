@@ -774,6 +774,10 @@ export class TasksComponent {
     });
   }
 
+  canBeParent(task: TaskNode | Task): boolean {
+    return task.parentId == null || task.hasChildren;
+  }
+
   openEdit(task: Task, event?: MouseEvent) {
     event?.stopPropagation();
     event?.preventDefault();
@@ -1135,10 +1139,22 @@ export class TasksComponent {
 
     const excludedIds = this.getTaskAndDescendantIds(editingId);
     const all = this.allTasks.filter(t => t.projectId === projectId && !excludedIds.has(t.id));
+    const childCounts = new Map<number, number>();
+
+    for (const task of all) {
+      childCounts.set(task.id, 0);
+    }
+    for (const task of all) {
+      if (task.parentId != null && childCounts.has(task.parentId)) {
+        childCounts.set(task.parentId, (childCounts.get(task.parentId) ?? 0) + 1);
+      }
+    }
+
+    const eligibleTasks = all.filter(task => task.parentId == null || (childCounts.get(task.id) ?? 0) > 0);
     const map = new Map<number, TaskNode & { _level?: number; _children: number[] }>();
     const roots: number[] = [];
 
-    for (const task of all) {
+    for (const task of eligibleTasks) {
       map.set(task.id, { ...(task as TaskNode), _level: 0, _children: [] });
     }
 
