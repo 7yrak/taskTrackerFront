@@ -115,8 +115,8 @@
   --task-col-title: 500px;
   --task-col-project: 120px;
   --task-col-assignee: 120px;
-  --task-col-status: 105px;
-  --task-col-priority: 80px;
+  --task-col-status: 135px;
+  --task-col-priority: 90px;
   --task-col-startDate: 64px;
   --task-col-dueDate: 78px;
   --task-col-progressActual: 64px;
@@ -124,28 +124,24 @@
   --task-col-actions: 112px;
 
   .mat-column-title {
-    width: auto;
+    width: 42%;
     min-width: var(--task-col-title);
   }
   .mat-column-project {
-    width: var(--task-col-project);
+    width: 9%;
     min-width: var(--task-col-project);
-    max-width: var(--task-col-project);
   }
   .mat-column-assignee {
-    width: var(--task-col-assignee);
+    width: 11%;
     min-width: var(--task-col-assignee);
-    max-width: var(--task-col-assignee);
   }
   .mat-column-status {
-    width: var(--task-col-status);
+    width: 8%;
     min-width: var(--task-col-status);
-    max-width: var(--task-col-status);
   }
   .mat-column-priority {
-    width: var(--task-col-priority);
+    width: 6%;
     min-width: var(--task-col-priority);
-    max-width: var(--task-col-priority);
   }
   .mat-column-startDate {
     width: var(--task-col-startDate);
