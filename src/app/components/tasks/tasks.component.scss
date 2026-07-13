@@ -104,7 +104,7 @@
 
 // ─── Tabla ────────────────────────────────────────────────────────────────
 .tasks-table {
-  width: max-content;
+  width: 100%;
   table-layout: fixed;
   min-width: 100%;
   --mat-table-header-container-height: 44px;
@@ -113,55 +113,64 @@
   --mat-table-row-item-label-text-color: var(--text-primary);
   --mat-table-header-headline-color: var(--text-secondary);
   --task-col-title: 500px;
-  --task-col-project: 160px;
-  --task-col-assignee: 210px;
-  --task-col-status: 170px;
-  --task-col-priority: 150px;
-  --task-col-startDate: 112px;
-  --task-col-dueDate: 122px;
-  --task-col-progressActual: 100px;
-  --task-col-progressExpected: 112px;
-  --task-col-actions: 150px;
+  --task-col-project: 120px;
+  --task-col-assignee: 120px;
+  --task-col-status: 105px;
+  --task-col-priority: 80px;
+  --task-col-startDate: 64px;
+  --task-col-dueDate: 78px;
+  --task-col-progressActual: 64px;
+  --task-col-progressExpected: 74px;
+  --task-col-actions: 112px;
 
   .mat-column-title {
-    width: var(--task-col-title);
+    width: auto;
     min-width: var(--task-col-title);
   }
   .mat-column-project {
     width: var(--task-col-project);
     min-width: var(--task-col-project);
+    max-width: var(--task-col-project);
   }
   .mat-column-assignee {
     width: var(--task-col-assignee);
     min-width: var(--task-col-assignee);
+    max-width: var(--task-col-assignee);
   }
   .mat-column-status {
     width: var(--task-col-status);
     min-width: var(--task-col-status);
+    max-width: var(--task-col-status);
   }
   .mat-column-priority {
     width: var(--task-col-priority);
     min-width: var(--task-col-priority);
+    max-width: var(--task-col-priority);
   }
   .mat-column-startDate {
     width: var(--task-col-startDate);
     min-width: var(--task-col-startDate);
+    max-width: var(--task-col-startDate);
   }
   .mat-column-dueDate {
     width: var(--task-col-dueDate);
     min-width: var(--task-col-dueDate);
+    max-width: var(--task-col-dueDate);
   }
   .mat-column-progressActual {
     width: var(--task-col-progressActual);
     min-width: var(--task-col-progressActual);
+    max-width: var(--task-col-progressActual);
   }
   .mat-column-progressExpected {
     width: var(--task-col-progressExpected);
     min-width: var(--task-col-progressExpected);
+    max-width: var(--task-col-progressExpected);
   }
   .mat-column-actions {
     width: var(--task-col-actions);
     min-width: var(--task-col-actions);
+    max-width: var(--task-col-actions);
   }
 
   th.mat-mdc-header-cell {
@@ -431,6 +440,11 @@
           background: color-mix(in srgb, var(--accent-dim) 22%, var(--bg-surface));
         }
       }
+    }
+
+    .comments-trigger-table {
+      margin-left: 4px;
+      padding: 3px 6px;
     }
   }
 

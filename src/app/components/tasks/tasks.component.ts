@@ -57,7 +57,7 @@ interface TaskTableColumnWidths {
 
 type TaskTableColumn = keyof TaskTableColumnWidths;
 
-const TASK_TABLE_COLUMN_WIDTHS_STORAGE_KEY = 'tasks.tableColumnWidths';
+const TASK_TABLE_COLUMN_WIDTHS_STORAGE_KEY = 'tasks.tableColumnWidths.v2';
 
 const DEFAULT_TASK_TABLE_COLUMN_WIDTHS: TaskTableColumnWidths = {
   title: 500,

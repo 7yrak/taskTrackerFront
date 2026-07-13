@@ -144,7 +144,9 @@
                         (pointerdown)="$event.stopPropagation()"
                         (click)="openCommentsDialog(node, $event)">
                   <mat-icon>{{ commentTriggerIcon(node) }}</mat-icon>
-                  <span>{{ commentTriggerLabel(node) }}</span>
+                  @if (commentCount(node) > 0) {
+                    <span>{{ commentCount(node) }}</span>
+                  }
                 </button>
               }
             </div>
