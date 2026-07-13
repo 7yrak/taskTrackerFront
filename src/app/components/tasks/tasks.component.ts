@@ -60,7 +60,7 @@ type TaskTableColumn = keyof TaskTableColumnWidths;
 const TASK_TABLE_COLUMN_WIDTHS_STORAGE_KEY = 'tasks.tableColumnWidths';
 
 const DEFAULT_TASK_TABLE_COLUMN_WIDTHS: TaskTableColumnWidths = {
-  title: 430,
+  title: 500,
   project: 120,
   assignee: 120,
   status: 105,
