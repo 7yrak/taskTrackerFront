@@ -1,4 +1,4 @@
-import { Component, inject, computed, signal, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, computed, signal, OnInit, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -10,9 +10,8 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { forkJoin, catchError, of } from 'rxjs';
-import { StatsService } from '../../services/stats.service';
 import { TaskService } from '../../services/task.service';
+import { StatsService } from '../../services/stats.service';
 import { ProjectService } from '../../services/project.service';
 import { MemberService } from '../../services/member.service';
 import { Task, TaskNode, STATUS_LABELS, PRIORITY_LABELS } from '../../models/task.model';
@@ -22,6 +21,7 @@ import { TaskDialogComponent } from '../shared/task-dialog/task-dialog.component
 import { DashboardTasksDialogComponent, DashboardTaskBucket } from './dashboard-tasks-dialog.component';
 import { LogoComponent } from '../shared/logo/logo.component';
 import { Stats } from '../../models/stats.model';
+import { formatDateYmd, parseIsoDateLike } from '../../shared/task-ui-utils';
 
 export type Health = 'blocked' | 'behind' | 'at-risk' | 'on-track' | 'done';
 
@@ -111,13 +111,14 @@ const DEFAULT_STATS: Stats = {
   styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit {
+  @ViewChild('dashboardContent') dashboardContent?: ElementRef<HTMLElement>;
+
   private taskService  = inject(TaskService);
   private statsService = inject(StatsService);
   private projectService = inject(ProjectService);
   private memberService  = inject(MemberService);
   private dialog         = inject(MatDialog);
   private snack          = inject(MatSnackBar);
-  private cdr = inject(ChangeDetectorRef);
 
   today = new Date();
   stats = signal<Stats>(DEFAULT_STATS);
@@ -139,18 +140,15 @@ export class DashboardComponent implements OnInit {
 
   refreshData() {
     this.isLoading.set(true);
-    this.cdr.detectChanges();
     
     this.taskService.getAll().subscribe({
       next: (tasks) => {
         this.allTasks.set(tasks);
         this.isLoading.set(false);
-        this.cdr.detectChanges();
       },
       error: (err) => {
         this.allTasks.set([]);
         this.isLoading.set(false);
-        this.cdr.detectChanges();
       }
     });
   }
@@ -609,16 +607,8 @@ export class DashboardComponent implements OnInit {
   statusLabels   = STATUS_LABELS;
   priorityLabels = PRIORITY_LABELS;
 
-  private parseDate(dateRaw: any): Date | null {
-    if (!dateRaw) return null;
-    let dateStr = dateRaw;
-    if (typeof dateStr === 'string') {
-      dateStr = dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00';
-    } else if (Array.isArray(dateStr) && dateStr.length >= 3) {
-      dateStr = `${dateStr[0]}-${String(dateStr[1]).padStart(2, '0')}-${String(dateStr[2]).padStart(2, '0')}T00:00:00`;
-    }
-    const d = new Date(dateStr);
-    return isNaN(d.getTime()) ? null : d;
+  private parseDate(dateRaw: string | null | undefined): Date | null {
+    return parseIsoDateLike(dateRaw);
   }
 
   isOverdue(t: Task) { 
@@ -732,22 +722,19 @@ export class DashboardComponent implements OnInit {
   }
 
   async exportDashboardPdf() {
-    const element = document.getElementById('dashboard-content');
-    if (!element) {
+    const target = this.dashboardContent?.nativeElement;
+    if (!target) {
       this.snack.open('No se encontró el contenedor del dashboard', 'OK', { duration: 2500 });
       return;
     }
-
     this.isExportingPdf.set(true);
     this.snack.open('Generando PDF, por favor espere...', 'OK', { duration: 5000 });
 
     try {
-      // @ts-ignore
       const { default: html2canvas } = await import('html2canvas');
-      // @ts-ignore
       const { jsPDF } = await import('jspdf');
 
-      const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+      const canvas = await html2canvas(target, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
       const imgData = canvas.toDataURL('image/png');
 
       const pdf = new jsPDF('p', 'mm', 'a4');
@@ -768,8 +755,8 @@ export class DashboardComponent implements OnInit {
         heightLeft -= pdfPageHeight;
       }
       
-      const today = new Date().toISOString().split('T')[0];
-      pdf.save(`tasktracker_dashboard_${today}.pdf`);
+      const today = formatDateYmd(new Date());
+      pdf.save(`dashboard_reporte_${today}.pdf`);
     } catch (error) {
       this.snack.open('Error al generar el PDF', 'OK', { duration: 3000 });
     } finally {

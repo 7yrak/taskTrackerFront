@@ -18,26 +18,7 @@ import { ProjectService } from '../../services/project.service';
 import { Project, ProjectStatus } from '../../models/project.model';
 import { ProjectDialogComponent } from '../shared/project-dialog/project-dialog.component';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog/confirm-dialog.component';
-
-export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
-  [ProjectStatus.INITIATED]: 'Iniciado',
-  [ProjectStatus.PLANNING]: 'Planificación',
-  [ProjectStatus.IN_PROGRESS]: 'En Ejecución',
-  [ProjectStatus.ON_HOLD]: 'Detenido',
-  [ProjectStatus.MONITORING]: 'Seguimiento y Control',
-  [ProjectStatus.COMPLETED]: 'Finalizado',
-  [ProjectStatus.CLOSED]: 'Cerrado'
-};
-
-export const PROJECT_STATUS_COLORS: Record<ProjectStatus, string> = {
-  [ProjectStatus.INITIATED]: '#64748B',
-  [ProjectStatus.PLANNING]: '#3B82F6',
-  [ProjectStatus.IN_PROGRESS]: '#F59E0B',
-  [ProjectStatus.ON_HOLD]: '#EF4444',
-  [ProjectStatus.MONITORING]: '#8B5CF6',
-  [ProjectStatus.COMPLETED]: '#10B981',
-  [ProjectStatus.CLOSED]: '#1E293B'
-};
+import { PROJECT_STATUSES, PROJECT_STATUS_LABELS, PROJECT_STATUS_COLORS } from '../../shared/task-ui-utils';
 
 @Component({
   selector: 'app-projects',
@@ -55,7 +36,6 @@ export class ProjectsComponent {
   private projectService = inject(ProjectService);
   private dialog = inject(MatDialog);
   private snack = inject(MatSnackBar);
-
   private refresh$ = new Subject<void>();
   recentlyUpdatedProjectIds = signal<Set<number>>(new Set());
 
@@ -67,38 +47,25 @@ export class ProjectsComponent {
     { initialValue: [] as Project[] }
   );
 
-  // Signal para almacenar el filtro actual
   selectedStatusFilter = signal<ProjectStatus | 'ALL'>('ALL');
-
-  // Lista de proyectos filtrada y reactiva
   filteredProjects = computed(() => {
     const status = this.selectedStatusFilter();
     const allProjects = this.projects();
-    
-    if (status === 'ALL') return allProjects;
-    return allProjects.filter(p => p.status === status);
+    return status === 'ALL' ? allProjects : allProjects.filter(p => p.status === status);
   });
 
   statusLabels = PROJECT_STATUS_LABELS;
   statusColors = PROJECT_STATUS_COLORS;
 
   getStatuses(): ProjectStatus[] {
-    return [
-      ProjectStatus.INITIATED, 
-      ProjectStatus.PLANNING, 
-      ProjectStatus.IN_PROGRESS, 
-      ProjectStatus.ON_HOLD, 
-      ProjectStatus.MONITORING, 
-      ProjectStatus.COMPLETED, 
-      ProjectStatus.CLOSED
-    ];
+    return PROJECT_STATUSES;
   }
 
   changeProjectStatus(project: Project, newStatus: ProjectStatus) {
     if (project.status === newStatus) return;
 
     const oldStatus = project.status;
-    project.status = newStatus; // Actualizamos la UI inmediatamente
+    project.status = newStatus;
 
     const updatePayload = {
       name: project.name,
@@ -115,6 +82,7 @@ export class ProjectsComponent {
       error: (err) => {
         project.status = oldStatus; // Revertir si hay error
         this.openInfoSnack('Error al guardar en el servidor', 'error');
+        console.error('Error actualizando estado:', err);
       }
     });
   }

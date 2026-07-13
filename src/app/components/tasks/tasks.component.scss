@@ -173,13 +173,12 @@
     white-space: nowrap;
     background: var(--orange-border);
     border-bottom: none !important;
-    padding: 0 8px;
-    padding-right: 16px;
+    padding: 0 6px;
     position: relative;
     overflow: visible;
 
-    &:first-of-type { padding-left: 16px; }
-    &:last-of-type  { padding-right: 4px; }
+    &:first-of-type { padding-left: 10px; }
+    &:last-of-type  { padding-right: 6px; }
   }
 
   .sort-header {
@@ -246,13 +245,20 @@
     color: var(--text-primary);
     border-bottom-color: var(--border-subtle) !important;
     font-size: 13px;
-    padding: 6px 8px;
+    padding: 6px;
     transition: background var(--transition), color var(--transition);
     overflow: hidden;
     text-overflow: ellipsis;
 
-    &:first-of-type { padding-left: 12px; }
-    &:last-of-type  { padding-right: 4px; }
+    &:first-of-type { padding-left: 10px; }
+    &:last-of-type  { padding-right: 6px; }
+  }
+
+  td.mat-column-project,
+  td.mat-column-assignee {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .mat-column-title {
@@ -476,9 +482,9 @@
   }
 
   .action-btn {
-    --mdc-icon-button-state-layer-size: 30px;
-    width: 30px !important;
-    height: 30px !important;
+    --mdc-icon-button-state-layer-size: 26px;
+    width: 26px !important;
+    height: 26px !important;
     padding: 0 !important;
     flex-shrink: 0;
 
@@ -566,7 +572,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-width: 90px;
+  min-width: 0;
 
   .pct-container { display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 45px; }
   .bar-pct { font-weight: 600; font-size: 13px; color: var(--text-primary); }

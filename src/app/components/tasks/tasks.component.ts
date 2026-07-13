@@ -1,4 +1,4 @@
-import { Component, inject, signal, ViewChild, ElementRef, DestroyRef, computed } from '@angular/core';
+import { Component, inject, signal, ViewChild, ElementRef, DestroyRef, computed, ViewChildren, QueryList, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
@@ -18,7 +18,6 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { CdkDragDrop, moveItemInArray, transferArrayItem, CdkDropList, CdkDrag, CdkDropListGroup } from '@angular/cdk/drag-drop';
 import { jsPDF } from 'jspdf';
-// @ts-ignore
 import autoTable from 'jspdf-autotable';
 import { TaskService, ImportResult } from '../../services/task.service';
 import { TaskFilterService, TaskViewPreset, PersistedSortState } from '../../services/task-filter.service';
@@ -43,7 +42,6 @@ interface TaskEditFormValue {
   dueDate: string | null;
   progressActual: number;
 }
-
 interface TaskTableColumnWidths {
   title: number;
   project: number;
@@ -63,28 +61,28 @@ const TASK_TABLE_COLUMN_WIDTHS_STORAGE_KEY = 'tasks.tableColumnWidths';
 
 const DEFAULT_TASK_TABLE_COLUMN_WIDTHS: TaskTableColumnWidths = {
   title: 430,
-  project: 160,
-  assignee: 210,
-  status: 170,
-  priority: 150,
-  startDate: 112,
-  dueDate: 122,
-  progressActual: 100,
-  progressExpected: 112,
-  actions: 150
+  project: 120,
+  assignee: 120,
+  status: 105,
+  priority: 80,
+  startDate: 80,
+  dueDate: 95,
+  progressActual: 80,
+  progressExpected: 90,
+  actions: 112
 };
 
 const MIN_TASK_TABLE_COLUMN_WIDTHS: TaskTableColumnWidths = {
   title: 260,
-  project: 130,
-  assignee: 160,
-  status: 145,
-  priority: 125,
-  startDate: 96,
-  dueDate: 96,
-  progressActual: 84,
-  progressExpected: 90,
-  actions: 128
+  project: 100,
+  assignee: 100,
+  status: 95,
+  priority: 72,
+  startDate: 70,
+  dueDate: 82,
+  progressActual: 72,
+  progressExpected: 82,
+  actions: 108
 };
 
 function normalizeTaskTableColumnWidths(raw: Partial<TaskTableColumnWidths> | null | undefined): TaskTableColumnWidths {
@@ -99,6 +97,7 @@ function normalizeTaskTableColumnWidths(raw: Partial<TaskTableColumnWidths> | nu
 
   return widths;
 }
+import { TASK_PRIORITIES, TASK_STATUSES, parseIsoDateLike, formatDateYmd } from '../../shared/task-ui-utils';
 
 
 @Component({
@@ -116,8 +115,9 @@ function normalizeTaskTableColumnWidths(raw: Partial<TaskTableColumnWidths> | nu
   templateUrl: './tasks.component.html',
   styleUrl: './tasks.component.scss'
 })
-export class TasksComponent {
+export class TasksComponent implements AfterViewInit {
   @ViewChild('fileInput')  fileInputRef!: ElementRef<HTMLInputElement>;
+  @ViewChildren('titleInput') titleInputRefs!: QueryList<ElementRef<HTMLInputElement>>;
 
   private taskService    = inject(TaskService);
   private filterService  = inject(TaskFilterService);
@@ -171,8 +171,8 @@ export class TasksComponent {
   ];
   statusLabels: Record<string, string>   = STATUS_LABELS;
   priorityLabels: Record<string, string> = PRIORITY_LABELS;
-  statuses: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'BLOCKED', 'STOPPED'];
-  priorities: TaskPriority[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+  statuses: TaskStatus[] = TASK_STATUSES;
+  priorities: TaskPriority[] = TASK_PRIORITIES;
   sorts: Sort[] = this.filterService.loadSortState([{ active: 'startDate', direction: 'asc' }]);
 
   editingTitleId = signal<number | null>(null);
@@ -385,6 +385,10 @@ export class TasksComponent {
 
   isColumnResizing(column: TaskTableColumn): boolean {
     return this.resizingColumn === column;
+  }
+
+  ngAfterViewInit() {
+    // ViewChildren queda disponible para la edición inline de títulos.
   }
 
   // ── Tree building ──────────────────────────────────────────────────────────
@@ -738,8 +742,8 @@ export class TasksComponent {
   applyFilter() { this.buildAndFilter(); }
 
   clearFilters() {
-    this.filterStatus.set(['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'BLOCKED', 'STOPPED']);
-    this.filterPriority.set(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']);
+    this.filterStatus.set(TASK_STATUSES);
+    this.filterPriority.set(TASK_PRIORITIES);
     this.filterProject.set(this.activeProjects().map(p => p.id));
     this.filterAssignee.set(this.members().map(m => m.id));
     this.buildAndFilter();
@@ -893,7 +897,7 @@ export class TasksComponent {
     const startDateRaw = node.startDate ? this.parseLocalDate(node.startDate) : null;
     const dueDateRaw = node.dueDate ? this.parseLocalDate(node.dueDate) : null;
 
-    const req: any = {
+    const req: TaskRequest = {
       title: node.title,
       description: node.description,
       status: node.status,
@@ -918,13 +922,10 @@ export class TasksComponent {
   startEditingTitle(node: TaskNode, event: MouseEvent) {
     event.stopPropagation();
     this.editingTitleId.set(node.id);
-    // Forzar foco en el input al siguiente ciclo del navegador
-    setTimeout(() => {
-      const input = document.getElementById(`title-input-${node.id}`) as HTMLInputElement;
-      if (input) {
-        input.focus();
-        input.select(); // Selecciona todo el texto automáticamente
-      }
+    queueMicrotask(() => {
+      const input = this.titleInputRefs.find(ref => ref.nativeElement.id === `title-input-${node.id}`)?.nativeElement;
+      input?.focus();
+      input?.select();
     });
   }
 
@@ -944,7 +945,7 @@ export class TasksComponent {
     const startDateRaw = node.startDate ? this.parseLocalDate(node.startDate) : null;
     const dueDateRaw = node.dueDate ? this.parseLocalDate(node.dueDate) : null;
 
-    const req: any = {
+    const req: TaskRequest = {
       title: newTitle,
       description: node.description,
       status: node.status,
@@ -1197,17 +1198,11 @@ export class TasksComponent {
   // ── Bulk actions ──────────────────────────────────────────────────────────
 
   private parseLocalDate(value?: string): Date | null {
-    if (!value) return null;
-    const [year, month, day] = value.split('-').map(Number);
-    if (!year || !month || !day) return null;
-    return new Date(year, month - 1, day);
+    return parseIsoDateLike(value);
   }
 
   private formatLocalDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return formatDateYmd(date);
   }
 
   confirmDeleteAll() {
@@ -1315,11 +1310,11 @@ export class TasksComponent {
       styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
       headStyles: { fillColor: [44, 62, 80], textColor: 255, fontStyle: 'bold' },
       columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 25 }, 2: { cellWidth: 30 } },
-      didDrawPage: (data: any) => {
+      didDrawPage: (data: { settings: { margin: { left: number } }; pageNumber: number }) => {
         doc.setFontSize(18);
         doc.setTextColor(40);
         doc.text('Vista de Tareas', data.settings.margin.left, 15);
-        const pageCount = (doc as any).internal.getNumberOfPages();
+        const pageCount = (doc as { getNumberOfPages: () => number }).getNumberOfPages();
         doc.setFontSize(10);
         doc.text(`Página ${data.pageNumber} de ${pageCount}`, data.settings.margin.left, doc.internal.pageSize.getHeight() - 10);
       },

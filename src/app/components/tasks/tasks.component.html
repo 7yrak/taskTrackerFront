@@ -124,7 +124,7 @@
                        placeholder="Título"
                        (click)="$event.stopPropagation()" />
               } @else if (editingTitleId() === node.id) {
-                <input type="text" [id]="'title-input-' + node.id" class="title-inline-input"
+                <input #titleInput type="text" [id]="'title-input-' + node.id" class="title-inline-input"
                        [value]="node.title"
                        (blur)="updateTitle(node, $event)"
                        (keydown.enter)="updateTitle(node, $event)"

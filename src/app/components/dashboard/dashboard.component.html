@@ -29,7 +29,7 @@
       <p>Cargando información del panel...</p>
     </div>
   } @else {
-    <div id="dashboard-content">
+    <div id="dashboard-content" #dashboardContent>
       <!-- ── KPI SUMMARY (Critical Metrics) ────────────────────────────────────── -->
       <div class="kpi-summary">
         <button type="button" class="kpi-card kpi-health" (click)="openTaskBucket('global')" matTooltip="Ver tareas críticas">
