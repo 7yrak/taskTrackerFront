@@ -65,10 +65,10 @@ const DEFAULT_TASK_TABLE_COLUMN_WIDTHS: TaskTableColumnWidths = {
   assignee: 120,
   status: 105,
   priority: 80,
-  startDate: 80,
-  dueDate: 95,
-  progressActual: 80,
-  progressExpected: 90,
+  startDate: 64,
+  dueDate: 78,
+  progressActual: 64,
+  progressExpected: 74,
   actions: 112
 };
 
@@ -78,10 +78,10 @@ const MIN_TASK_TABLE_COLUMN_WIDTHS: TaskTableColumnWidths = {
   assignee: 100,
   status: 95,
   priority: 72,
-  startDate: 70,
-  dueDate: 82,
-  progressActual: 72,
-  progressExpected: 82,
+  startDate: 60,
+  dueDate: 72,
+  progressActual: 60,
+  progressExpected: 68,
   actions: 108
 };
 

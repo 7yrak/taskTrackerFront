@@ -261,6 +261,26 @@
     white-space: nowrap;
   }
 
+  th.mat-column-startDate,
+  td.mat-column-startDate,
+  th.mat-column-dueDate,
+  td.mat-column-dueDate,
+  th.mat-column-progressActual,
+  td.mat-column-progressActual,
+  th.mat-column-progressExpected,
+  td.mat-column-progressExpected {
+    padding-left: 3px;
+    padding-right: 3px;
+  }
+
+  th.mat-column-startDate,
+  th.mat-column-dueDate,
+  th.mat-column-progressActual,
+  th.mat-column-progressExpected {
+    font-size: 9px;
+    letter-spacing: 0.25px;
+  }
+
   .mat-column-title {
     overflow: visible;
     text-overflow: clip;
@@ -571,10 +591,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 2px;
   min-width: 0;
 
-  .pct-container { display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 45px; }
+  .pct-container { display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 38px; }
   .bar-pct { font-weight: 600; font-size: 13px; color: var(--text-primary); }
   .pct-symbol { font-weight: 600; font-size: 12px; margin-left: 2px; color: var(--text-secondary); }
 
