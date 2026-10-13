@@ -109,11 +109,26 @@
       <p>Crea un incidente o carga un Excel del proyecto.</p>
     </div>
   } @else if (view === 'table') {
+    <div class="hierarchy-drop-zones" [class.dragging]="rowDrag.id !== null">
+      <span class="drag-help"
+        ><mat-icon>drag_indicator</mat-icon> Arrastra sobre una fila para hacerla hija. Suelta en un
+        proyecto para dejarla sin padre o cambiarla de proyecto:</span
+      >
+      @for (project of projects; track project.id) {
+        <span
+          class="root-drop-zone"
+          [attr.data-hierarchy-project]="project.id"
+          (dragover)="rowDrag.over($event, null)"
+          (drop)="dropRow($event, null, project.id)"
+          >{{ project.name }}</span
+        >
+      }
+    </div>
     <div class="table-wrapper">
       <div class="table-scroll">
         <table
           mat-table
-          [dataSource]="filtered"
+          [dataSource]="tableRows"
           [trackBy]="trackIncident"
           class="incidents-table"
           [style.width.px]="tableWidth"
@@ -146,7 +161,34 @@
               ></span>
             </th>
             <td mat-cell *matCellDef="let i">
-              <div class="incident-cell">
+              <div class="incident-cell" [style.paddingLeft.px]="level(i) * 20">
+                <mat-icon
+                  class="row-drag-handle"
+                  (pointerdown)="startRowPointer($event, i)"
+                  aria-label="Arrastrar incidente"
+                  >drag_indicator</mat-icon
+                >
+                @if (hasChildren(i.id)) {
+                  <button
+                    mat-icon-button
+                    class="action-btn"
+                    [attr.aria-label]="collapsed.has(i.id) ? 'Expandir hijas' : 'Contraer hijas'"
+                    (click)="toggleChildren(i.id)"
+                  >
+                    <mat-icon>{{ collapsed.has(i.id) ? 'chevron_right' : 'expand_more' }}</mat-icon>
+                  </button>
+                }
+                @if (i.parentId != null) {
+                  <button
+                    mat-icon-button
+                    class="action-btn"
+                    matTooltip="Dejar sin padre"
+                    [disabled]="busy || hierarchyBusy"
+                    (click)="moveRow(i.id, null, i.projectId)"
+                  >
+                    <mat-icon>vertical_align_top</mat-icon>
+                  </button>
+                }
                 <span class="incident-id">#{{ i.id }}</span>
                 <div class="inline-title-group">
                   @if (inlineEditingId === i.id) {
@@ -577,6 +619,23 @@
           <tr
             mat-row
             *matRowDef="let row; columns: displayedColumns"
+            [attr.data-hierarchy-row]="row.id"
+            [attr.draggable]="
+              !busy && !hierarchyBusy && inlineEditingId !== row.id && titleEditingId !== row.id
+            "
+            (dragstart)="
+              rowDrag.start(
+                $event,
+                row.id,
+                busy || hierarchyBusy || inlineEditingId === row.id || titleEditingId === row.id
+              )
+            "
+            (dragend)="rowDrag.end()"
+            (dragover)="rowDrag.over($event, row.id)"
+            (dragleave)="rowDrag.target = null"
+            (drop)="dropRow($event, row.id, row.projectId)"
+            [class.hierarchy-drop-target]="rowDrag.target === row.id"
+            [class.parent-row]="hasChildren(row.id)"
             [class.editing-row]="inlineEditingId === row.id"
             [class.closed-row]="row.status === 'CLOSED' || row.status === 'CANCELLED'"
           ></tr>

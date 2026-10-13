@@ -24,6 +24,10 @@ export class TaskService {
     return this.http.get<Task[]>(this.base, { params });
   }
 
+  moveHierarchy(id: number, parentId: number | null, projectId: number | null): Observable<void> {
+    return this.http.patch<void>(`${this.base}/${id}/hierarchy`, { parentId, projectId });
+  }
+
   getById(id: number): Observable<Task> {
     return this.http.get<Task>(`${this.base}/${id}`);
   }

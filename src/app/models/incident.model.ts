@@ -67,6 +67,7 @@ export interface IncidentAttachment {
   createdAt: string;
 }
 export interface Incident extends IncidentRequest {
+  parentId: number | null;
   id: number;
   status: IncidentStatus;
   projectName: string;

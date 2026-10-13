@@ -1,3 +1,4 @@
+import { RowDrag } from '../../shared/row-drag';
 import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { A11yModule } from '@angular/cdk/a11y';
@@ -49,6 +50,87 @@ import { Task, PRIORITY_LABELS } from '../../models/task.model';
   styleUrl: './incidents.component.scss',
 })
 export class IncidentsComponent implements OnInit, OnDestroy {
+  rowDrag = new RowDrag('incidents');
+  startRowPointer(event: PointerEvent, row: Incident) {
+    this.rowDrag.pointerStart(
+      event,
+      row.id,
+      this.busy ||
+        this.hierarchyBusy ||
+        this.inlineEditingId === row.id ||
+        this.titleEditingId === row.id,
+      (id, parent, project) => this.moveRow(id, parent, project),
+      () => this.change.markForCheck(),
+    );
+  }
+  hierarchyBusy = false;
+  collapsed = new Set<number>();
+  hasChildren(id: number) {
+    return this.incidents.some((i) => i.parentId === id);
+  }
+  level(row: Incident) {
+    let level = 0,
+      parent = row.parentId;
+    const visited = new Set<number>([row.id]);
+    while (parent != null && !visited.has(parent)) {
+      visited.add(parent);
+      level++;
+      parent = this.incidents.find((i) => i.id === parent)?.parentId ?? null;
+    }
+    return level;
+  }
+  toggleChildren(id: number) {
+    this.collapsed.has(id) ? this.collapsed.delete(id) : this.collapsed.add(id);
+  }
+  get tableRows(): Incident[] {
+    const matches = this.filtered;
+    const ids = new Set(matches.map((i) => i.id));
+    for (const row of matches) {
+      let parent = row.parentId;
+      while (parent != null && !ids.has(parent)) {
+        ids.add(parent);
+        parent = this.incidents.find((i) => i.id === parent)?.parentId ?? null;
+      }
+    }
+    const ordered = [
+      ...matches,
+      ...this.incidents.filter((i) => ids.has(i.id) && !matches.some((m) => m.id === i.id)),
+    ];
+    const result: Incident[] = [];
+    const visit = (parent: number | null) => {
+      for (const row of ordered.filter(
+        (i) =>
+          (i.parentId ?? null) === parent ||
+          (parent === null && i.parentId != null && !ids.has(i.parentId)),
+      )) {
+        result.push(row);
+        if (!this.collapsed.has(row.id)) visit(row.id);
+      }
+    };
+    visit(null);
+    return result;
+  }
+  async dropRow(event: DragEvent, parentId: number | null, projectId: number | null) {
+    const id = this.rowDrag.take(event);
+    if (id === null || id === parentId || this.busy || this.hierarchyBusy) return;
+    await this.moveRow(id, parentId, projectId);
+  }
+  async moveRow(id: number, parentId: number | null, projectId: number | null) {
+    this.hierarchyBusy = true;
+    this.error = '';
+    try {
+      await firstValueFrom(this.api.moveHierarchy(id, parentId, projectId));
+      this.incidents = await firstValueFrom(this.api.all());
+      if (this.selected)
+        this.selected = this.incidents.find((i) => i.id === this.selected!.id) ?? null;
+      this.notice = 'Jerarquía y proyecto actualizados';
+    } catch (e: any) {
+      this.error = e.error?.message || 'No se pudo mover la fila';
+    } finally {
+      this.hierarchyBusy = false;
+      this.change.markForCheck();
+    }
+  }
   private change = inject(ChangeDetectorRef);
   private destroy = inject(DestroyRef);
   private api = inject(IncidentService);
@@ -237,6 +319,7 @@ export class IncidentsComponent implements OnInit, OnDestroy {
     this.load();
   }
   ngOnDestroy() {
+    this.rowDrag.end();
     this.resizeCleanup?.();
     this.urls.forEach((url) => URL.revokeObjectURL(url));
   }

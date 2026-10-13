@@ -1,4 +1,5 @@
-import { Component, inject, signal, ViewChild, ElementRef, DestroyRef, computed, ViewChildren, QueryList, AfterViewInit } from '@angular/core';
+import { RowDrag } from '../../shared/row-drag';
+import { Component, inject, signal, ChangeDetectorRef, ViewChild, ElementRef, DestroyRef, computed, ViewChildren, QueryList, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
@@ -116,6 +117,52 @@ import { TASK_PRIORITIES, TASK_STATUSES, parseIsoDateLike, formatDateYmd } from 
   styleUrl: './tasks.component.scss'
 })
 export class TasksComponent implements AfterViewInit {
+  private hierarchyChange = inject(ChangeDetectorRef);
+  rowDrag = new RowDrag('tasks');
+  startRowPointer(event: PointerEvent, row: TaskNode) {
+    this.rowDrag.pointerStart(
+      event,
+      row.id,
+      this.hierarchyBusy() || this.editingTaskId() === row.id,
+      (id, parent, project) => this.moveHierarchyRow(id, parent, project),
+      () => this.hierarchyChange.markForCheck(),
+    );
+  }
+  moveHierarchyRow(id: number, parentId: number | null, projectId: number | null) {
+    if (this.hierarchyBusy()) return;
+    this.hierarchyBusy.set(true);
+    this.taskService.moveHierarchy(id, parentId, projectId).subscribe({
+      next: () => {
+        this.hierarchyBusy.set(false);
+        this.refresh$.next();
+        this.openInfoSnack('Jerarquía y proyecto actualizados', 'success');
+      },
+      error: (e) => {
+        this.hierarchyBusy.set(false);
+        this.openInfoSnack(e.error?.message || 'No se pudo mover la fila', 'error');
+      },
+    });
+  }
+  hierarchyBusy = signal(false);
+  dropRow(event: DragEvent, parentId: number | null, projectId: number | null) {
+    const id = this.rowDrag.take(event);
+    if (id === null || id === parentId || this.hierarchyBusy()) return;
+    this.moveHierarchyRow(id, parentId, projectId);
+  }
+
+  detachRow(row: TaskNode) {
+    this.hierarchyBusy.set(true);
+    this.taskService.moveHierarchy(row.id, null, row.projectId ?? null).subscribe({
+      next: () => {
+        this.hierarchyBusy.set(false);
+        this.refresh$.next();
+      },
+      error: (e) => {
+        this.hierarchyBusy.set(false);
+        this.openInfoSnack(e.error?.message || 'No se pudo mover', 'error');
+      },
+    });
+  }
   @ViewChild('fileInput')  fileInputRef!: ElementRef<HTMLInputElement>;
   @ViewChildren('titleInput') titleInputRefs!: QueryList<ElementRef<HTMLInputElement>>;
 
@@ -201,6 +248,7 @@ export class TasksComponent implements AfterViewInit {
         this.filterService.projectsInitialized = true;
         this.filterProject.set(p.filter(x => !this.isArchivedProjectStatus(x.status)).map(x => x.id));
       }
+      this.buildAndFilter();
     });
 
     toObservable(this.members).pipe(
@@ -210,6 +258,7 @@ export class TasksComponent implements AfterViewInit {
         this.filterService.membersInitialized = true;
         this.filterAssignee.set(m.map(x => x.id));
       }
+      this.buildAndFilter();
     });
 
     // Always load all tasks — filtering is done client-side to preserve tree structure
@@ -224,6 +273,7 @@ export class TasksComponent implements AfterViewInit {
   }
 
   ngOnDestroy() {
+    this.rowDrag.end();
     this.editSub.unsubscribe();
     this.resizeCleanup?.();
   }
@@ -779,7 +829,7 @@ export class TasksComponent implements AfterViewInit {
   }
 
   canBeParent(task: TaskNode | Task): boolean {
-    return task.parentId == null || task.hasChildren;
+    return true;
   }
 
   openEdit(task: Task, event?: MouseEvent) {
@@ -1151,7 +1201,7 @@ export class TasksComponent implements AfterViewInit {
       }
     }
 
-    const eligibleTasks = all.filter(task => task.parentId == null || (childCounts.get(task.id) ?? 0) > 0);
+    const eligibleTasks = all;
     const map = new Map<number, TaskNode & { _level?: number; _children: number[] }>();
     const roots: number[] = [];
 

@@ -93,6 +93,15 @@
   </div>
 
   <!-- Tabla árbol -->
+  @if (viewMode === 'table') {
+<div class="hierarchy-drop-zones" [class.dragging]="rowDrag.id !== null">
+  <span class="drag-help"><mat-icon>drag_indicator</mat-icon> Arrastra sobre una fila para hacerla hija. Suelta en un proyecto para dejarla sin padre o cambiarla de proyecto:</span>
+  <span class="root-drop-zone" data-hierarchy-project="none" (dragover)="rowDrag.over($event, null)" (drop)="dropRow($event, null, null)">Sin proyecto</span>
+  @for (project of activeProjects(); track project.id) {
+    <span class="root-drop-zone" [attr.data-hierarchy-project]="project.id" (dragover)="rowDrag.over($event, null)" (drop)="dropRow($event, null, project.id)">{{ project.name }}</span>
+  }
+</div>
+  }
   <div class="table-wrapper" *ngIf="viewMode === 'table'">
     <div class="table-scroll">
       <table mat-table [dataSource]="dataSource" class="tasks-table" [trackBy]="trackById" [formGroup]="editForm" [ngStyle]="tableStyleVars()">
@@ -110,6 +119,10 @@
           </th>
           <td mat-cell *matCellDef="let node">
             <div class="task-title-cell" [style.paddingLeft.px]="node.level * 20">
+              <mat-icon class="row-drag-handle" (pointerdown)="startRowPointer($event, node)" aria-label="Arrastrar tarea">drag_indicator</mat-icon>
+              @if (node.parentId != null) {
+                <button mat-icon-button class="action-btn" matTooltip="Dejar sin padre" [disabled]="hierarchyBusy()" (click)="detachRow(node)"><mat-icon>vertical_align_top</mat-icon></button>
+              }
               @if (node.childrenNodes.length > 0) {
                 <mat-icon class="toggle-btn" (click)="toggleExpand(node); $event.stopPropagation()"
                         [matTooltip]="node.expanded ? 'Colapsar' : 'Expandir'">
@@ -437,7 +450,7 @@
                 </button>
                 <button mat-icon-button class="action-btn"
                         [disabled]="!canBeParent(node)"
-                        [matTooltip]="canBeParent(node) ? 'Agregar subtarea' : 'Solo las tareas raíz o con subtareas pueden tener subtareas'"
+                        [matTooltip]="canBeParent(node) ? 'Agregar subtarea' : 'Agregar subtarea'"
                         (click)="openCreate(node.id)"
                         style="color:#6366F1">
                   <mat-icon>add_circle_outline</mat-icon>
@@ -452,6 +465,13 @@
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+            [attr.data-hierarchy-row]="row.id" [attr.draggable]="!hierarchyBusy() && editingTaskId() !== row.id"
+            (dragstart)="rowDrag.start($event, row.id, hierarchyBusy() || editingTaskId() === row.id)"
+            (dragend)="rowDrag.end()"
+            (dragover)="rowDrag.over($event, row.id)"
+            (dragleave)="rowDrag.target = null"
+            (drop)="dropRow($event, row.id, row.projectId)"
+            [class.hierarchy-drop-target]="rowDrag.target === row.id"
             [class.overdue-row]="isRowCritical(row)"
             [class.parent-row]="row.hasChildren"
             [class.task-done-row]="row.status === 'DONE'"

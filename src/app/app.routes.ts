@@ -23,6 +23,7 @@ export const routes: Routes = [
         path: 'incidents',
         loadComponent: () => import('./components/incidents/incidents.component').then(m => m.IncidentsComponent)
       },
+      { path: 'overtime', loadComponent: () => import('./components/overtime/overtime.component').then(m => m.OvertimeComponent) },
       {
         path: 'team',
         loadComponent: () => import('./components/team/team.component').then(m => m.TeamComponent)

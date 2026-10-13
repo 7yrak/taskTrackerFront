@@ -425,9 +425,7 @@ export class TaskDialogComponent implements OnInit, OnDestroy {
       }
     }
 
-    const eligible = projectTasks.filter(task =>
-      task.parentId == null || (childCounts.get(task.id) ?? 0) > 0
-    );
+    const eligible = projectTasks;
 
     const map = new Map<number, Task & { _level: number; _children: number[] }>();
     const roots: number[] = [];

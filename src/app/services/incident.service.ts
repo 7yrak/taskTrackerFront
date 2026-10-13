@@ -1,3 +1,4 @@
+import { Observable } from 'rxjs';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { API_BASE_URL } from '../config/api.config';
@@ -52,6 +53,10 @@ export class IncidentService {
   all() {
     return this.http.get<Incident[]>(this.base);
   }
+  moveHierarchy(id: number, parentId: number | null, projectId: number | null): Observable<void> {
+    return this.http.patch<void>(`${this.base}/${id}/hierarchy`, { parentId, projectId });
+  }
+
   get(id: number) {
     return this.http.get<Incident>(`${this.base}/${id}`);
   }
