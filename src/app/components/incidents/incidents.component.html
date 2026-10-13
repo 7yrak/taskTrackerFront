@@ -1,0 +1,469 @@
+<section class="incidents-page">
+  <header>
+    <div>
+      <h1>Seguimiento de incidentes</h1>
+      <p>DESA → CERT con QA → UAT con cliente → PROD</p>
+    </div>
+    <div class="toolbar">
+      <button mat-stroked-button (click)="load()" [disabled]="busy || loading">Actualizar</button
+      ><button mat-flat-button (click)="openEditor()" [disabled]="busy">Nuevo incidente</button>
+    </div>
+  </header>
+  @if (error) {
+    <p class="message error" role="alert">{{ error }}</p>
+  }
+  @if (notice) {
+    <p class="message" role="status">{{ notice }}</p>
+  }
+  <div class="filters">
+    <label
+      >Buscar<input [(ngModel)]="search" placeholder="ID, título, descripción o reportante"
+    /></label>
+    <label
+      >Proyecto<select [(ngModel)]="projectFilter">
+        <option value="">Todos</option>
+        @for (p of projects; track p.id) {
+          <option [value]="p.id">{{ p.name }}</option>
+        }
+      </select></label
+    >
+    <label
+      >Ambiente de detección<select [(ngModel)]="environmentFilter">
+        <option value="">Todos</option>
+        @for (e of environments; track e) {
+          <option [value]="e">{{ e }}</option>
+        }
+      </select></label
+    >
+    <label
+      >Estado<select [(ngModel)]="statusFilter">
+        <option value="">Todos</option>
+        @for (s of statuses; track s) {
+          <option [value]="s">{{ labels[s] }}</option>
+        }
+      </select></label
+    >
+    <label
+      >Prioridad<select [(ngModel)]="priorityFilter">
+        <option value="">Todas</option>
+        @for (p of priorities; track p) {
+          <option [value]="p">{{ $any(priorityLabels)[p] }}</option>
+        }
+      </select></label
+    >
+    <label
+      >Responsable<select [(ngModel)]="memberFilter">
+        <option value="">Todos</option>
+        @for (m of members; track m.id) {
+          <option [value]="m.id">{{ m.name }}</option>
+        }
+      </select></label
+    >
+    <button mat-button (click)="resetFilters()">Limpiar</button>
+  </div>
+  <div class="view-switch">
+    <span>{{ filtered.length }} incidente(s)</span
+    ><button mat-button (click)="view = 'table'" [attr.aria-pressed]="view === 'table'">
+      Tabla</button
+    ><button mat-button (click)="view = 'board'" [attr.aria-pressed]="view === 'board'">
+      Tablero
+    </button>
+  </div>
+  @if (loading) {
+    <p role="status">Cargando incidentes…</p>
+  } @else if (!filtered.length) {
+    <div class="empty">No hay incidentes para estos filtros.</div>
+  } @else if (view === 'table') {
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Incidente</th>
+            <th>Proyecto</th>
+            <th>Detectado en</th>
+            <th>Estado</th>
+            <th>Prioridad</th>
+            <th>Desarrollo / QA</th>
+            <th>Fecha objetivo</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (i of filtered; track i.id) {
+            <tr>
+              <td>
+                <button class="title-link" (click)="open(i)">#{{ i.id }} · {{ i.title }}</button
+                ><small>{{ i.reporter }}</small>
+              </td>
+              <td>{{ i.projectName }}</td>
+              <td>
+                <span class="badge">{{ i.detectedEnvironment }}</span>
+              </td>
+              <td>{{ labels[i.status] }}</td>
+              <td [class.critical]="i.priority === 'CRITICAL'">{{ priorityLabels[i.priority] }}</td>
+              <td>
+                {{ i.developerName || 'Sin asignar'
+                }}<small>QA: {{ i.qaName || 'Sin asignar' }}</small>
+              </td>
+              <td>{{ i.dueDate ? (i.dueDate | date: 'dd/MM/yyyy') : '—' }}</td>
+              <td>
+                <button mat-button (click)="open(i)">Ver</button>
+                @if (editable(i)) {
+                  <button mat-button (click)="openEditor(i)">Editar</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <div class="board" cdkDropListGroup>
+      @for (s of statuses; track s) {
+        <section class="column">
+          <h2>
+            {{ labels[s] }} <span>{{ column(s).length }}</span>
+          </h2>
+          <div
+            cdkDropList
+            [cdkDropListData]="column(s)"
+            (cdkDropListDropped)="drop($event, s)"
+            class="drop-zone"
+          >
+            @for (i of column(s); track i.id) {
+              <article class="card" cdkDrag [cdkDragData]="i" [cdkDragDisabled]="busy">
+                <button class="title-link" (click)="open(i)">#{{ i.id }} · {{ i.title }}</button>
+                <p>{{ i.projectName }}</p>
+                <div>
+                  <span class="badge">{{ i.detectedEnvironment }}</span>
+                  <span [class.critical]="i.priority === 'CRITICAL'">{{
+                    priorityLabels[i.priority]
+                  }}</span>
+                </div>
+                <small>{{ i.developerName || 'Sin desarrollo asignado' }}</small>
+                @if (i.dueDate) {
+                  <small>Objetivo: {{ i.dueDate | date: 'dd/MM/yyyy' }}</small>
+                }
+              </article>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  }
+</section>
+@if (selected && !editor) {
+  <div class="overlay">
+    <section
+      class="modal detail"
+      cdkTrapFocus
+      [cdkTrapFocusAutoCapture]="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="incident-detail-title"
+    >
+      <header>
+        <div>
+          <h2 id="incident-detail-title">#{{ selected.id }} · {{ selected.title }}</h2>
+          <p>{{ labels[selected.status] }}</p>
+        </div>
+        <button
+          mat-icon-button
+          aria-label="Cerrar ficha"
+          (click)="selected = null; action = ''"
+          [disabled]="busy"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </header>
+      @if (error) {
+        <p class="message error" role="alert">{{ error }}</p>
+      }
+      <div class="summary">
+        <span>Proyecto: {{ selected.projectName }}</span
+        ><span>Detectado en: {{ selected.detectedEnvironment }}</span
+        ><span>Prioridad: {{ priorityLabels[selected.priority] }}</span
+        ><span>Reportante: {{ selected.reporter }}</span
+        ><span>Desarrollo: {{ selected.developerName || 'Sin asignar' }}</span
+        ><span>QA: {{ selected.qaName || 'Sin asignar' }}</span
+        ><span>Tarea: {{ selected.taskTitle || 'Sin vincular' }}</span
+        ><span
+          >Fecha objetivo:
+          {{ selected.dueDate ? (selected.dueDate | date: 'dd/MM/yyyy') : 'Sin fecha' }}</span
+        >
+      </div>
+      <h3>Descripción</h3>
+      <p class="multiline">{{ selected.description }}</p>
+      @if (selected.reproductionSteps) {
+        <h3>Pasos para reproducir</h3>
+        <p class="multiline">{{ selected.reproductionSteps }}</p>
+      }
+      @if (selected.expectedResult) {
+        <h3>Resultado esperado</h3>
+        <p class="multiline">{{ selected.expectedResult }}</p>
+      }
+      @if (selected.actualResult) {
+        <h3>Resultado obtenido</h3>
+        <p class="multiline">{{ selected.actualResult }}</p>
+      }
+      <div class="actions">
+        @if (editable(selected)) {
+          <button mat-stroked-button (click)="openEditor(selected)" [disabled]="busy">
+            Editar datos y responsables
+          </button>
+        }
+        @for (a of actions(selected); track a) {
+          <button mat-stroked-button (click)="choose(a)" [disabled]="busy">
+            {{ actionLabels[a] }}
+          </button>
+        }
+      </div>
+      @if (action) {
+        <form class="action-form" (ngSubmit)="transition()">
+          <h3>{{ actionLabels[action] }}</h3>
+          <label
+            >Responsable *<input
+              name="actor"
+              [(ngModel)]="actor"
+              [readonly]="actorFixed()"
+              required
+              maxlength="255"
+          /></label>
+          @if (actorFixed() && !actor) {
+            <p>Asigna el responsable en la edición del incidente antes de avanzar.</p>
+          }
+          <label
+            >Observación {{ reasonRequired() ? '*' : '(opcional)'
+            }}<textarea
+              name="observation"
+              [(ngModel)]="observation"
+              [required]="reasonRequired()"
+            ></textarea>
+          </label>
+          <label
+            >Enlace a evidencia (opcional)<input
+              name="url"
+              type="url"
+              [(ngModel)]="evidenceUrl"
+              placeholder="https://…"
+          /></label>
+          <p>
+            La acción se registrará en el historial. Un rechazo o reapertura exige repetir las
+            aprobaciones.
+          </p>
+          <button mat-flat-button type="submit" [disabled]="busy">Confirmar</button
+          ><button mat-button type="button" (click)="action = ''" [disabled]="busy">Volver</button>
+        </form>
+      }
+      <h3>Evidencias</h3>
+      <p>PNG, JPG, WebP y PDF · máximo 10 MB por archivo.</p>
+      <div class="upload-row">
+        <label
+          >Tipo de evidencia<select [(ngModel)]="category">
+            <option value="INCIDENT">Del incidente</option>
+            <option value="CORRECTION">De la corrección</option>
+          </select></label
+        ><label class="file-input"
+          >Adjuntar archivos<input
+            type="file"
+            multiple
+            accept=".png,.jpg,.jpeg,.webp,.pdf"
+            (change)="upload($event)"
+            [disabled]="busy"
+        /></label>
+      </div>
+      <ul class="attachments">
+        @for (a of selected.attachments; track a.id) {
+          <li>
+            <span class="badge">{{ a.category === 'INCIDENT' ? 'Incidente' : 'Corrección' }}</span
+            ><button mat-button (click)="evidence(a)">{{ a.filename }}</button
+            ><small
+              >{{ a.size / 1024 | number: '1.0-0' }} KB ·
+              {{ a.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small
+            >
+          </li>
+        } @empty {
+          <li>Sin evidencias adjuntas.</li>
+        }
+      </ul>
+      <h3>Comentarios</h3>
+      <form (ngSubmit)="addComment()" class="comment-form">
+        <label
+          >Autor *<input
+            name="commentAuthor"
+            [(ngModel)]="commentAuthor"
+            required
+            maxlength="255" /></label
+        ><label
+          >Comentario *<textarea
+            name="commentText"
+            [(ngModel)]="commentText"
+            required
+          ></textarea></label
+        ><button mat-flat-button type="submit" [disabled]="busy">Agregar comentario</button>
+      </form>
+      <h3>Historial y comentarios</h3>
+      <ol class="timeline">
+        @for (e of selected.events.slice().reverse(); track e.id) {
+          <li>
+            <strong>{{ eventLabel(e.type) }}</strong
+            ><small>{{ e.actor }} · {{ e.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+            @if (e.fromStatus && e.toStatus !== e.fromStatus) {
+              <p>{{ labels[e.fromStatus] }} → {{ labels[e.toStatus] }}</p>
+            }
+            <p class="multiline">{{ e.observation }}</p>
+            @if (e.evidenceUrl) {
+              <a [href]="e.evidenceUrl" target="_blank" rel="noopener noreferrer"
+                >Ver enlace de evidencia</a
+              >
+            }
+          </li>
+        }
+      </ol>
+    </section>
+  </div>
+}
+@if (editor) {
+  <div class="overlay">
+    <section
+      class="modal"
+      cdkTrapFocus
+      [cdkTrapFocusAutoCapture]="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="incident-editor-title"
+    >
+      <header>
+        <h2 id="incident-editor-title">{{ editingId ? 'Editar incidente' : 'Nuevo incidente' }}</h2>
+        <button
+          mat-icon-button
+          aria-label="Cerrar edición"
+          (click)="editor = false"
+          [disabled]="busy"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </header>
+      @if (error) {
+        <p class="message error" role="alert">{{ error }}</p>
+      }
+      <form (ngSubmit)="save()">
+        <div class="form-grid">
+          <label class="full"
+            >Título *<input name="title" [(ngModel)]="form.title" required maxlength="255"
+          /></label>
+          <label class="full"
+            >Descripción *<textarea
+              name="description"
+              [(ngModel)]="form.description"
+              required
+            ></textarea>
+          </label>
+          <label
+            >Proyecto *<select
+              name="projectId"
+              [(ngModel)]="form.projectId"
+              (ngModelChange)="form.taskId = null"
+              required
+            >
+              <option [ngValue]="null">Seleccionar</option>
+              @for (p of projects; track p.id) {
+                <option [ngValue]="p.id">{{ p.name }}</option>
+              }
+            </select></label
+          >
+          <label
+            >Tarea vinculada<select name="taskId" [(ngModel)]="form.taskId">
+              <option [ngValue]="null">Sin vincular</option>
+              @for (t of taskOptions; track t.id) {
+                <option [ngValue]="t.id">{{ t.title }}</option>
+              }
+            </select></label
+          >
+          <label
+            >Ambiente de detección *<select
+              name="environment"
+              [(ngModel)]="form.detectedEnvironment"
+              required
+            >
+              @for (e of environments; track e) {
+                <option [value]="e">{{ e }}</option>
+              }
+            </select></label
+          >
+          <label
+            >Prioridad *<select name="priority" [(ngModel)]="form.priority" required>
+              @for (p of priorities; track p) {
+                <option [value]="p">{{ $any(priorityLabels)[p] }}</option>
+              }
+            </select></label
+          >
+          <label
+            >Reportante *<input
+              name="reporter"
+              [(ngModel)]="form.reporter"
+              required
+              maxlength="255"
+          /></label>
+          <label
+            >Fecha objetivo<input name="dueDate" type="date" [(ngModel)]="form.dueDate"
+          /></label>
+          <label
+            >Responsable de desarrollo<select name="developerId" [(ngModel)]="form.developerId">
+              <option [ngValue]="null">Sin asignar</option>
+              @for (m of members; track m.id) {
+                <option [ngValue]="m.id">{{ m.name }}</option>
+              }
+            </select></label
+          >
+          <label
+            >Responsable QA<select name="qaId" [(ngModel)]="form.qaId">
+              <option [ngValue]="null">Sin asignar</option>
+              @for (m of members; track m.id) {
+                <option [ngValue]="m.id">{{ m.name }}</option>
+              }
+            </select></label
+          >
+          <label class="full"
+            >Pasos para reproducir<textarea
+              name="steps"
+              [(ngModel)]="form.reproductionSteps"
+            ></textarea>
+          </label>
+          <label
+            >Resultado esperado<textarea
+              name="expected"
+              [(ngModel)]="form.expectedResult"
+            ></textarea>
+          </label>
+          <label
+            >Resultado obtenido<textarea name="actual" [(ngModel)]="form.actualResult"></textarea>
+          </label>
+        </div>
+        <p>
+          Podrás adjuntar imágenes y PDF después de guardar. Desarrollo es obligatorio al iniciar
+          DESA; QA al enviar a CERT.
+        </p>
+        <footer>
+          <button mat-button type="button" (click)="editor = false" [disabled]="busy">Volver</button
+          ><button mat-flat-button type="submit" [disabled]="busy">
+            {{ busy ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
+@if (previewUrl) {
+  <div class="overlay preview" role="dialog" aria-modal="true" aria-label="Vista de evidencia">
+    <section class="modal">
+      <header>
+        <h2>{{ previewName }}</h2>
+        <button mat-icon-button aria-label="Cerrar imagen" (click)="previewUrl = ''">
+          <mat-icon>close</mat-icon>
+        </button>
+      </header>
+      <img [src]="previewUrl" [alt]="previewName" />
+    </section>
+  </div>
+}
