@@ -1,3 +1,4 @@
+@use '../../shared/styles/editable-table' as editable;
 :host {
   display: block;
   min-width: 0;
@@ -597,4 +598,61 @@ mat-select {
 
 .incidents-table .mat-column-responsibles {
   min-width: 145px;
+}
+
+.incidents-table {
+  @include editable.cells;
+  @include editable.inline-controls;
+  table-layout: fixed;
+  min-width: 100%;
+  .mat-column-incident,
+  .mat-column-project,
+  .mat-column-status,
+  .mat-column-environment,
+  .mat-column-responsibles,
+  .mat-column-actions {
+    min-width: 0;
+  }
+  .incident-cell {
+    align-items: flex-start;
+  }
+  .title-link {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  .row-actions {
+    flex-wrap: nowrap;
+    gap: 0;
+  }
+  .inline-responsibles {
+    display: grid;
+    gap: 4px;
+  }
+  .incident-id {
+    font-size: 10px;
+  }
+  .inline-title-group {
+    width: 100%;
+    min-width: 0;
+  }
+  .inline-reporter {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    padding: 3px 6px;
+    font: inherit;
+    font-size: 11px;
+  }
+  .status-btn {
+    padding: 0;
+    min-width: 0;
+    height: auto;
+    line-height: normal;
+  }
 }

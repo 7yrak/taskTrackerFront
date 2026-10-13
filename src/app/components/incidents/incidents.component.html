@@ -111,85 +111,463 @@
   } @else if (view === 'table') {
     <div class="table-wrapper">
       <div class="table-scroll">
-        <table mat-table [dataSource]="filtered" [trackBy]="trackIncident" class="incidents-table">
+        <table
+          mat-table
+          [dataSource]="filtered"
+          [trackBy]="trackIncident"
+          class="incidents-table"
+          [style.width.px]="tableWidth"
+        >
           <ng-container matColumnDef="incident"
-            ><th mat-header-cell *matHeaderCellDef>Incidente</th>
+            ><th mat-header-cell *matHeaderCellDef [style.width.px]="columnWidths['incident']">
+              <div
+                class="sort-header"
+                role="button"
+                tabindex="0"
+                (click)="handleSort('incident', $event)"
+                (keydown.enter)="handleSort('incident', $any($event))"
+                [class.sorted]="sortDirection('incident')"
+                aria-label="Ordenar por Incidente"
+              >
+                <span>Incidente</span>
+                @if (sortDirection('incident')) {
+                  <mat-icon class="sort-icon">{{
+                    sortDirection('incident') === 'asc' ? 'arrow_upward' : 'arrow_downward'
+                  }}</mat-icon>
+                }
+                @if (sortOrder('incident')) {
+                  <span class="sort-order-badge">{{ sortOrder('incident') }}</span>
+                }
+              </div>
+              <span
+                class="column-resize-handle"
+                (pointerdown)="startColumnResize('incident', $event)"
+                aria-label="Redimensionar columna Incidente"
+              ></span>
+            </th>
             <td mat-cell *matCellDef="let i">
               <div class="incident-cell">
                 <span class="incident-id">#{{ i.id }}</span>
-                <div>
-                  <button class="title-link" (click)="open(i)">{{ i.title }}</button
-                  ><small>Reportado por {{ i.reporter }}</small>
+                <div class="inline-title-group">
+                  @if (inlineEditingId === i.id) {
+                    <input
+                      class="title-inline-input"
+                      [id]="'inline-title-' + i.id"
+                      [(ngModel)]="inlineForm.title"
+                      maxlength="255"
+                      aria-label="Título del incidente"
+                      (keydown.enter)="saveInlineEdit(i)"
+                      (keydown.escape)="cancelInlineEdit()"
+                      [disabled]="busy"
+                    /><input
+                      class="inline-reporter"
+                      [(ngModel)]="inlineForm.reporter"
+                      maxlength="255"
+                      aria-label="Reportante"
+                      [disabled]="busy"
+                    />
+                  } @else if (titleEditingId === i.id) {
+                    <input
+                      class="title-inline-input"
+                      [id]="'title-input-' + i.id"
+                      [(ngModel)]="titleDraft"
+                      maxlength="255"
+                      aria-label="Editar título"
+                      (blur)="saveTitle(i)"
+                      (keydown.enter)="saveTitle(i)"
+                      (keydown.escape)="cancelTitleEdit()"
+                      [disabled]="busy"
+                    />
+                  } @else {
+                    <span
+                      class="title-link"
+                      [matTooltip]="
+                        i.description + (editable(i) ? '\n(Doble clic para editar)' : '')
+                      "
+                      matTooltipShowDelay="600"
+                      (dblclick)="startTitleEdit(i, $event)"
+                      >{{ i.title }}</span
+                    ><small>Reportado por {{ i.reporter }}</small>
+                  }
                 </div>
               </div>
             </td></ng-container
           >
           <ng-container matColumnDef="project"
-            ><th mat-header-cell *matHeaderCellDef>Proyecto</th>
-            <td mat-cell *matCellDef="let i">
-              <span class="project-label"
-                ><span class="color-dot" [style.background]="projectColor(i.projectId)"></span
-                >{{ i.projectName }}</span
+            ><th mat-header-cell *matHeaderCellDef [style.width.px]="columnWidths['project']">
+              <div
+                class="sort-header"
+                role="button"
+                tabindex="0"
+                (click)="handleSort('project', $event)"
+                (keydown.enter)="handleSort('project', $any($event))"
+                [class.sorted]="sortDirection('project')"
+                aria-label="Ordenar por Proyecto"
               >
+                <span>Proyecto</span>
+                @if (sortDirection('project')) {
+                  <mat-icon class="sort-icon">{{
+                    sortDirection('project') === 'asc' ? 'arrow_upward' : 'arrow_downward'
+                  }}</mat-icon>
+                }
+                @if (sortOrder('project')) {
+                  <span class="sort-order-badge">{{ sortOrder('project') }}</span>
+                }
+              </div>
+              <span
+                class="column-resize-handle"
+                (pointerdown)="startColumnResize('project', $event)"
+                aria-label="Redimensionar columna Proyecto"
+              ></span>
+            </th>
+            <td mat-cell *matCellDef="let i">
+              @if (inlineEditingId === i.id) {
+                <mat-form-field
+                  appearance="outline"
+                  subscriptSizing="dynamic"
+                  class="inline-cell-field"
+                  ><mat-select
+                    [(ngModel)]="inlineForm.projectId"
+                    (ngModelChange)="inlineProjectChanged()"
+                    aria-label="Proyecto"
+                    [disabled]="busy"
+                  >
+                    @for (p of projects; track p.id) {
+                      <mat-option [value]="p.id">{{ p.name }}</mat-option>
+                    }
+                  </mat-select></mat-form-field
+                >
+              } @else {
+                <span class="project-label"
+                  ><span class="color-dot" [style.background]="projectColor(i.projectId)"></span
+                  >{{ i.projectName }}</span
+                >
+              }
             </td></ng-container
           >
           <ng-container matColumnDef="environment"
-            ><th mat-header-cell *matHeaderCellDef>Ambiente</th>
+            ><th mat-header-cell *matHeaderCellDef [style.width.px]="columnWidths['environment']">
+              <div
+                class="sort-header"
+                role="button"
+                tabindex="0"
+                (click)="handleSort('environment', $event)"
+                (keydown.enter)="handleSort('environment', $any($event))"
+                [class.sorted]="sortDirection('environment')"
+                aria-label="Ordenar por Ambiente"
+              >
+                <span>Ambiente</span>
+                @if (sortDirection('environment')) {
+                  <mat-icon class="sort-icon">{{
+                    sortDirection('environment') === 'asc' ? 'arrow_upward' : 'arrow_downward'
+                  }}</mat-icon>
+                }
+                @if (sortOrder('environment')) {
+                  <span class="sort-order-badge">{{ sortOrder('environment') }}</span>
+                }
+              </div>
+              <span
+                class="column-resize-handle"
+                (pointerdown)="startColumnResize('environment', $event)"
+                aria-label="Redimensionar columna Ambiente"
+              ></span>
+            </th>
             <td mat-cell *matCellDef="let i">
-              <span class="environment-chip">{{ i.detectedEnvironment }}</span>
+              @if (inlineEditingId === i.id) {
+                <mat-form-field
+                  appearance="outline"
+                  subscriptSizing="dynamic"
+                  class="inline-cell-field"
+                  ><mat-select
+                    [(ngModel)]="inlineForm.detectedEnvironment"
+                    aria-label="Ambiente de detección"
+                    [disabled]="busy"
+                  >
+                    @for (e of environments; track e) {
+                      <mat-option [value]="e">{{ e }}</mat-option>
+                    }
+                  </mat-select></mat-form-field
+                >
+              } @else {
+                <span class="environment-chip">{{ i.detectedEnvironment }}</span>
+              }
             </td></ng-container
           >
           <ng-container matColumnDef="status"
-            ><th mat-header-cell *matHeaderCellDef>Estado</th>
+            ><th mat-header-cell *matHeaderCellDef [style.width.px]="columnWidths['status']">
+              <div
+                class="sort-header"
+                role="button"
+                tabindex="0"
+                (click)="handleSort('status', $event)"
+                (keydown.enter)="handleSort('status', $any($event))"
+                [class.sorted]="sortDirection('status')"
+                aria-label="Ordenar por Estado"
+              >
+                <span>Estado</span>
+                @if (sortDirection('status')) {
+                  <mat-icon class="sort-icon">{{
+                    sortDirection('status') === 'asc' ? 'arrow_upward' : 'arrow_downward'
+                  }}</mat-icon>
+                }
+                @if (sortOrder('status')) {
+                  <span class="sort-order-badge">{{ sortOrder('status') }}</span>
+                }
+              </div>
+              <span
+                class="column-resize-handle"
+                (pointerdown)="startColumnResize('status', $event)"
+                aria-label="Redimensionar columna Estado"
+              ></span>
+            </th>
             <td mat-cell *matCellDef="let i">
-              <span class="status-chip" [ngClass]="statusTone(i.status)">{{
-                statusLabel(i.status)
-              }}</span>
+              <button
+                mat-button
+                class="status-btn"
+                [matMenuTriggerFor]="stageMenu"
+                [disabled]="busy || inlineEditingId === i.id || !actions(i).length"
+                [attr.aria-label]="'Cambiar etapa del incidente ' + i.id"
+              >
+                <span class="status-chip" [ngClass]="statusTone(i.status)">{{
+                  statusLabel(i.status)
+                }}</span>
+              </button>
+              <mat-menu #stageMenu="matMenu">
+                @for (a of actions(i); track a) {
+                  <button mat-menu-item (click)="startTableAction(i, a)">
+                    {{ actionLabels[a] }}
+                  </button>
+                }
+              </mat-menu>
             </td></ng-container
           >
           <ng-container matColumnDef="priority"
-            ><th mat-header-cell *matHeaderCellDef>Prioridad</th>
+            ><th mat-header-cell *matHeaderCellDef [style.width.px]="columnWidths['priority']">
+              <div
+                class="sort-header"
+                role="button"
+                tabindex="0"
+                (click)="handleSort('priority', $event)"
+                (keydown.enter)="handleSort('priority', $any($event))"
+                [class.sorted]="sortDirection('priority')"
+                aria-label="Ordenar por Prioridad"
+              >
+                <span>Prioridad</span>
+                @if (sortDirection('priority')) {
+                  <mat-icon class="sort-icon">{{
+                    sortDirection('priority') === 'asc' ? 'arrow_upward' : 'arrow_downward'
+                  }}</mat-icon>
+                }
+                @if (sortOrder('priority')) {
+                  <span class="sort-order-badge">{{ sortOrder('priority') }}</span>
+                }
+              </div>
+              <span
+                class="column-resize-handle"
+                (pointerdown)="startColumnResize('priority', $event)"
+                aria-label="Redimensionar columna Prioridad"
+              ></span>
+            </th>
             <td mat-cell *matCellDef="let i">
-              <span class="priority-chip" [ngClass]="i.priority">{{
-                priorityLabel(i.priority)
-              }}</span>
+              @if (inlineEditingId === i.id) {
+                <mat-form-field
+                  appearance="outline"
+                  subscriptSizing="dynamic"
+                  class="inline-cell-field"
+                  ><mat-select
+                    [(ngModel)]="inlineForm.priority"
+                    aria-label="Prioridad"
+                    [disabled]="busy"
+                  >
+                    @for (p of priorities; track p) {
+                      <mat-option [value]="p">{{ $any(priorityLabels)[p] }}</mat-option>
+                    }
+                  </mat-select></mat-form-field
+                >
+              } @else {
+                <span class="priority-chip" [ngClass]="i.priority">{{
+                  priorityLabel(i.priority)
+                }}</span>
+              }
             </td></ng-container
           >
           <ng-container matColumnDef="responsibles"
-            ><th mat-header-cell *matHeaderCellDef>Desarrollo / QA</th>
+            ><th mat-header-cell *matHeaderCellDef [style.width.px]="columnWidths['responsibles']">
+              <div
+                class="sort-header"
+                role="button"
+                tabindex="0"
+                (click)="handleSort('responsibles', $event)"
+                (keydown.enter)="handleSort('responsibles', $any($event))"
+                [class.sorted]="sortDirection('responsibles')"
+                aria-label="Ordenar por Desarrollo / QA"
+              >
+                <span>Desarrollo / QA</span>
+                @if (sortDirection('responsibles')) {
+                  <mat-icon class="sort-icon">{{
+                    sortDirection('responsibles') === 'asc' ? 'arrow_upward' : 'arrow_downward'
+                  }}</mat-icon>
+                }
+                @if (sortOrder('responsibles')) {
+                  <span class="sort-order-badge">{{ sortOrder('responsibles') }}</span>
+                }
+              </div>
+              <span
+                class="column-resize-handle"
+                (pointerdown)="startColumnResize('responsibles', $event)"
+                aria-label="Redimensionar columna Desarrollo / QA"
+              ></span>
+            </th>
             <td mat-cell *matCellDef="let i">
-              <span class="responsible-name">{{ i.developerName || 'Sin asignar' }}</span
-              ><small>QA: {{ i.qaName || 'Sin asignar' }}</small>
+              @if (inlineEditingId === i.id) {
+                <div class="inline-responsibles">
+                  <mat-form-field
+                    appearance="outline"
+                    subscriptSizing="dynamic"
+                    class="inline-cell-field"
+                    ><mat-select
+                      [(ngModel)]="inlineForm.developerId"
+                      aria-label="Responsable de desarrollo"
+                      [disabled]="busy"
+                      placeholder="Desarrollo"
+                    >
+                      <mat-option [value]="null">Sin asignar</mat-option>
+                      @for (m of members; track m.id) {
+                        <mat-option [value]="m.id">{{ m.name }}</mat-option>
+                      }
+                    </mat-select></mat-form-field
+                  ><mat-form-field
+                    appearance="outline"
+                    subscriptSizing="dynamic"
+                    class="inline-cell-field"
+                    ><mat-select
+                      [(ngModel)]="inlineForm.qaId"
+                      aria-label="Responsable QA"
+                      [disabled]="busy"
+                      placeholder="QA"
+                      ><mat-option [value]="null">Sin asignar</mat-option>
+                      @for (m of members; track m.id) {
+                        <mat-option [value]="m.id">{{ m.name }}</mat-option>
+                      }
+                    </mat-select></mat-form-field
+                  >
+                </div>
+              } @else {
+                <span class="responsible-name">{{ i.developerName || '—' }}</span
+                ><small>QA: {{ i.qaName || '—' }}</small>
+              }
             </td></ng-container
           >
           <ng-container matColumnDef="dueDate"
-            ><th mat-header-cell *matHeaderCellDef>Fecha objetivo</th>
+            ><th mat-header-cell *matHeaderCellDef [style.width.px]="columnWidths['dueDate']">
+              <div
+                class="sort-header"
+                role="button"
+                tabindex="0"
+                (click)="handleSort('dueDate', $event)"
+                (keydown.enter)="handleSort('dueDate', $any($event))"
+                [class.sorted]="sortDirection('dueDate')"
+                aria-label="Ordenar por Fecha objetivo"
+              >
+                <span>Fecha objetivo</span>
+                @if (sortDirection('dueDate')) {
+                  <mat-icon class="sort-icon">{{
+                    sortDirection('dueDate') === 'asc' ? 'arrow_upward' : 'arrow_downward'
+                  }}</mat-icon>
+                }
+                @if (sortOrder('dueDate')) {
+                  <span class="sort-order-badge">{{ sortOrder('dueDate') }}</span>
+                }
+              </div>
+              <span
+                class="column-resize-handle"
+                (pointerdown)="startColumnResize('dueDate', $event)"
+                aria-label="Redimensionar columna Fecha objetivo"
+              ></span>
+            </th>
             <td mat-cell *matCellDef="let i">
-              <span class="date-cell">{{
-                i.dueDate ? (i.dueDate | date: 'dd/MM/yyyy') : '—'
-              }}</span>
+              @if (inlineEditingId === i.id) {
+                <mat-form-field
+                  appearance="outline"
+                  subscriptSizing="dynamic"
+                  class="inline-cell-field"
+                  ><input
+                    matInput
+                    type="date"
+                    [(ngModel)]="inlineForm.dueDate"
+                    aria-label="Fecha objetivo"
+                    [disabled]="busy"
+                /></mat-form-field>
+              } @else {
+                <span class="date-cell">{{
+                  i.dueDate ? (i.dueDate | date: 'dd/MM/yyyy') : '—'
+                }}</span>
+              }
             </td></ng-container
           >
           <ng-container matColumnDef="actions"
-            ><th mat-header-cell *matHeaderCellDef>Acciones</th>
+            ><th mat-header-cell *matHeaderCellDef [style.width.px]="columnWidths['actions']">
+              <span
+                class="column-resize-handle"
+                (pointerdown)="startColumnResize('actions', $event)"
+                aria-label="Redimensionar columna Acciones"
+              ></span>
+            </th>
             <td mat-cell *matCellDef="let i">
-              <div class="row-actions">
-                <button
-                  mat-icon-button
-                  matTooltip="Ver incidente"
-                  [attr.aria-label]="'Ver incidente ' + i.id"
-                  (click)="open(i)"
-                >
-                  <mat-icon>visibility</mat-icon>
-                </button>
-                @if (editable(i)) {
+              <div class="actions-cell row-actions">
+                @if (inlineEditingId === i.id) {
                   <button
                     mat-icon-button
-                    matTooltip="Editar incidente"
-                    [attr.aria-label]="'Editar incidente ' + i.id"
-                    (click)="openEditor(i)"
+                    class="action-btn"
+                    color="primary"
+                    matTooltip="Guardar cambios"
+                    [attr.aria-label]="'Guardar cambios del incidente ' + i.id"
+                    (click)="saveInlineEdit(i)"
+                    [disabled]="busy"
                   >
-                    <mat-icon>edit</mat-icon>
+                    <mat-icon>check</mat-icon></button
+                  ><button
+                    mat-icon-button
+                    class="action-btn"
+                    matTooltip="Cancelar edición"
+                    [attr.aria-label]="'Cancelar edición del incidente ' + i.id"
+                    (click)="cancelInlineEdit()"
+                    [disabled]="busy"
+                  >
+                    <mat-icon>close</mat-icon>
+                  </button>
+                } @else {
+                  @if (editable(i)) {
+                    <button
+                      mat-icon-button
+                      class="action-btn"
+                      color="primary"
+                      matTooltip="Editar en la tabla"
+                      [attr.aria-label]="'Editar en la tabla incidente ' + i.id"
+                      (click)="startInlineEdit(i)"
+                      [disabled]="busy"
+                    >
+                      <mat-icon>edit</mat-icon></button
+                    ><button
+                      mat-icon-button
+                      class="action-btn"
+                      matTooltip="Editar en modal"
+                      [attr.aria-label]="'Editar en modal incidente ' + i.id"
+                      (click)="openEditor(i)"
+                      [disabled]="busy"
+                    >
+                      <mat-icon>edit_note</mat-icon>
+                    </button>
+                  }
+                  <button
+                    mat-icon-button
+                    class="action-btn"
+                    matTooltip="Ver detalle, comentarios y evidencias"
+                    [attr.aria-label]="'Ver incidente ' + i.id"
+                    (click)="open(i)"
+                    [disabled]="busy"
+                  >
+                    <mat-icon>visibility</mat-icon>
                   </button>
                 }
               </div>
@@ -199,6 +577,7 @@
           <tr
             mat-row
             *matRowDef="let row; columns: displayedColumns"
+            [class.editing-row]="inlineEditingId === row.id"
             [class.closed-row]="row.status === 'CLOSED' || row.status === 'CANCELLED'"
           ></tr>
         </table>

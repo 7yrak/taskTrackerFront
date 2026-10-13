@@ -9,6 +9,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { forkJoin, firstValueFrom } from 'rxjs';
@@ -42,6 +43,7 @@ import { Task, PRIORITY_LABELS } from '../../models/task.model';
     MatSelectModule,
     MatTableModule,
     MatTooltipModule,
+    MatMenuModule,
   ],
   templateUrl: './incidents.component.html',
   styleUrl: './incidents.component.scss',
@@ -57,6 +59,81 @@ export class IncidentsComponent implements OnInit, OnDestroy {
   projects: Project[] = [];
   members: Member[] = [];
   tasks: Task[] = [];
+  inlineEditingId: number | null = null;
+  inlineForm: IncidentRequest = this.emptyForm();
+  titleEditingId: number | null = null;
+  titleDraft = '';
+  sorts: { column: string; direction: 'asc' | 'desc' }[] = [];
+  columnWidths: Record<string, number> = {
+    incident: 420,
+    project: 130,
+    environment: 85,
+    status: 170,
+    priority: 90,
+    responsibles: 160,
+    dueDate: 120,
+    actions: 112,
+  };
+  private resizeCleanup: (() => void) | null = null;
+  get tableWidth() {
+    return Object.values(this.columnWidths).reduce((sum, width) => sum + width, 0);
+  }
+  sortDirection(column: string) {
+    return this.sorts.find((sort) => sort.column === column)?.direction ?? '';
+  }
+  sortOrder(column: string) {
+    const index = this.sorts.findIndex((sort) => sort.column === column);
+    return this.sorts.length > 1 && index >= 0 ? index + 1 : null;
+  }
+  handleSort(column: string, event: MouseEvent) {
+    const existing = this.sorts.find((sort) => sort.column === column);
+    if (event.shiftKey) {
+      if (existing?.direction === 'asc')
+        this.sorts = this.sorts.map((sort) =>
+          sort.column === column ? { ...sort, direction: 'desc' } : sort,
+        );
+      else if (existing) this.sorts = this.sorts.filter((sort) => sort.column !== column);
+      else this.sorts = [...this.sorts, { column, direction: 'asc' }];
+    } else {
+      this.sorts = [
+        {
+          column,
+          direction: this.sorts.length === 1 && existing?.direction === 'asc' ? 'desc' : 'asc',
+        },
+      ];
+    }
+  }
+  startColumnResize(column: string, event: PointerEvent) {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.resizeCleanup?.();
+    const start = event.clientX,
+      width = this.columnWidths[column];
+    const minimum = column === 'incident' ? 260 : column === 'actions' ? 100 : 80;
+    const move = (pointer: PointerEvent) => {
+      this.columnWidths = {
+        ...this.columnWidths,
+        [column]: Math.max(minimum, width + pointer.clientX - start),
+      };
+      this.change.markForCheck();
+    };
+    const end = () => {
+      this.resizeCleanup?.();
+      try {
+        localStorage.setItem('incidents.tableColumnWidths.v1', JSON.stringify(this.columnWidths));
+      } catch {}
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', end, { once: true });
+    window.addEventListener('pointercancel', end, { once: true });
+    this.resizeCleanup = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', end);
+      window.removeEventListener('pointercancel', end);
+      this.resizeCleanup = null;
+    };
+  }
   displayedColumns = [
     'incident',
     'project',
@@ -148,9 +225,19 @@ export class IncidentsComponent implements OnInit, OnDestroy {
     };
   }
   ngOnInit() {
+    try {
+      const saved = JSON.parse(localStorage.getItem('incidents.tableColumnWidths.v1') ?? '{}');
+      for (const key of Object.keys(this.columnWidths))
+        if (Number.isFinite(saved[key]))
+          this.columnWidths[key] = Math.max(
+            key === 'incident' ? 260 : key === 'actions' ? 100 : 80,
+            saved[key],
+          );
+    } catch {}
     this.load();
   }
   ngOnDestroy() {
+    this.resizeCleanup?.();
     this.urls.forEach((url) => URL.revokeObjectURL(url));
   }
   load() {
@@ -178,7 +265,7 @@ export class IncidentsComponent implements OnInit, OnDestroy {
   }
   get filtered() {
     const q = this.search.trim().toLocaleLowerCase();
-    return this.incidents.filter(
+    const result = this.incidents.filter(
       (i) =>
         (!q ||
           `${i.id} ${i.title} ${i.description} ${i.reporter}`.toLocaleLowerCase().includes(q)) &&
@@ -190,6 +277,39 @@ export class IncidentsComponent implements OnInit, OnDestroy {
           String(i.developerId) === this.memberFilter ||
           String(i.qaId) === this.memberFilter),
     );
+    const text = new Intl.Collator('es', { numeric: true, sensitivity: 'base' });
+    return result.sort((a, b) => {
+      for (const sort of this.sorts) {
+        const value = (i: Incident): string | number => {
+          switch (sort.column) {
+            case 'incident':
+              return i.title;
+            case 'project':
+              return i.projectName;
+            case 'environment':
+              return i.detectedEnvironment;
+            case 'status':
+              return this.labels[i.status];
+            case 'priority':
+              return ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].indexOf(i.priority);
+            case 'responsibles':
+              return `${i.developerName ?? ''} ${i.qaName ?? ''}`;
+            case 'dueDate':
+              return i.dueDate ?? '';
+            default:
+              return '';
+          }
+        };
+        const left = value(a),
+          right = value(b);
+        const compared =
+          typeof left === 'number' && typeof right === 'number'
+            ? left - right
+            : text.compare(String(left), String(right));
+        if (compared) return sort.direction === 'asc' ? compared : -compared;
+      }
+      return 0;
+    });
   }
   column(status: IncidentStatus) {
     return this.filtered.filter((i) => i.status === status);
@@ -209,7 +329,118 @@ export class IncidentsComponent implements OnInit, OnDestroy {
   editable(i: Incident) {
     return i.status === 'REGISTERED' || i.status === 'DEVELOPMENT';
   }
+  private request(value: IncidentRequest): IncidentRequest {
+    return {
+      title: value.title.trim(),
+      description: value.description,
+      projectId: value.projectId,
+      taskId: value.taskId,
+      detectedEnvironment: value.detectedEnvironment,
+      priority: value.priority,
+      reporter: value.reporter.trim(),
+      developerId: value.developerId,
+      qaId: value.qaId,
+      reproductionSteps: value.reproductionSteps,
+      expectedResult: value.expectedResult,
+      actualResult: value.actualResult,
+      dueDate: value.dueDate || null,
+      reportedStatus: value.reportedStatus,
+      qaDeliveryDate: value.qaDeliveryDate || null,
+      importNotes: value.importNotes,
+    };
+  }
+  startInlineEdit(i: Incident) {
+    if (this.busy || !this.editable(i)) return;
+    this.cancelTitleEdit();
+    this.inlineEditingId = i.id;
+    this.inlineForm = { ...i };
+    this.error = '';
+    setTimeout(() => {
+      const input = document.getElementById(`inline-title-${i.id}`) as HTMLInputElement | null;
+      input?.focus();
+      input?.select();
+    });
+  }
+  cancelInlineEdit() {
+    if (this.busy) return;
+    this.inlineEditingId = null;
+    this.inlineForm = this.emptyForm();
+  }
+  inlineProjectChanged() {
+    this.inlineForm.taskId = null;
+  }
+  async saveInlineEdit(i: Incident) {
+    if (this.busy || this.inlineEditingId !== i.id) return;
+    if (
+      !this.inlineForm.title.trim() ||
+      !this.inlineForm.reporter.trim() ||
+      !this.inlineForm.projectId
+    ) {
+      this.error = 'Completa título, reportante y proyecto.';
+      return;
+    }
+    this.busy = true;
+    this.error = '';
+    try {
+      this.replace(await firstValueFrom(this.api.update(i.id, this.request(this.inlineForm))));
+      this.inlineEditingId = null;
+      this.notice = 'Incidente actualizado';
+    } catch (e) {
+      this.fail(e);
+    } finally {
+      this.busy = false;
+      this.change.markForCheck();
+    }
+  }
+  startTitleEdit(i: Incident, event: MouseEvent) {
+    event.stopPropagation();
+    if (this.busy || !this.editable(i)) return;
+    this.cancelInlineEdit();
+    this.titleEditingId = i.id;
+    this.titleDraft = i.title;
+    this.error = '';
+    setTimeout(() => {
+      const input = document.getElementById(`title-input-${i.id}`) as HTMLInputElement | null;
+      input?.focus();
+      input?.select();
+    });
+  }
+  cancelTitleEdit() {
+    if (!this.busy) this.titleEditingId = null;
+  }
+  async saveTitle(i: Incident) {
+    if (this.busy || this.titleEditingId !== i.id) return;
+    const title = this.titleDraft.trim();
+    if (!title) {
+      this.error = 'El título es obligatorio.';
+      return;
+    }
+    if (title === i.title) {
+      this.cancelTitleEdit();
+      return;
+    }
+    this.busy = true;
+    this.error = '';
+    try {
+      this.replace(await firstValueFrom(this.api.update(i.id, this.request({ ...i, title }))));
+      this.titleEditingId = null;
+      this.notice = 'Título actualizado';
+    } catch (e) {
+      this.fail(e);
+    } finally {
+      this.busy = false;
+      this.change.markForCheck();
+    }
+  }
+  startTableAction(i: Incident, action: string) {
+    this.cancelInlineEdit();
+    this.cancelTitleEdit();
+    this.selected = i;
+    this.choose(action);
+  }
   openEditor(i?: Incident) {
+    this.cancelInlineEdit();
+    this.cancelTitleEdit();
     this.editingId = i?.id ?? null;
     this.form = i ? { ...i } : this.emptyForm();
     this.editor = true;
@@ -268,9 +499,12 @@ export class IncidentsComponent implements OnInit, OnDestroy {
         this.editingId ? this.api.update(this.editingId, request) : this.api.create(request),
       );
       this.replace(result);
-      this.selected = result;
+      if (this.editingId === null || this.selected?.id === result.id) this.selected = result;
       this.editor = false;
-      this.notice = 'Incidente guardado. Puedes agregar sus evidencias.';
+      this.notice =
+        this.editingId === null
+          ? 'Incidente guardado. Puedes agregar sus evidencias.'
+          : 'Incidente actualizado';
     } catch (e) {
       this.fail(e);
     } finally {

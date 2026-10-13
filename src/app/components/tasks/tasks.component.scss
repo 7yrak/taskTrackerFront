@@ -1,3 +1,4 @@
+@use '../../shared/styles/editable-table' as editable;
 // ─── Host / layout flex chain ─────────────────────────────────────────────
 :host {
   display: flex;
@@ -104,6 +105,8 @@
 
 // ─── Tabla ────────────────────────────────────────────────────────────────
 .tasks-table {
+  @include editable.cells;
+  @include editable.inline-controls;
   width: 100%;
   table-layout: fixed;
   min-width: 100%;

@@ -1,0 +1,227 @@
+// Shared with Tareas: table density, editing controls, headers and row actions.
+@mixin cells {
+  th.mat-mdc-header-cell {
+    font-weight: 700;
+    font-size: 10px;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    white-space: nowrap;
+    background: var(--orange-border);
+    border-bottom: none !important;
+    padding: 0 6px;
+    position: relative;
+    overflow: visible;
+
+    &:first-of-type {
+      padding-left: 10px;
+    }
+    &:last-of-type {
+      padding-right: 6px;
+    }
+  }
+
+  td.mat-mdc-cell {
+    color: var(--text-primary);
+    border-bottom-color: var(--border-subtle) !important;
+    font-size: 13px;
+    padding: 6px;
+    transition:
+      background var(--transition),
+      color var(--transition);
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    &:first-of-type {
+      padding-left: 10px;
+    }
+    &:last-of-type {
+      padding-right: 6px;
+    }
+  }
+
+  .sort-header {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    gap: 4px;
+
+    &:hover {
+      color: var(--accent-bright);
+    }
+    &.sorted {
+      font-weight: 700;
+      color: var(--accent-bright);
+    }
+
+    .sort-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+
+    .sort-order-badge {
+      background: var(--accent);
+      color: white;
+      border-radius: 50%;
+      width: 14px;
+      height: 14px;
+      font-size: 10px;
+      line-height: 14px;
+      text-align: center;
+      font-weight: 700;
+      margin-left: 4px;
+    }
+  }
+
+  .column-resize-handle {
+    position: absolute;
+    top: 0;
+    right: -2px;
+    width: 12px;
+    height: 100%;
+    cursor: col-resize;
+    touch-action: none;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &::before {
+      content: '';
+      width: 2px;
+      height: calc(100% - 14px);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--border) 80%, var(--accent));
+      opacity: 0.8;
+    }
+
+    &:hover::before {
+      background: var(--accent);
+    }
+  }
+
+  .title-inline-input {
+    flex: 1;
+    width: 100%;
+    border: 1px solid var(--accent);
+    background: var(--bg-card);
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+    min-width: 50px;
+    box-sizing: border-box;
+    transition: background var(--transition);
+  }
+
+  .inline-cell-field {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .actions-cell {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 0;
+  }
+
+  .action-btn {
+    --mat-icon-button-state-layer-size: 26px;
+    --mat-icon-button-touch-target-display: none;
+    --mdc-icon-button-state-layer-size: 26px;
+    width: 26px !important;
+    height: 26px !important;
+    padding: 0 !important;
+    flex-shrink: 0;
+
+    .mat-icon {
+      font-size: 17px !important;
+      width: 17px !important;
+      height: 17px !important;
+      line-height: 17px !important;
+    }
+  }
+
+  tr.mat-mdc-row:hover td.mat-mdc-cell {
+    background-color: var(--bg-surface);
+  }
+
+  tr.editing-row td.mat-mdc-cell {
+    background-color: color-mix(in srgb, var(--accent-dim) 35%, var(--bg-card));
+  }
+
+  tr.editing-row:hover td.mat-mdc-cell {
+    background-color: color-mix(in srgb, var(--accent-dim) 45%, var(--bg-card));
+  }
+  th.mat-mdc-header-cell:hover .column-resize-handle,
+  .column-resize-handle:focus-visible {
+    opacity: 1;
+  }
+}
+
+@mixin inline-controls {
+  & ::ng-deep .inline-cell-field {
+    margin: 0;
+  }
+
+  & ::ng-deep .inline-cell-field .mat-mdc-text-field-wrapper {
+    padding: 0 8px;
+    margin: 0;
+  }
+
+  & ::ng-deep .inline-cell-field .mat-mdc-form-field-flex {
+    align-items: center;
+  }
+
+  & ::ng-deep .inline-cell-field .mat-mdc-form-field-infix {
+    min-height: 32px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    width: auto;
+  }
+
+  & ::ng-deep .inline-cell-field .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
+
+  & ::ng-deep .inline-cell-field .mat-mdc-select-value,
+  & ::ng-deep .inline-cell-field .mat-mdc-input-element {
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  & ::ng-deep .inline-cell-field .mat-mdc-select-trigger {
+    min-height: 20px;
+  }
+
+  & ::ng-deep .inline-cell-field .mat-mdc-select-arrow {
+    margin-left: 4px;
+  }
+
+  & ::ng-deep .inline-cell-field .mat-mdc-text-field-wrapper .mdc-notched-outline__leading,
+  & ::ng-deep .inline-cell-field .mat-mdc-text-field-wrapper .mdc-notched-outline__notch,
+  & ::ng-deep .inline-cell-field .mat-mdc-text-field-wrapper .mdc-notched-outline__trailing {
+    border-color: var(--border);
+  }
+
+  & ::ng-deep .inline-cell-field .mat-mdc-text-field-wrapper:hover .mdc-notched-outline__leading,
+  & ::ng-deep .inline-cell-field .mat-mdc-text-field-wrapper:hover .mdc-notched-outline__notch,
+  & ::ng-deep .inline-cell-field .mat-mdc-text-field-wrapper:hover .mdc-notched-outline__trailing {
+    border-color: var(--accent);
+  }
+
+  & ::ng-deep .inline-cell-field textarea.mat-mdc-input-element,
+  & ::ng-deep .inline-cell-field input.mat-mdc-input-element {
+    margin: 0;
+  }
+}
