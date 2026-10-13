@@ -5,6 +5,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { forkJoin, firstValueFrom } from 'rxjs';
 import { IncidentService } from '../../services/incident.service';
@@ -25,7 +30,19 @@ import { Member } from '../../models/member.model';
 import { Task, PRIORITY_LABELS } from '../../models/task.model';
 @Component({
   selector: 'app-incidents',
-  imports: [CommonModule, FormsModule, MatButtonModule, MatIconModule, DragDropModule, A11yModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatButtonModule,
+    MatIconModule,
+    DragDropModule,
+    A11yModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatTableModule,
+    MatTooltipModule,
+  ],
   templateUrl: './incidents.component.html',
   styleUrl: './incidents.component.scss',
 })
@@ -40,6 +57,41 @@ export class IncidentsComponent implements OnInit, OnDestroy {
   projects: Project[] = [];
   members: Member[] = [];
   tasks: Task[] = [];
+  displayedColumns = [
+    'incident',
+    'project',
+    'environment',
+    'status',
+    'priority',
+    'responsibles',
+    'dueDate',
+    'actions',
+  ];
+  statusTones: Record<IncidentStatus, string> = {
+    REGISTERED: 'TODO',
+    DEVELOPMENT: 'IN_PROGRESS',
+    CERT: 'IN_REVIEW',
+    QA_APPROVED: 'DONE',
+    UAT: 'IN_REVIEW',
+    CLIENT_APPROVED: 'DONE',
+    CLOSED: 'DONE',
+    CANCELLED: 'BLOCKED',
+  };
+  statusTone(status: IncidentStatus) {
+    return this.statusTones[status];
+  }
+  statusLabel(status: IncidentStatus) {
+    return this.labels[status];
+  }
+  priorityLabel(priority: Incident['priority']) {
+    return this.priorityLabels[priority];
+  }
+  projectColor(id: number | null) {
+    return this.projects.find((project) => project.id === id)?.color ?? 'var(--gray)';
+  }
+  trackIncident(index: number, incident: Incident) {
+    return incident.id;
+  }
   statuses = Object.keys(INCIDENT_STATUS_LABELS) as IncidentStatus[];
   labels = INCIDENT_STATUS_LABELS;
   actionLabels = INCIDENT_ACTIONS;

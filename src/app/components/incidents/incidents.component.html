@@ -1,12 +1,15 @@
-<section class="incidents-page">
-  <header>
+<section class="page-container incidents-page">
+  <header class="page-header">
     <div>
-      <h1>Seguimiento de incidentes</h1>
+      <h1 class="page-title">Incidentes</h1>
       <p>DESA → CERT con QA → UAT con cliente → PROD</p>
     </div>
     <div class="toolbar">
-      <button mat-stroked-button (click)="load()" [disabled]="busy || loading">Actualizar</button
-      ><button mat-flat-button (click)="openEditor()" [disabled]="busy">Nuevo incidente</button>
+      <button mat-stroked-button (click)="load()" [disabled]="busy || loading">
+        <mat-icon>refresh</mat-icon>Actualizar</button
+      ><button mat-flat-button (click)="openEditor()" [disabled]="busy">
+        <mat-icon>add</mat-icon>Nuevo incidente
+      </button>
     </div>
   </header>
   @if (error) {
@@ -15,49 +18,55 @@
   @if (notice) {
     <p class="message" role="status">{{ notice }}</p>
   }
-  <div class="filters">
-    <label
-      >Buscar<input [(ngModel)]="search" placeholder="ID, título, descripción o reportante"
-    /></label>
-    <label
-      >Proyecto<select [(ngModel)]="projectFilter">
-        <option value="">Todos</option>
+  <div class="filter-bar filters">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic"
+      ><mat-label>Buscar</mat-label
+      ><input matInput [(ngModel)]="search" placeholder="ID, título, descripción o reportante"
+    /></mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic"
+      ><mat-label>Proyecto</mat-label
+      ><mat-select [(ngModel)]="projectFilter">
+        <mat-option value="">Todos</mat-option>
         @for (p of projects; track p.id) {
-          <option [value]="p.id">{{ p.name }}</option>
+          <mat-option [value]="p.id.toString()">{{ p.name }}</mat-option>
         }
-      </select></label
+      </mat-select></mat-form-field
     >
-    <label
-      >Ambiente de detección<select [(ngModel)]="environmentFilter">
-        <option value="">Todos</option>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic"
+      ><mat-label>Ambiente</mat-label
+      ><mat-select [(ngModel)]="environmentFilter">
+        <mat-option value="">Todos</mat-option>
         @for (e of environments; track e) {
-          <option [value]="e">{{ e }}</option>
+          <mat-option [value]="e">{{ e }}</mat-option>
         }
-      </select></label
+      </mat-select></mat-form-field
     >
-    <label
-      >Estado<select [(ngModel)]="statusFilter">
-        <option value="">Todos</option>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic"
+      ><mat-label>Estado</mat-label
+      ><mat-select [(ngModel)]="statusFilter">
+        <mat-option value="">Todos</mat-option>
         @for (s of statuses; track s) {
-          <option [value]="s">{{ labels[s] }}</option>
+          <mat-option [value]="s">{{ labels[s] }}</mat-option>
         }
-      </select></label
+      </mat-select></mat-form-field
     >
-    <label
-      >Prioridad<select [(ngModel)]="priorityFilter">
-        <option value="">Todas</option>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic"
+      ><mat-label>Prioridad</mat-label
+      ><mat-select [(ngModel)]="priorityFilter">
+        <mat-option value="">Todas</mat-option>
         @for (p of priorities; track p) {
-          <option [value]="p">{{ $any(priorityLabels)[p] }}</option>
+          <mat-option [value]="p">{{ $any(priorityLabels)[p] }}</mat-option>
         }
-      </select></label
+      </mat-select></mat-form-field
     >
-    <label
-      >Responsable<select [(ngModel)]="memberFilter">
-        <option value="">Todos</option>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic"
+      ><mat-label>Responsable</mat-label
+      ><mat-select [(ngModel)]="memberFilter">
+        <mat-option value="">Todos</mat-option>
         @for (m of members; track m.id) {
-          <option [value]="m.id">{{ m.name }}</option>
+          <mat-option [value]="m.id.toString()">{{ m.name }}</mat-option>
         }
-      </select></label
+      </mat-select></mat-form-field
     >
     <button mat-button (click)="resetFilters()">Limpiar</button>
   </div>
@@ -69,75 +78,131 @@
         (click)="downloadExcel(true)"
         [disabled]="busy || loading || !projectFilter"
       >
-        Plantilla Excel
+        <mat-icon>description</mat-icon>Plantilla Excel
       </button>
       <button
         mat-stroked-button
         (click)="downloadExcel(false)"
         [disabled]="busy || loading || !projectFilter"
       >
-        Descargar Excel del proyecto
+        <mat-icon>download</mat-icon>Descargar Excel del proyecto
       </button>
       <button mat-flat-button (click)="openExcel()" [disabled]="busy || loading || !projectFilter">
-        Subir Excel y reemplazar
+        <mat-icon>upload</mat-icon>Subir Excel y reemplazar
       </button>
     </div>
   </div>
   <div class="view-switch">
     <span>{{ filtered.length }} incidente(s)</span
     ><button mat-button (click)="view = 'table'" [attr.aria-pressed]="view === 'table'">
-      Tabla</button
+      <mat-icon>table_rows</mat-icon>Tabla</button
     ><button mat-button (click)="view = 'board'" [attr.aria-pressed]="view === 'board'">
-      Tablero
+      <mat-icon>view_column</mat-icon>Tablero
     </button>
   </div>
   @if (loading) {
     <p role="status">Cargando incidentes…</p>
   } @else if (!filtered.length) {
-    <div class="empty">No hay incidentes para estos filtros.</div>
+    <div class="empty">
+      <mat-icon>bug_report</mat-icon>
+      <h3>No hay incidentes para estos filtros</h3>
+      <p>Crea un incidente o carga un Excel del proyecto.</p>
+    </div>
   } @else if (view === 'table') {
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>Incidente</th>
-            <th>Proyecto</th>
-            <th>Detectado en</th>
-            <th>Estado</th>
-            <th>Prioridad</th>
-            <th>Desarrollo / QA</th>
-            <th>Fecha objetivo</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (i of filtered; track i.id) {
-            <tr>
-              <td>
-                <button class="title-link" (click)="open(i)">#{{ i.id }} · {{ i.title }}</button
-                ><small>{{ i.reporter }}</small>
-              </td>
-              <td>{{ i.projectName }}</td>
-              <td>
-                <span class="badge">{{ i.detectedEnvironment }}</span>
-              </td>
-              <td>{{ labels[i.status] }}</td>
-              <td [class.critical]="i.priority === 'CRITICAL'">{{ priorityLabels[i.priority] }}</td>
-              <td>
-                {{ i.developerName || 'Sin asignar'
-                }}<small>QA: {{ i.qaName || 'Sin asignar' }}</small>
-              </td>
-              <td>{{ i.dueDate ? (i.dueDate | date: 'dd/MM/yyyy') : '—' }}</td>
-              <td>
-                <button mat-button (click)="open(i)">Ver</button>
+    <div class="table-wrapper">
+      <div class="table-scroll">
+        <table mat-table [dataSource]="filtered" [trackBy]="trackIncident" class="incidents-table">
+          <ng-container matColumnDef="incident"
+            ><th mat-header-cell *matHeaderCellDef>Incidente</th>
+            <td mat-cell *matCellDef="let i">
+              <div class="incident-cell">
+                <span class="incident-id">#{{ i.id }}</span>
+                <div>
+                  <button class="title-link" (click)="open(i)">{{ i.title }}</button
+                  ><small>Reportado por {{ i.reporter }}</small>
+                </div>
+              </div>
+            </td></ng-container
+          >
+          <ng-container matColumnDef="project"
+            ><th mat-header-cell *matHeaderCellDef>Proyecto</th>
+            <td mat-cell *matCellDef="let i">
+              <span class="project-label"
+                ><span class="color-dot" [style.background]="projectColor(i.projectId)"></span
+                >{{ i.projectName }}</span
+              >
+            </td></ng-container
+          >
+          <ng-container matColumnDef="environment"
+            ><th mat-header-cell *matHeaderCellDef>Ambiente</th>
+            <td mat-cell *matCellDef="let i">
+              <span class="environment-chip">{{ i.detectedEnvironment }}</span>
+            </td></ng-container
+          >
+          <ng-container matColumnDef="status"
+            ><th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let i">
+              <span class="status-chip" [ngClass]="statusTone(i.status)">{{
+                statusLabel(i.status)
+              }}</span>
+            </td></ng-container
+          >
+          <ng-container matColumnDef="priority"
+            ><th mat-header-cell *matHeaderCellDef>Prioridad</th>
+            <td mat-cell *matCellDef="let i">
+              <span class="priority-chip" [ngClass]="i.priority">{{
+                priorityLabel(i.priority)
+              }}</span>
+            </td></ng-container
+          >
+          <ng-container matColumnDef="responsibles"
+            ><th mat-header-cell *matHeaderCellDef>Desarrollo / QA</th>
+            <td mat-cell *matCellDef="let i">
+              <span class="responsible-name">{{ i.developerName || 'Sin asignar' }}</span
+              ><small>QA: {{ i.qaName || 'Sin asignar' }}</small>
+            </td></ng-container
+          >
+          <ng-container matColumnDef="dueDate"
+            ><th mat-header-cell *matHeaderCellDef>Fecha objetivo</th>
+            <td mat-cell *matCellDef="let i">
+              <span class="date-cell">{{
+                i.dueDate ? (i.dueDate | date: 'dd/MM/yyyy') : '—'
+              }}</span>
+            </td></ng-container
+          >
+          <ng-container matColumnDef="actions"
+            ><th mat-header-cell *matHeaderCellDef>Acciones</th>
+            <td mat-cell *matCellDef="let i">
+              <div class="row-actions">
+                <button
+                  mat-icon-button
+                  matTooltip="Ver incidente"
+                  [attr.aria-label]="'Ver incidente ' + i.id"
+                  (click)="open(i)"
+                >
+                  <mat-icon>visibility</mat-icon>
+                </button>
                 @if (editable(i)) {
-                  <button mat-button (click)="openEditor(i)">Editar</button>
+                  <button
+                    mat-icon-button
+                    matTooltip="Editar incidente"
+                    [attr.aria-label]="'Editar incidente ' + i.id"
+                    (click)="openEditor(i)"
+                  >
+                    <mat-icon>edit</mat-icon>
+                  </button>
                 }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+              </div>
+            </td></ng-container
+          >
+          <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns"
+            [class.closed-row]="row.status === 'CLOSED' || row.status === 'CANCELLED'"
+          ></tr>
+        </table>
+      </div>
     </div>
   } @else {
     <div class="board" cdkDropListGroup>
@@ -157,9 +222,9 @@
                 <button class="title-link" (click)="open(i)">#{{ i.id }} · {{ i.title }}</button>
                 <p>{{ i.projectName }}</p>
                 <div>
-                  <span class="badge">{{ i.detectedEnvironment }}</span>
-                  <span [class.critical]="i.priority === 'CRITICAL'">{{
-                    priorityLabels[i.priority]
+                  <span class="environment-chip">{{ i.detectedEnvironment }}</span>
+                  <span class="priority-chip" [ngClass]="i.priority">{{
+                    priorityLabel(i.priority)
                   }}</span>
                 </div>
                 <small>{{ i.developerName || 'Sin desarrollo asignado' }}</small>
@@ -187,7 +252,9 @@
       <header>
         <div>
           <h2 id="incident-detail-title">#{{ selected.id }} · {{ selected.title }}</h2>
-          <p>{{ labels[selected.status] }}</p>
+          <span class="status-chip" [ngClass]="statusTones[selected.status]">{{
+            labels[selected.status]
+          }}</span>
         </div>
         <button
           mat-icon-button
@@ -256,32 +323,37 @@
       @if (action) {
         <form class="action-form" (ngSubmit)="transition()">
           <h3>{{ actionLabels[action] }}</h3>
-          <label
-            >Responsable *<input
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"
+            ><mat-label>Responsable *</mat-label
+            ><input
+              matInput
               name="actor"
               [(ngModel)]="actor"
               [readonly]="actorFixed()"
               required
               maxlength="255"
-          /></label>
+          /></mat-form-field>
           @if (actorFixed() && !actor) {
             <p>Asigna el responsable en la edición del incidente antes de avanzar.</p>
           }
-          <label
-            >Observación {{ reasonRequired() ? '*' : '(opcional)'
-            }}<textarea
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"
+            ><mat-label>Observación {{ reasonRequired() ? '' : '(opcional)' }}</mat-label
+            ><textarea
+              matInput
               name="observation"
               [(ngModel)]="observation"
               [required]="reasonRequired()"
             ></textarea>
-          </label>
-          <label
-            >Enlace a evidencia (opcional)<input
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"
+            ><mat-label>Enlace a evidencia (opcional)</mat-label
+            ><input
+              matInput
               name="url"
               type="url"
               [(ngModel)]="evidenceUrl"
               placeholder="https://…"
-          /></label>
+          /></mat-form-field>
           <p>
             La acción se registrará en el historial. Un rechazo o reapertura exige repetir las
             aprobaciones.
@@ -293,11 +365,12 @@
       <h3>Evidencias</h3>
       <p>PNG, JPG, WebP y PDF · máximo 10 MB por archivo.</p>
       <div class="upload-row">
-        <label
-          >Tipo de evidencia<select [(ngModel)]="category">
-            <option value="INCIDENT">Del incidente</option>
-            <option value="CORRECTION">De la corrección</option>
-          </select></label
+        <mat-form-field appearance="outline" subscriptSizing="dynamic"
+          ><mat-label>Tipo de evidencia</mat-label
+          ><mat-select [(ngModel)]="category">
+            <mat-option value="INCIDENT">Del incidente</mat-option>
+            <mat-option value="CORRECTION">De la corrección</mat-option>
+          </mat-select></mat-form-field
         ><label class="file-input"
           >Adjuntar archivos<input
             type="file"
@@ -323,18 +396,22 @@
       </ul>
       <h3>Comentarios</h3>
       <form (ngSubmit)="addComment()" class="comment-form">
-        <label
-          >Autor *<input
+        <mat-form-field appearance="outline" subscriptSizing="dynamic"
+          ><mat-label>Autor *</mat-label
+          ><input
+            matInput
             name="commentAuthor"
             [(ngModel)]="commentAuthor"
             required
-            maxlength="255" /></label
-        ><label
-          >Comentario *<textarea
+            maxlength="255" /></mat-form-field
+        ><mat-form-field appearance="outline" subscriptSizing="dynamic"
+          ><mat-label>Comentario *</mat-label
+          ><textarea
+            matInput
             name="commentText"
             [(ngModel)]="commentText"
             required
-          ></textarea></label
+          ></textarea></mat-form-field
         ><button mat-flat-button type="submit" [disabled]="busy">Agregar comentario</button>
       </form>
       <h3>Historial y comentarios</h3>
@@ -384,96 +461,96 @@
       }
       <form (ngSubmit)="save()">
         <div class="form-grid">
-          <label class="full"
-            >Título *<input name="title" [(ngModel)]="form.title" required maxlength="255"
-          /></label>
-          <label class="full"
-            >Descripción *<textarea
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="full"
+            ><mat-label>Título *</mat-label
+            ><input matInput name="title" [(ngModel)]="form.title" required maxlength="255"
+          /></mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="full"
+            ><mat-label>Descripción *</mat-label
+            ><textarea
+              matInput
               name="description"
               [(ngModel)]="form.description"
               required
             ></textarea>
-          </label>
-          <label
-            >Proyecto *<select
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"
+            ><mat-label>Proyecto *</mat-label
+            ><mat-select
               name="projectId"
               [(ngModel)]="form.projectId"
               (ngModelChange)="form.taskId = null"
               required
             >
-              <option [ngValue]="null">Seleccionar</option>
+              <mat-option [value]="null">Seleccionar</mat-option>
               @for (p of projects; track p.id) {
-                <option [ngValue]="p.id">{{ p.name }}</option>
+                <mat-option [value]="p.id">{{ p.name }}</mat-option>
               }
-            </select></label
+            </mat-select></mat-form-field
           >
-          <label
-            >Tarea vinculada<select name="taskId" [(ngModel)]="form.taskId">
-              <option [ngValue]="null">Sin vincular</option>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"
+            ><mat-label>Tarea vinculada</mat-label
+            ><mat-select name="taskId" [(ngModel)]="form.taskId">
+              <mat-option [value]="null">Sin vincular</mat-option>
               @for (t of taskOptions; track t.id) {
-                <option [ngValue]="t.id">{{ t.title }}</option>
+                <mat-option [value]="t.id">{{ t.title }}</mat-option>
               }
-            </select></label
+            </mat-select></mat-form-field
           >
-          <label
-            >Ambiente de detección *<select
-              name="environment"
-              [(ngModel)]="form.detectedEnvironment"
-              required
-            >
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"
+            ><mat-label>Ambiente de detección *</mat-label
+            ><mat-select name="environment" [(ngModel)]="form.detectedEnvironment" required>
               @for (e of environments; track e) {
-                <option [value]="e">{{ e }}</option>
+                <mat-option [value]="e">{{ e }}</mat-option>
               }
-            </select></label
+            </mat-select></mat-form-field
           >
-          <label
-            >Prioridad *<select name="priority" [(ngModel)]="form.priority" required>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"
+            ><mat-label>Prioridad *</mat-label
+            ><mat-select name="priority" [(ngModel)]="form.priority" required>
               @for (p of priorities; track p) {
-                <option [value]="p">{{ $any(priorityLabels)[p] }}</option>
+                <mat-option [value]="p">{{ $any(priorityLabels)[p] }}</mat-option>
               }
-            </select></label
+            </mat-select></mat-form-field
           >
-          <label
-            >Reportante *<input
-              name="reporter"
-              [(ngModel)]="form.reporter"
-              required
-              maxlength="255"
-          /></label>
-          <label
-            >Fecha objetivo<input name="dueDate" type="date" [(ngModel)]="form.dueDate"
-          /></label>
-          <label
-            >Responsable de desarrollo<select name="developerId" [(ngModel)]="form.developerId">
-              <option [ngValue]="null">Sin asignar</option>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"
+            ><mat-label>Reportante *</mat-label
+            ><input matInput name="reporter" [(ngModel)]="form.reporter" required maxlength="255"
+          /></mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"
+            ><mat-label>Fecha objetivo</mat-label
+            ><input matInput name="dueDate" type="date" [(ngModel)]="form.dueDate"
+          /></mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"
+            ><mat-label>Responsable de desarrollo</mat-label
+            ><mat-select name="developerId" [(ngModel)]="form.developerId">
+              <mat-option [value]="null">Sin asignar</mat-option>
               @for (m of members; track m.id) {
-                <option [ngValue]="m.id">{{ m.name }}</option>
+                <mat-option [value]="m.id">{{ m.name }}</mat-option>
               }
-            </select></label
+            </mat-select></mat-form-field
           >
-          <label
-            >Responsable QA<select name="qaId" [(ngModel)]="form.qaId">
-              <option [ngValue]="null">Sin asignar</option>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"
+            ><mat-label>Responsable QA</mat-label
+            ><mat-select name="qaId" [(ngModel)]="form.qaId">
+              <mat-option [value]="null">Sin asignar</mat-option>
               @for (m of members; track m.id) {
-                <option [ngValue]="m.id">{{ m.name }}</option>
+                <mat-option [value]="m.id">{{ m.name }}</mat-option>
               }
-            </select></label
+            </mat-select></mat-form-field
           >
-          <label class="full"
-            >Pasos para reproducir<textarea
-              name="steps"
-              [(ngModel)]="form.reproductionSteps"
-            ></textarea>
-          </label>
-          <label
-            >Resultado esperado<textarea
-              name="expected"
-              [(ngModel)]="form.expectedResult"
-            ></textarea>
-          </label>
-          <label
-            >Resultado obtenido<textarea name="actual" [(ngModel)]="form.actualResult"></textarea>
-          </label>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="full"
+            ><mat-label>Pasos para reproducir</mat-label
+            ><textarea matInput name="steps" [(ngModel)]="form.reproductionSteps"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"
+            ><mat-label>Resultado esperado</mat-label
+            ><textarea matInput name="expected" [(ngModel)]="form.expectedResult"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"
+            ><mat-label>Resultado obtenido</mat-label
+            ><textarea matInput name="actual" [(ngModel)]="form.actualResult"></textarea>
+          </mat-form-field>
         </div>
         <p>
           Podrás adjuntar imágenes y PDF después de guardar. Desarrollo es obligatorio al iniciar
@@ -535,25 +612,28 @@
         los nuevos incidentes comienzan en Registrado.
       </p>
       <div class="form-grid">
-        <label
-          >Ambiente por defecto (si la celda está vacía)<select
+        <mat-form-field appearance="outline" subscriptSizing="dynamic"
+          ><mat-label>Ambiente por defecto</mat-label
+          ><mat-select
             [(ngModel)]="excelEnvironment"
             (ngModelChange)="invalidateExcelPreview()"
             [disabled]="busy"
           >
-            <option value="">Completar en Excel</option>
+            <mat-option value="">Completar en Excel</mat-option>
             @for (e of environments; track e) {
-              <option [value]="e">{{ e }}</option>
+              <mat-option [value]="e">{{ e }}</mat-option>
             }
-          </select></label
+          </mat-select></mat-form-field
         >
-        <label
-          >Reportante por defecto (si la celda está vacía)<input
+        <mat-form-field appearance="outline" subscriptSizing="dynamic"
+          ><mat-label>Reportante por defecto</mat-label
+          ><input
+            matInput
             [(ngModel)]="excelReporter"
             (ngModelChange)="invalidateExcelPreview()"
             maxlength="255"
             [disabled]="busy"
-        /></label>
+        /></mat-form-field>
         <label class="full"
           >Archivo .xlsx (máximo 10 MB)<input
             type="file"
