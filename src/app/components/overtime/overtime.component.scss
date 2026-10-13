@@ -47,6 +47,10 @@
   background: var(--bg-card);
 }
 .overtime-table {
+  --mat-table-background-color: var(--bg-card);
+  --mat-table-row-item-label-text-color: var(--text-primary);
+  --mat-table-header-headline-color: var(--text-primary);
+  --mat-table-header-container-height: 44px;
   width: 100%;
   min-width: 850px;
   @include shared.cells;
@@ -119,4 +123,36 @@
   .modal form {
     grid-template-columns: 1fr;
   }
+}
+
+mat-form-field {
+  --mat-form-field-outlined-outline-color: var(--border);
+  --mat-form-field-outlined-hover-outline-color: var(--text-muted);
+  --mat-form-field-outlined-focus-outline-color: var(--accent);
+  --mat-form-field-outlined-label-text-color: var(--text-secondary);
+  --mat-form-field-outlined-focus-label-text-color: var(--accent-text);
+  --mat-form-field-outlined-input-text-color: var(--text-primary);
+  --mat-form-field-outlined-input-text-placeholder-color: var(--text-muted);
+  --mat-form-field-select-option-text-color: var(--text-primary);
+  --mat-form-field-container-text-size: 13px;
+}
+button[mat-flat-button] {
+  --mat-button-filled-container-color: var(--accent);
+  --mat-button-filled-label-text-color: var(--text-on-dark);
+  --mat-button-filled-disabled-container-color: var(--bg-surface-2);
+  --mat-button-filled-disabled-label-text-color: var(--text-muted);
+}
+button[mat-stroked-button] {
+  --mat-button-outlined-outline-color: var(--border);
+  --mat-button-outlined-label-text-color: var(--text-primary);
+  --mat-button-outlined-disabled-label-text-color: var(--text-muted);
+}
+
+mat-select {
+  --mat-select-enabled-arrow-color: var(--text-secondary);
+  --mat-select-focused-arrow-color: var(--accent);
+  --mat-select-disabled-arrow-color: var(--text-muted);
+  --mat-select-enabled-trigger-text-color: var(--text-primary);
+  --mat-select-placeholder-text-color: var(--text-muted);
+  --mat-select-trigger-text-size: 13px;
 }

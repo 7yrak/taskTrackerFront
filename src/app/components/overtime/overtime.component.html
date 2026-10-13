@@ -1,267 +1,284 @@
-<div class="page-header">
-  <div>
-    <h1>Horas extras</h1>
-    <p>Registro por proyecto, persona y tema.</p>
+<section class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Horas extras</h1>
+      <p>Registro por proyecto, persona, tema y cliente.</p>
+    </div>
+    <div class="header-actions">
+      <button mat-stroked-button (click)="download()" [disabled]="!filtered.length">
+        <mat-icon>download</mat-icon> Descargar</button
+      ><button mat-flat-button (click)="open()" [disabled]="busy">
+        <mat-icon>add</mat-icon> Registrar horas
+      </button>
+    </div>
   </div>
-  <div class="header-actions">
-    <button mat-stroked-button (click)="download()" [disabled]="!filtered.length">
-      <mat-icon>download</mat-icon> Descargar</button
-    ><button mat-flat-button (click)="open()" [disabled]="busy">
-      <mat-icon>add</mat-icon> Registrar horas
-    </button>
-  </div>
-</div>
-@if (error) {
-  <p class="error" role="alert">{{ error }}</p>
-}
-<div class="filters">
-  <mat-form-field appearance="outline"
-    ><mat-label>Proyecto</mat-label
-    ><mat-select [(ngModel)]="projectFilter" [canSelectNullableOptions]="true"
-      ><mat-option [value]="null">Todos</mat-option>
-      @for (p of projects; track p.id) {
-        <mat-option [value]="p.id">{{ p.name }}</mat-option>
-      }
-    </mat-select></mat-form-field
-  >
-  <mat-form-field appearance="outline"
-    ><mat-label>Persona</mat-label
-    ><mat-select [(ngModel)]="personFilter"
-      ><mat-option value="">Todas</mat-option>
-      @for (p of people; track p) {
-        <mat-option [value]="p">{{ p }}</mat-option>
-      }
-    </mat-select></mat-form-field
-  >
-  <mat-form-field appearance="outline"
-    ><mat-label>Desde</mat-label><input matInput type="date" [(ngModel)]="from"
-  /></mat-form-field>
-  <mat-form-field appearance="outline"
-    ><mat-label>Hasta</mat-label><input matInput type="date" [(ngModel)]="to"
-  /></mat-form-field>
-  <mat-form-field appearance="outline"
-    ><mat-label>Buscar tema</mat-label><input matInput [(ngModel)]="search"
-  /></mat-form-field>
-</div>
-<div class="summary">
-  <strong>{{ total | number: '1.0-2' }} horas</strong><span>{{ filtered.length }} registros</span>
-  @for (p of summary; track p.person) {
-    <span>{{ p.person }}: {{ p.hours | number: '1.0-2' }} h</span>
+  @if (error) {
+    <p class="error" role="alert">{{ error }}</p>
   }
-</div>
-@if (loading) {
-  <p role="status">Cargando…</p>
-} @else {
-  <div class="table-wrapper">
-    <table mat-table [dataSource]="filtered" class="overtime-table">
-      <ng-container matColumnDef="date"
-        ><th mat-header-cell *matHeaderCellDef>Fecha</th>
-        <td mat-cell *matCellDef="let e">
-          @if (inlineId === e.id) {
-            <input type="date" [(ngModel)]="form.date" aria-label="Fecha" />
-          } @else {
-            {{ e.date | date: 'dd/MM/yyyy' }}
-          }
-        </td></ng-container
+  <div class="filters">
+    <mat-form-field appearance="outline"
+      ><mat-label>Proyecto</mat-label
+      ><mat-select [(ngModel)]="projectFilter" [canSelectNullableOptions]="true"
+        ><mat-option [value]="null">Todos</mat-option>
+        @for (p of projects; track p.id) {
+          <mat-option [value]="p.id">{{ p.name }}</mat-option>
+        }
+      </mat-select></mat-form-field
+    >
+    <mat-form-field appearance="outline"
+      ><mat-label>Persona</mat-label
+      ><mat-select [(ngModel)]="personFilter"
+        ><mat-option value="">Todas</mat-option>
+        @for (p of people; track p) {
+          <mat-option [value]="p">{{ p }}</mat-option>
+        }
+      </mat-select></mat-form-field
+    >
+    <mat-form-field appearance="outline"
+      ><mat-label>Desde</mat-label><input matInput type="date" [(ngModel)]="from"
+    /></mat-form-field>
+    <mat-form-field appearance="outline"
+      ><mat-label>Hasta</mat-label><input matInput type="date" [(ngModel)]="to"
+    /></mat-form-field>
+    <mat-form-field appearance="outline"
+      ><mat-label>Buscar tema o cliente</mat-label><input matInput [(ngModel)]="search"
+    /></mat-form-field>
+  </div>
+  <div class="summary">
+    <strong>{{ total | number: '1.0-2' }} horas</strong><span>{{ filtered.length }} registros</span>
+    @for (p of summary; track p.person) {
+      <span>{{ p.person }}: {{ p.hours | number: '1.0-2' }} h</span>
+    }
+  </div>
+  @if (loading) {
+    <p role="status">Cargando…</p>
+  } @else {
+    <div class="table-wrapper">
+      <table mat-table [dataSource]="filtered" class="overtime-table">
+        <ng-container matColumnDef="date"
+          ><th mat-header-cell *matHeaderCellDef>Fecha</th>
+          <td mat-cell *matCellDef="let e">
+            @if (inlineId === e.id) {
+              <input type="date" [(ngModel)]="form.date" aria-label="Fecha" />
+            } @else {
+              {{ e.date | date: 'dd/MM/yyyy' }}
+            }
+          </td></ng-container
+        >
+        <ng-container matColumnDef="project"
+          ><th mat-header-cell *matHeaderCellDef>Proyecto</th>
+          <td mat-cell *matCellDef="let e">
+            @if (inlineId === e.id) {
+              <mat-select [(ngModel)]="form.projectId" aria-label="Proyecto">
+                @for (p of projects; track p.id) {
+                  <mat-option [value]="p.id">{{ p.name }}</mat-option>
+                }
+              </mat-select>
+            } @else {
+              <span class="project-chip">{{ e.projectName }}</span>
+            }
+          </td></ng-container
+        >
+        <ng-container matColumnDef="person"
+          ><th mat-header-cell *matHeaderCellDef>Persona</th>
+          <td mat-cell *matCellDef="let e">
+            @if (inlineId === e.id) {
+              <input
+                [(ngModel)]="form.person"
+                list="overtime-people"
+                maxlength="255"
+                aria-label="Persona"
+              />
+            } @else {
+              {{ e.person }}
+            }
+          </td></ng-container
+        >
+        <ng-container matColumnDef="topic"
+          ><th mat-header-cell *matHeaderCellDef>Tema/Motivo</th>
+          <td mat-cell *matCellDef="let e">
+            @if (inlineId === e.id) {
+              <input [(ngModel)]="form.topic" maxlength="5000" aria-label="Tema/Motivo" />
+            } @else {
+              {{ e.topic }}
+            }
+          </td></ng-container
+        >
+        <ng-container matColumnDef="hours"
+          ><th mat-header-cell *matHeaderCellDef>Horas</th>
+          <td mat-cell *matCellDef="let e">
+            @if (inlineId === e.id) {
+              <input
+                type="number"
+                [(ngModel)]="form.hours"
+                min="0.01"
+                max="24"
+                step="0.25"
+                aria-label="Horas"
+              />
+            } @else {
+              {{ e.hours | number: '1.0-2' }}
+            }
+          </td></ng-container
+        >
+        <ng-container matColumnDef="client">
+          <th mat-header-cell *matHeaderCellDef>Cliente</th>
+          <td mat-cell *matCellDef="let e">
+            @if (inlineId === e.id) {
+              <input [(ngModel)]="form.client" maxlength="255" aria-label="Cliente" />
+            } @else {
+              {{ e.client }}
+            }
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="actions"
+          ><th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let e">
+            <div class="action-btns">
+              @if (inlineId === e.id) {
+                <button
+                  mat-icon-button
+                  class="action-btn"
+                  matTooltip="Guardar"
+                  [disabled]="busy || !valid"
+                  (click)="save()"
+                >
+                  <mat-icon>check</mat-icon></button
+                ><button
+                  mat-icon-button
+                  class="action-btn"
+                  matTooltip="Cancelar"
+                  [disabled]="busy"
+                  (click)="cancel()"
+                >
+                  <mat-icon>close</mat-icon>
+                </button>
+              } @else {
+                <button
+                  mat-icon-button
+                  class="action-btn"
+                  matTooltip="Editar en tabla"
+                  [disabled]="busy"
+                  (click)="open(e, true)"
+                >
+                  <mat-icon>edit</mat-icon></button
+                ><button
+                  mat-icon-button
+                  class="action-btn"
+                  matTooltip="Editar en modal"
+                  [disabled]="busy"
+                  (click)="open(e)"
+                >
+                  <mat-icon>edit_note</mat-icon></button
+                ><button
+                  mat-icon-button
+                  class="action-btn"
+                  matTooltip="Eliminar"
+                  [disabled]="busy"
+                  (click)="remove(e)"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              }
+            </div>
+          </td></ng-container
+        >
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: columns"
+          [class.editing-row]="inlineId === row.id"
+        ></tr>
+        <tr *matNoDataRow>
+          <td colspan="7" class="empty">No hay horas extras para estos filtros.</td>
+        </tr>
+      </table>
+    </div>
+  }
+  <datalist id="overtime-people">
+    @for (p of people; track p) {
+      <option [value]="p"></option>
+    }
+  </datalist>
+  @if (modal) {
+    <div class="overlay" (click)="cancel()">
+      <section
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="overtime-title"
+        cdkTrapFocus
+        [cdkTrapFocusAutoCapture]="true"
+        (click)="$event.stopPropagation()"
+        (keydown.escape)="cancel()"
       >
-      <ng-container matColumnDef="project"
-        ><th mat-header-cell *matHeaderCellDef>Proyecto</th>
-        <td mat-cell *matCellDef="let e">
-          @if (inlineId === e.id) {
-            <mat-select [(ngModel)]="form.projectId" aria-label="Proyecto">
+        <h2 id="overtime-title">
+          {{ editingId ? 'Editar horas extras' : 'Registrar horas extras' }}
+        </h2>
+        <form (ngSubmit)="save()">
+          <mat-form-field appearance="outline"
+            ><mat-label>Proyecto</mat-label
+            ><mat-select name="project" [(ngModel)]="form.projectId" required>
               @for (p of projects; track p.id) {
                 <mat-option [value]="p.id">{{ p.name }}</mat-option>
               }
-            </mat-select>
-          } @else {
-            <span class="project-chip">{{ e.projectName }}</span>
-          }
-        </td></ng-container
-      >
-      <ng-container matColumnDef="person"
-        ><th mat-header-cell *matHeaderCellDef>Persona</th>
-        <td mat-cell *matCellDef="let e">
-          @if (inlineId === e.id) {
-            <input
+            </mat-select></mat-form-field
+          >
+          <mat-form-field appearance="outline"
+            ><mat-label>Fecha</mat-label
+            ><input matInput name="date" type="date" [(ngModel)]="form.date" required
+          /></mat-form-field>
+          <mat-form-field appearance="outline"
+            ><mat-label>Persona</mat-label
+            ><input
+              matInput
+              name="person"
               [(ngModel)]="form.person"
               list="overtime-people"
               maxlength="255"
-              aria-label="Persona"
-            />
-          } @else {
-            {{ e.person }}
-          }
-        </td></ng-container
-      >
-      <ng-container matColumnDef="topic"
-        ><th mat-header-cell *matHeaderCellDef>Tema / actividad</th>
-        <td mat-cell *matCellDef="let e">
-          @if (inlineId === e.id) {
-            <input [(ngModel)]="form.topic" maxlength="5000" aria-label="Tema / actividad" />
-          } @else {
-            {{ e.topic }}
-          }
-        </td></ng-container
-      >
-      <ng-container matColumnDef="hours"
-        ><th mat-header-cell *matHeaderCellDef>Horas</th>
-        <td mat-cell *matCellDef="let e">
-          @if (inlineId === e.id) {
-            <input
+              required
+          /></mat-form-field>
+          <mat-form-field appearance="outline"
+            ><mat-label>Horas</mat-label
+            ><input
+              matInput
+              name="hours"
               type="number"
               [(ngModel)]="form.hours"
               min="0.01"
               max="24"
               step="0.25"
-              aria-label="Horas"
-            />
-          } @else {
-            {{ e.hours | number: '1.0-2' }}
+              required
+            /><mat-hint>Permite fracciones, por ejemplo 1,5 horas.</mat-hint></mat-form-field
+          >
+          <mat-form-field appearance="outline" class="wide">
+            <mat-label>Cliente</mat-label>
+            <input matInput name="client" [(ngModel)]="form.client" maxlength="255" required />
+            <mat-hint>Usa “Por confirmar” si todavía no está definido.</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="wide"
+            ><mat-label>Tema/Motivo</mat-label
+            ><textarea
+              matInput
+              name="topic"
+              [(ngModel)]="form.topic"
+              maxlength="5000"
+              rows="3"
+              required
+            ></textarea>
+          </mat-form-field>
+          @if (error) {
+            <p role="alert" class="error wide">{{ error }}</p>
           }
-        </td></ng-container
-      >
-      <ng-container matColumnDef="actions"
-        ><th mat-header-cell *matHeaderCellDef>Acciones</th>
-        <td mat-cell *matCellDef="let e">
-          <div class="action-btns">
-            @if (inlineId === e.id) {
-              <button
-                mat-icon-button
-                class="action-btn"
-                matTooltip="Guardar"
-                [disabled]="busy || !valid"
-                (click)="save()"
-              >
-                <mat-icon>check</mat-icon></button
-              ><button
-                mat-icon-button
-                class="action-btn"
-                matTooltip="Cancelar"
-                [disabled]="busy"
-                (click)="cancel()"
-              >
-                <mat-icon>close</mat-icon>
-              </button>
-            } @else {
-              <button
-                mat-icon-button
-                class="action-btn"
-                matTooltip="Editar en tabla"
-                [disabled]="busy"
-                (click)="open(e, true)"
-              >
-                <mat-icon>edit</mat-icon></button
-              ><button
-                mat-icon-button
-                class="action-btn"
-                matTooltip="Editar en modal"
-                [disabled]="busy"
-                (click)="open(e)"
-              >
-                <mat-icon>edit_note</mat-icon></button
-              ><button
-                mat-icon-button
-                class="action-btn"
-                matTooltip="Eliminar"
-                [disabled]="busy"
-                (click)="remove(e)"
-              >
-                <mat-icon>delete</mat-icon>
-              </button>
-            }
+          <div class="modal-actions wide">
+            <button mat-stroked-button type="button" [disabled]="busy" (click)="cancel()">
+              Cancelar</button
+            ><button mat-flat-button type="submit" [disabled]="busy || !valid">
+              {{ busy ? 'Guardando…' : 'Guardar' }}
+            </button>
           </div>
-        </td></ng-container
-      >
-      <tr mat-header-row *matHeaderRowDef="columns"></tr>
-      <tr
-        mat-row
-        *matRowDef="let row; columns: columns"
-        [class.editing-row]="inlineId === row.id"
-      ></tr>
-      <tr *matNoDataRow>
-        <td colspan="6" class="empty">No hay horas extras para estos filtros.</td>
-      </tr>
-    </table>
-  </div>
-}
-<datalist id="overtime-people">
-  @for (p of people; track p) {
-    <option [value]="p"></option>
+        </form>
+      </section>
+    </div>
   }
-</datalist>
-@if (modal) {
-  <div class="overlay" (click)="cancel()">
-    <section
-      class="modal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="overtime-title"
-      cdkTrapFocus
-      [cdkTrapFocusAutoCapture]="true"
-      (click)="$event.stopPropagation()"
-      (keydown.escape)="cancel()"
-    >
-      <h2 id="overtime-title">
-        {{ editingId ? 'Editar horas extras' : 'Registrar horas extras' }}
-      </h2>
-      <form (ngSubmit)="save()">
-        <mat-form-field appearance="outline"
-          ><mat-label>Proyecto</mat-label
-          ><mat-select name="project" [(ngModel)]="form.projectId" required>
-            @for (p of projects; track p.id) {
-              <mat-option [value]="p.id">{{ p.name }}</mat-option>
-            }
-          </mat-select></mat-form-field
-        >
-        <mat-form-field appearance="outline"
-          ><mat-label>Fecha</mat-label
-          ><input matInput name="date" type="date" [(ngModel)]="form.date" required
-        /></mat-form-field>
-        <mat-form-field appearance="outline"
-          ><mat-label>Persona</mat-label
-          ><input
-            matInput
-            name="person"
-            [(ngModel)]="form.person"
-            list="overtime-people"
-            maxlength="255"
-            required
-        /></mat-form-field>
-        <mat-form-field appearance="outline"
-          ><mat-label>Horas</mat-label
-          ><input
-            matInput
-            name="hours"
-            type="number"
-            [(ngModel)]="form.hours"
-            min="0.01"
-            max="24"
-            step="0.25"
-            required
-          /><mat-hint>Permite fracciones, por ejemplo 1,5 horas.</mat-hint></mat-form-field
-        >
-        <mat-form-field appearance="outline" class="wide"
-          ><mat-label>Tema / actividad</mat-label
-          ><textarea
-            matInput
-            name="topic"
-            [(ngModel)]="form.topic"
-            maxlength="5000"
-            rows="3"
-            required
-          ></textarea>
-        </mat-form-field>
-        @if (error) {
-          <p role="alert" class="error wide">{{ error }}</p>
-        }
-        <div class="modal-actions wide">
-          <button mat-stroked-button type="button" [disabled]="busy" (click)="cancel()">
-            Cancelar</button
-          ><button mat-flat-button type="submit" [disabled]="busy || !valid">
-            {{ busy ? 'Guardando…' : 'Guardar' }}
-          </button>
-        </div>
-      </form>
-    </section>
-  </div>
-}
+</section>

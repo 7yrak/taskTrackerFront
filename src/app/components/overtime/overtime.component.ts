@@ -25,6 +25,7 @@ interface Entry {
   date: string;
   person: string;
   topic: string;
+  client: string;
   hours: number;
 }
 @Component({
@@ -54,7 +55,7 @@ export class OvertimeComponent implements OnInit {
   entries: Entry[] = [];
   projects: Project[] = [];
   members: Member[] = [];
-  columns = ['date', 'project', 'person', 'topic', 'hours', 'actions'];
+  columns = ['date', 'person', 'hours', 'topic', 'client', 'project', 'actions'];
   projectFilter: number | null = null;
   personFilter = '';
   from = '';
@@ -70,7 +71,14 @@ export class OvertimeComponent implements OnInit {
   empty(): Entry {
     const now = new Date();
     const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    return { projectId: this.projectFilter ?? null, date, person: '', topic: '', hours: 1 };
+    return {
+      projectId: this.projectFilter ?? null,
+      date,
+      person: '',
+      topic: '',
+      client: 'Por confirmar',
+      hours: 1,
+    };
   }
   ngOnInit() {
     this.load();
@@ -107,7 +115,8 @@ export class OvertimeComponent implements OnInit {
         (!this.personFilter || e.person === this.personFilter) &&
         (!this.from || e.date >= this.from) &&
         (!this.to || e.date <= this.to) &&
-        (!q || `${e.topic} ${e.person} ${e.projectName}`.toLocaleLowerCase().includes(q)),
+        (!q ||
+          `${e.topic} ${e.person} ${e.projectName} ${e.client}`.toLocaleLowerCase().includes(q)),
     );
   }
   get total() {
@@ -139,6 +148,7 @@ export class OvertimeComponent implements OnInit {
       !!this.form.date &&
       !!this.form.person.trim() &&
       !!this.form.topic.trim() &&
+      !!this.form.client.trim() &&
       Number(this.form.hours) > 0 &&
       Number(this.form.hours) <= 24
     );
@@ -152,6 +162,7 @@ export class OvertimeComponent implements OnInit {
         ...this.form,
         person: this.form.person.trim(),
         topic: this.form.topic.trim(),
+        client: this.form.client.trim(),
         hours: Number(this.form.hours),
       };
       const saved = await firstValueFrom(
@@ -198,8 +209,8 @@ export class OvertimeComponent implements OnInit {
   download() {
     const cell = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
     const rows = [
-      ['Fecha', 'Proyecto', 'Persona', 'Tema / actividad', 'Horas'],
-      ...this.filtered.map((e) => [e.date, e.projectName, e.person, e.topic, e.hours]),
+      ['Fecha', 'Persona', 'Horas', 'Tema/Motivo', 'Cliente', 'Proyecto'],
+      ...this.filtered.map((e) => [e.date, e.person, e.hours, e.topic, e.client, e.projectName]),
     ];
     const csv =
       '\uFEFF' +
