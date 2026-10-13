@@ -16,6 +16,7 @@ import {
   IncidentRequest,
   IncidentStatus,
   IncidentAttachment,
+  IncidentImportPreview,
   INCIDENT_STATUS_LABELS,
   INCIDENT_ACTIONS,
 } from '../../models/incident.model';
@@ -69,6 +70,13 @@ export class IncidentsComponent implements OnInit, OnDestroy {
   category = 'INCIDENT';
   previewUrl = '';
   previewName = '';
+  excelOpen = false;
+  excelProjectId: number | null = null;
+  excelFile: File | null = null;
+  excelEnvironment = '';
+  excelReporter = '';
+  excelPreview: IncidentImportPreview | null = null;
+  excelConfirmed = false;
   private urls: string[] = [];
   emptyForm(): IncidentRequest {
     return {
@@ -182,6 +190,9 @@ export class IncidentsComponent implements OnInit, OnDestroy {
         expectedResult,
         actualResult,
         dueDate,
+        reportedStatus,
+        qaDeliveryDate,
+        importNotes,
       } = this.form;
       const request = {
         title,
@@ -197,6 +208,9 @@ export class IncidentsComponent implements OnInit, OnDestroy {
         expectedResult,
         actualResult,
         dueDate: dueDate || null,
+        reportedStatus,
+        qaDeliveryDate: qaDeliveryDate || null,
+        importNotes,
       };
       const result = await firstValueFrom(
         this.editingId ? this.api.update(this.editingId, request) : this.api.create(request),
@@ -395,6 +409,137 @@ export class IncidentsComponent implements OnInit, OnDestroy {
       e?.error?.message ??
       'No se pudo completar la operación. Revisa la conexión e intenta nuevamente.';
     this.change.markForCheck();
+  }
+  openExcel() {
+    this.excelProjectId = Number(this.projectFilter) || null;
+    this.excelFile = null;
+    this.excelPreview = null;
+    this.excelConfirmed = false;
+    this.excelEnvironment = '';
+    this.excelReporter = '';
+    this.error = '';
+    this.notice = '';
+    this.excelOpen = true;
+  }
+  get excelProjectName() {
+    return this.projects.find((p) => p.id === this.excelProjectId)?.name ?? '';
+  }
+  invalidateExcelPreview() {
+    this.excelPreview = null;
+    this.excelConfirmed = false;
+  }
+  selectExcelFile(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.excelFile = input.files?.[0] ?? null;
+    this.invalidateExcelPreview();
+    this.error = '';
+    if (
+      this.excelFile &&
+      (!this.excelFile.name.toLowerCase().endsWith('.xlsx') ||
+        this.excelFile.size > 10 * 1024 * 1024 ||
+        !this.excelFile.size)
+    ) {
+      this.error = 'Selecciona un archivo Excel .xlsx de hasta 10 MB.';
+      this.excelFile = null;
+      input.value = '';
+    }
+  }
+  async previewExcel() {
+    if (!this.excelFile || !this.excelProjectId) return;
+    this.busy = true;
+    this.error = '';
+    this.invalidateExcelPreview();
+    try {
+      this.excelPreview = await firstValueFrom(
+        this.api.preview(
+          this.excelFile,
+          this.excelProjectId,
+          this.excelEnvironment,
+          this.excelReporter,
+        ),
+      );
+    } catch (e) {
+      this.fail(e);
+    } finally {
+      this.busy = false;
+      this.change.markForCheck();
+    }
+  }
+  async importExcel() {
+    if (
+      !this.excelFile ||
+      !this.excelProjectId ||
+      !this.excelPreview ||
+      this.excelPreview.errors.length ||
+      !this.excelConfirmed ||
+      this.busy
+    )
+      return;
+    this.busy = true;
+    this.error = '';
+    try {
+      const result = await firstValueFrom(
+        this.api.replaceFromExcel(
+          this.excelFile,
+          this.excelProjectId,
+          this.excelEnvironment,
+          this.excelReporter,
+          this.excelPreview.fingerprint,
+        ),
+      );
+      this.incidents = this.incidents.filter((i) => i.projectId !== this.excelProjectId);
+      this.selected = null;
+      this.excelOpen = false;
+      this.resetFilters();
+      this.projectFilter = String(this.excelProjectId);
+      this.notice = `Se cargaron ${result.imported} incidentes en Registrado y se reemplazaron ${result.replaced} del proyecto ${result.projectName}.`;
+      try {
+        this.incidents = await firstValueFrom(this.api.all());
+      } catch {
+        this.error =
+          'La carga se completó, pero no se pudo actualizar el listado. Usa Actualizar para volver a consultarlo.';
+      }
+    } catch (e) {
+      this.fail(e);
+      this.invalidateExcelPreview();
+    } finally {
+      this.busy = false;
+      this.change.markForCheck();
+    }
+  }
+  async downloadExcel(template: boolean) {
+    const projectId = Number(this.projectFilter);
+    if (!projectId) {
+      this.error = 'Selecciona un proyecto para descargar su Excel.';
+      return;
+    }
+    this.busy = true;
+    this.error = '';
+    try {
+      const blob = await firstValueFrom(
+        template ? this.api.template(projectId) : this.api.export(projectId),
+      );
+      const url = URL.createObjectURL(blob);
+      this.urls.push(url);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = template
+        ? 'plantilla-incidentes.xlsx'
+        : `incidentes-proyecto-${projectId}.xlsx`;
+      link.click();
+    } catch (e) {
+      const failure = e as { error?: Blob };
+      if (failure.error instanceof Blob) {
+        try {
+          this.error = JSON.parse(await failure.error.text()).message;
+        } catch {
+          this.fail(e);
+        }
+      } else this.fail(e);
+    } finally {
+      this.busy = false;
+      this.change.markForCheck();
+    }
   }
   eventLabel(type: string) {
     return (

@@ -9,7 +9,31 @@ export type IncidentStatus =
   | 'CLOSED'
   | 'CANCELLED';
 export type IncidentEnvironment = 'DESA' | 'CERT' | 'UAT' | 'PROD';
+export interface IncidentImportPreview {
+  count: number;
+  existingCount: number;
+  projectName: string;
+  fingerprint: string;
+  rows: {
+    row: number;
+    title: string;
+    environment: string;
+    priority: string;
+    reporter: string;
+    reportedStatus: string;
+  }[];
+  errors: string[];
+  warnings: string[];
+}
+export interface IncidentImportResult {
+  imported: number;
+  replaced: number;
+  projectName: string;
+}
 export interface IncidentRequest {
+  reportedStatus?: string;
+  qaDeliveryDate?: string | null;
+  importNotes?: string;
   title: string;
   description: string;
   detectedEnvironment: IncidentEnvironment;

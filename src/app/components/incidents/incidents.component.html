@@ -61,6 +61,28 @@
     >
     <button mat-button (click)="resetFilters()">Limpiar</button>
   </div>
+  <div class="excel-tools">
+    <p>Excel: selecciona un proyecto en el filtro para cargar o descargar sus incidentes.</p>
+    <div class="toolbar">
+      <button
+        mat-stroked-button
+        (click)="downloadExcel(true)"
+        [disabled]="busy || loading || !projectFilter"
+      >
+        Plantilla Excel
+      </button>
+      <button
+        mat-stroked-button
+        (click)="downloadExcel(false)"
+        [disabled]="busy || loading || !projectFilter"
+      >
+        Descargar Excel del proyecto
+      </button>
+      <button mat-flat-button (click)="openExcel()" [disabled]="busy || loading || !projectFilter">
+        Subir Excel y reemplazar
+      </button>
+    </div>
+  </div>
   <div class="view-switch">
     <span>{{ filtered.length }} incidente(s)</span
     ><button mat-button (click)="view = 'table'" [attr.aria-pressed]="view === 'table'">
@@ -192,6 +214,19 @@
           {{ selected.dueDate ? (selected.dueDate | date: 'dd/MM/yyyy') : 'Sin fecha' }}</span
         >
       </div>
+      @if (selected.reportedStatus || selected.qaDeliveryDate || selected.importNotes) {
+        <h3>Referencia del reporte QA</h3>
+        @if (selected.reportedStatus) {
+          <p>Estado reportado: {{ selected.reportedStatus }}</p>
+        }
+        @if (selected.qaDeliveryDate) {
+          <p>Entregado a QA: {{ selected.qaDeliveryDate | date: 'dd/MM/yyyy' }}</p>
+        }
+        @if (selected.importNotes) {
+          <p class="multiline">{{ selected.importNotes }}</p>
+        }
+        <p>Esta referencia no reemplaza las aprobaciones de QA y cliente.</p>
+      }
       <h3>Descripción</h3>
       <p class="multiline">{{ selected.description }}</p>
       @if (selected.reproductionSteps) {
@@ -464,6 +499,147 @@
         </button>
       </header>
       <img [src]="previewUrl" [alt]="previewName" />
+    </section>
+  </div>
+}
+
+@if (excelOpen) {
+  <div class="overlay">
+    <section
+      class="modal"
+      cdkTrapFocus
+      [cdkTrapFocusAutoCapture]="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="excel-import-title"
+    >
+      <header>
+        <div>
+          <h2 id="excel-import-title">Cargar incidentes desde Excel</h2>
+          <p>Proyecto: {{ excelProjectName }}</p>
+        </div>
+        <button
+          mat-icon-button
+          aria-label="Cerrar carga Excel"
+          (click)="excelOpen = false"
+          [disabled]="busy"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </header>
+      @if (error) {
+        <p class="message error" role="alert">{{ error }}</p>
+      }
+      <p>
+        Se reemplazará el listado completo de este proyecto. Los demás proyectos se conservan. Todos
+        los nuevos incidentes comienzan en Registrado.
+      </p>
+      <div class="form-grid">
+        <label
+          >Ambiente por defecto (si la celda está vacía)<select
+            [(ngModel)]="excelEnvironment"
+            (ngModelChange)="invalidateExcelPreview()"
+            [disabled]="busy"
+          >
+            <option value="">Completar en Excel</option>
+            @for (e of environments; track e) {
+              <option [value]="e">{{ e }}</option>
+            }
+          </select></label
+        >
+        <label
+          >Reportante por defecto (si la celda está vacía)<input
+            [(ngModel)]="excelReporter"
+            (ngModelChange)="invalidateExcelPreview()"
+            maxlength="255"
+            [disabled]="busy"
+        /></label>
+        <label class="full"
+          >Archivo .xlsx (máximo 10 MB)<input
+            type="file"
+            accept=".xlsx"
+            (change)="selectExcelFile($event)"
+            [disabled]="busy"
+        /></label>
+      </div>
+      <p>
+        Una prioridad vacía se carga como Media. Las fechas de entrega QA y estados reportados se
+        guardan como referencia. Los adjuntos no viajan en el Excel.
+      </p>
+      <button mat-stroked-button (click)="previewExcel()" [disabled]="busy || !excelFile">
+        {{ busy ? 'Procesando…' : 'Validar archivo y ver resumen' }}
+      </button>
+      @if (excelPreview) {
+        <h3>Resultado de la validación</h3>
+        <p>
+          {{ excelPreview.count }} incidente(s) válido(s) para cargar ·
+          {{ excelPreview.existingCount }} incidente(s) actuales del proyecto.
+        </p>
+        @if (excelPreview.errors.length) {
+          <div class="message error" role="alert">
+            <strong
+              >Corrige estos errores y vuelve a validar. No se ha reemplazado ningún
+              incidente.</strong
+            >
+            <ul>
+              @for (error of excelPreview.errors; track $index) {
+                <li>{{ error }}</li>
+              }
+            </ul>
+          </div>
+        }
+        <div class="table-scroll preview-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Fila</th>
+                <th>Incidente</th>
+                <th>Ambiente</th>
+                <th>Prioridad</th>
+                <th>Reportante</th>
+                <th>Estado reportado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of excelPreview.rows.slice(0, 50); track row.row) {
+                <tr>
+                  <td>{{ row.row }}</td>
+                  <td>{{ row.title }}</td>
+                  <td>{{ row.environment }}</td>
+                  <td>{{ row.priority }}</td>
+                  <td>{{ row.reporter }}</td>
+                  <td>{{ row.reportedStatus || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (excelPreview.rows.length > 50) {
+          <p>
+            Se muestran las primeras 50 filas. Se cargarán todas las filas válidas si el archivo
+            completo no tiene errores.
+          </p>
+        }
+        <ul>
+          @for (warning of excelPreview.warnings; track warning) {
+            <li>{{ warning }}</li>
+          }
+        </ul>
+        @if (!excelPreview.errors.length && excelPreview.count) {
+          <label class="confirmation"
+            ><input type="checkbox" [(ngModel)]="excelConfirmed" [disabled]="busy" />Confirmo
+            reemplazar los {{ excelPreview.existingCount }} incidentes de
+            {{ excelPreview.projectName }}, eliminando sus comentarios, historial y adjuntos
+            anteriores.</label
+          >
+          <footer>
+            <button mat-button (click)="excelOpen = false" [disabled]="busy">Volver</button
+            ><button mat-flat-button (click)="importExcel()" [disabled]="busy || !excelConfirmed">
+              Reemplazar y cargar {{ excelPreview.count }} incidentes
+            </button>
+          </footer>
+        }
+      }
     </section>
   </div>
 }
