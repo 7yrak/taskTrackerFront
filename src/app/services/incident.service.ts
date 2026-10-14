@@ -66,6 +66,13 @@ export class IncidentService {
   update(id: number, request: IncidentRequest) {
     return this.http.put<Incident>(`${this.base}/${id}`, request);
   }
+  inlineEdit(
+    id: number,
+    data: IncidentRequest | null,
+    transition: { action: string; actor: string; observation: string; evidenceUrl: string } | null,
+  ) {
+    return this.http.post<Incident>(`${this.base}/${id}/inline-edit`, { data, transition });
+  }
   transition(id: number, action: string, actor: string, observation: string, evidenceUrl: string) {
     return this.http.post<Incident>(`${this.base}/${id}/transitions`, {
       action,

@@ -249,13 +249,13 @@
                   {{ statusLabels[node.status] }}
                 </span>
               } @else {
-                <button mat-button [matMenuTriggerFor]="statusMenu" class="status-btn">
+                <button mat-button [matMenuTriggerFor]="statusMenu" #statusTrigger="matMenuTrigger" class="status-btn">
                   <span class="status-chip {{ node.status }}">{{ statusLabels[node.status] }}</span>
                   <mat-icon>arrow_drop_down</mat-icon>
                 </button>
                 <mat-menu #statusMenu="matMenu">
                   @for (s of statuses; track s) {
-                    <button mat-menu-item (click)="changeStatus(node, s)" [disabled]="node.status === s">
+                    <button mat-menu-item (click)="statusTrigger.closeMenu(); changeStatus(node, s)" [disabled]="node.status === s">
                       <span class="status-chip {{ s }}">{{ statusLabels[s] }}</span>
                     </button>
                   }

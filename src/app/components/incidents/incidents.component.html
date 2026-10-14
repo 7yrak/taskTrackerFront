@@ -191,7 +191,7 @@
                 }
                 <span class="incident-id">#{{ i.id }}</span>
                 <div class="inline-title-group">
-                  @if (inlineEditingId === i.id) {
+                  @if (inlineEditingId === i.id && editable(i)) {
                     <input
                       class="title-inline-input"
                       [id]="'inline-title-' + i.id"
@@ -263,7 +263,7 @@
               ></span>
             </th>
             <td mat-cell *matCellDef="let i">
-              @if (inlineEditingId === i.id) {
+              @if (inlineEditingId === i.id && editable(i)) {
                 <mat-form-field
                   appearance="outline"
                   subscriptSizing="dynamic"
@@ -315,7 +315,7 @@
               ></span>
             </th>
             <td mat-cell *matCellDef="let i">
-              @if (inlineEditingId === i.id) {
+              @if (inlineEditingId === i.id && editable(i)) {
                 <mat-form-field
                   appearance="outline"
                   subscriptSizing="dynamic"
@@ -363,24 +363,81 @@
               ></span>
             </th>
             <td mat-cell *matCellDef="let i">
-              <button
-                mat-button
-                class="status-btn"
-                [matMenuTriggerFor]="stageMenu"
-                [disabled]="busy || inlineEditingId === i.id || !actions(i).length"
-                [attr.aria-label]="'Cambiar etapa del incidente ' + i.id"
-              >
-                <span class="status-chip" [ngClass]="statusTone(i.status)">{{
-                  statusLabel(i.status)
-                }}</span>
-              </button>
-              <mat-menu #stageMenu="matMenu">
-                @for (a of actions(i); track a) {
-                  <button mat-menu-item (click)="startTableAction(i, a)">
-                    {{ actionLabels[a] }}
-                  </button>
-                }
-              </mat-menu>
+              @if (inlineEditingId === i.id) {
+                <div class="inline-stage-fields">
+                  <mat-form-field
+                    appearance="outline"
+                    subscriptSizing="dynamic"
+                    class="inline-field"
+                  >
+                    <mat-select
+                      [(ngModel)]="inlineAction"
+                      (selectionChange)="inlineActionChanged()"
+                      aria-label="Estado del incidente"
+                      [disabled]="busy"
+                    >
+                      <mat-option value="">{{ statusLabel(i.status) }} (actual)</mat-option>
+                      @for (a of actions(i); track a) {
+                        <mat-option [value]="a">{{ inlineStateLabel(a) }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  @if (inlineAction) {
+                    <input
+                      class="stage-input"
+                      aria-label="Responsable del cambio"
+                      placeholder="Responsable"
+                      [ngModel]="inlineActorValue(i)"
+                      (ngModelChange)="inlineActor = $event"
+                      [readonly]="inlineActorFixed(i)"
+                      [disabled]="busy"
+                      maxlength="255"
+                    />
+                    <textarea
+                      class="stage-input"
+                      aria-label="Observación del cambio"
+                      [placeholder]="
+                        inlineReasonRequired()
+                          ? 'Observación obligatoria'
+                          : 'Observación (opcional)'
+                      "
+                      [(ngModel)]="inlineObservation"
+                      [disabled]="busy"
+                      rows="2"
+                    ></textarea>
+                    <input
+                      class="stage-input"
+                      aria-label="Enlace a evidencia"
+                      placeholder="Enlace a evidencia (opcional)"
+                      [(ngModel)]="inlineEvidenceUrl"
+                      [disabled]="busy"
+                    />
+                  }
+                </div>
+              } @else {
+                <button
+                  mat-button
+                  class="status-btn"
+                  [matMenuTriggerFor]="stageMenu"
+                  #stageTrigger="matMenuTrigger"
+                  [disabled]="busy || inlineEditingId === i.id || !actions(i).length"
+                  [attr.aria-label]="'Cambiar etapa del incidente ' + i.id"
+                >
+                  <span class="status-chip" [ngClass]="statusTone(i.status)">{{
+                    statusLabel(i.status)
+                  }}</span>
+                </button>
+                <mat-menu #stageMenu="matMenu">
+                  @for (a of actions(i); track a) {
+                    <button
+                      mat-menu-item
+                      (click)="stageTrigger.closeMenu(); startTableAction(i, a)"
+                    >
+                      {{ actionLabels[a] }}
+                    </button>
+                  }
+                </mat-menu>
+              }
             </td></ng-container
           >
           <ng-container matColumnDef="priority"
@@ -411,7 +468,7 @@
               ></span>
             </th>
             <td mat-cell *matCellDef="let i">
-              @if (inlineEditingId === i.id) {
+              @if (inlineEditingId === i.id && editable(i)) {
                 <mat-form-field
                   appearance="outline"
                   subscriptSizing="dynamic"
@@ -461,7 +518,7 @@
               ></span>
             </th>
             <td mat-cell *matCellDef="let i">
-              @if (inlineEditingId === i.id) {
+              @if (inlineEditingId === i.id && editable(i)) {
                 <div class="inline-responsibles">
                   <mat-form-field
                     appearance="outline"
@@ -528,7 +585,7 @@
               ></span>
             </th>
             <td mat-cell *matCellDef="let i">
-              @if (inlineEditingId === i.id) {
+              @if (inlineEditingId === i.id && editable(i)) {
                 <mat-form-field
                   appearance="outline"
                   subscriptSizing="dynamic"
@@ -579,7 +636,7 @@
                     <mat-icon>close</mat-icon>
                   </button>
                 } @else {
-                  @if (editable(i)) {
+                  @if (editable(i) || actions(i).length) {
                     <button
                       mat-icon-button
                       class="action-btn"
@@ -589,17 +646,20 @@
                       (click)="startInlineEdit(i)"
                       [disabled]="busy"
                     >
-                      <mat-icon>edit</mat-icon></button
-                    ><button
-                      mat-icon-button
-                      class="action-btn"
-                      matTooltip="Editar en modal"
-                      [attr.aria-label]="'Editar en modal incidente ' + i.id"
-                      (click)="openEditor(i)"
-                      [disabled]="busy"
-                    >
-                      <mat-icon>edit_note</mat-icon>
+                      <mat-icon>edit</mat-icon>
                     </button>
+                    @if (editable(i)) {
+                      <button
+                        mat-icon-button
+                        class="action-btn"
+                        matTooltip="Editar en modal"
+                        [attr.aria-label]="'Editar en modal incidente ' + i.id"
+                        (click)="openEditor(i)"
+                        [disabled]="busy"
+                      >
+                        <mat-icon>edit_note</mat-icon>
+                      </button>
+                    }
                   }
                   <button
                     mat-icon-button

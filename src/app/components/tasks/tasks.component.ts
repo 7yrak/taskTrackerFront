@@ -235,8 +235,8 @@ export class TasksComponent implements AfterViewInit {
     status: ['TODO' as TaskStatus, Validators.required],
     priority: ['MEDIUM' as TaskPriority, Validators.required],
     assigneeIds: [[] as number[]],
-    startDate: [null as string | null, Validators.required],
-    dueDate: [null as string | null, Validators.required],
+    startDate: [null as string | null],
+    dueDate: [null as string | null],
     progressActual: [0, [Validators.required, Validators.min(0), Validators.max(100)]]
   });
 
@@ -579,6 +579,7 @@ export class TasksComponent implements AfterViewInit {
   }
 
   buildAndFilter() {
+    this.hierarchyChange.markForCheck();
     this.rootNodes = this.buildTree(this.allTasks);
     this.sortTree(this.rootNodes);
     const filtered = this.filterTree(this.rootNodes);

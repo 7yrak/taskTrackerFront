@@ -142,6 +142,46 @@ export class IncidentsComponent implements OnInit, OnDestroy {
   members: Member[] = [];
   tasks: Task[] = [];
   inlineEditingId: number | null = null;
+  inlineAction = '';
+  inlineActor = '';
+  inlineObservation = '';
+  inlineEvidenceUrl = '';
+  inlineStateLabel(action: string) {
+    const next: Record<string, IncidentStatus> = {
+      START: 'DEVELOPMENT',
+      SEND_CERT: 'CERT',
+      APPROVE_QA: 'QA_APPROVED',
+      SEND_UAT: 'UAT',
+      APPROVE_CLIENT: 'CLIENT_APPROVED',
+      DEPLOY: 'CLOSED',
+      REJECT: 'DEVELOPMENT',
+      REOPEN: 'DEVELOPMENT',
+      CANCEL: 'CANCELLED',
+    };
+    return `${this.labels[next[action]]}${action === 'REJECT' ? ' (rechazar)' : action === 'REOPEN' ? ' (reabrir)' : ''}`;
+  }
+  inlineReasonRequired() {
+    return ['APPROVE_QA', 'APPROVE_CLIENT', 'REJECT', 'REOPEN', 'CANCEL', 'DEPLOY'].includes(
+      this.inlineAction,
+    );
+  }
+  inlineActorFixed(i: Incident) {
+    return (
+      ['START', 'SEND_CERT', 'APPROVE_QA', 'SEND_UAT'].includes(this.inlineAction) ||
+      (this.inlineAction === 'REJECT' && i.status === 'CERT')
+    );
+  }
+  inlineActorValue(i: Incident) {
+    if (!this.inlineActorFixed(i)) return this.inlineActor;
+    const developer = ['START', 'SEND_CERT'].includes(this.inlineAction);
+    const id = developer ? this.inlineForm.developerId : this.inlineForm.qaId;
+    return this.members.find((m) => m.id === id)?.name ?? '';
+  }
+  inlineActionChanged() {
+    this.inlineActor = '';
+    this.inlineObservation = '';
+    this.inlineEvidenceUrl = '';
+  }
   inlineForm: IncidentRequest = this.emptyForm();
   titleEditingId: number | null = null;
   titleDraft = '';
@@ -433,11 +473,14 @@ export class IncidentsComponent implements OnInit, OnDestroy {
     };
   }
   startInlineEdit(i: Incident) {
-    if (this.busy || !this.editable(i)) return;
+    if (this.busy || (!this.editable(i) && !this.actions(i).length)) return;
     this.cancelTitleEdit();
     this.inlineEditingId = i.id;
     this.inlineForm = { ...i };
+    this.inlineAction = '';
+    this.inlineActionChanged();
     this.error = '';
+    this.notice = '';
     setTimeout(() => {
       const input = document.getElementById(`inline-title-${i.id}`) as HTMLInputElement | null;
       input?.focus();
@@ -448,6 +491,8 @@ export class IncidentsComponent implements OnInit, OnDestroy {
     if (this.busy) return;
     this.inlineEditingId = null;
     this.inlineForm = this.emptyForm();
+    this.inlineAction = '';
+    this.inlineActionChanged();
   }
   inlineProjectChanged() {
     this.inlineForm.taskId = null;
@@ -462,10 +507,38 @@ export class IncidentsComponent implements OnInit, OnDestroy {
       this.error = 'Completa título, reportante y proyecto.';
       return;
     }
+    if (!this.editable(i) && !this.inlineAction) {
+      this.error = 'Selecciona el nuevo estado.';
+      return;
+    }
+    if (
+      this.inlineAction &&
+      (!this.inlineActorValue(i).trim() ||
+        (this.inlineReasonRequired() && !this.inlineObservation.trim()))
+    ) {
+      this.error = 'Completa el responsable y la observación requerida en la fila.';
+      return;
+    }
     this.busy = true;
     this.error = '';
     try {
-      this.replace(await firstValueFrom(this.api.update(i.id, this.request(this.inlineForm))));
+      const transition = this.inlineAction
+        ? {
+            action: this.inlineAction,
+            actor: this.inlineActorValue(i),
+            observation: this.inlineObservation,
+            evidenceUrl: this.inlineEvidenceUrl,
+          }
+        : null;
+      this.replace(
+        await firstValueFrom(
+          this.api.inlineEdit(
+            i.id,
+            this.editable(i) ? this.request(this.inlineForm) : null,
+            transition,
+          ),
+        ),
+      );
       this.inlineEditingId = null;
       this.notice = 'Incidente actualizado';
     } catch (e) {
@@ -663,6 +736,7 @@ export class IncidentsComponent implements OnInit, OnDestroy {
         ),
       );
       this.action = '';
+      this.selected = null;
       this.notice = 'Etapa registrada en el historial.';
     } catch (e) {
       this.fail(e);

@@ -17,3 +17,7 @@ La edición de datos se permite solo en Registrado y Desarrollo, conforme a las 
 Se probó sobre un backend con base H2 temporal: guardar título, prioridad, responsables y fecha en fila; cancelar sin guardar; editar título con doble clic; guardar descripción en modal y regresar a tabla; ordenar y redimensionar; conservar referencias del Excel; pasar a CERT y comprobar el bloqueo de edición de datos. No se modificaron datos reales.
 
 Se compararon ambas tablas en el navegador: tamaño de texto de celda de 13 px y padding de 6 px, con 10 px en el borde izquierdo, coincidentes con Tareas. Se comprobó compilación de producción y ausencia de errores de interfaz.
+
+El lápiz permite cambiar el estado desde la misma fila. Solo ofrece los cambios permitidos por el flujo DESA → CERT → QA → UAT → cliente → PROD. Cuando hace falta registrar responsable, observación o enlace, esos campos aparecen debajo del selector de estado, sin abrir un modal. Desde CERT en adelante se puede editar el estado, mientras los datos de la corrección permanecen protegidos.
+
+El botón Guardar registra datos y cambio de estado en una sola operación: si falla una validación, no guarda parcialmente la edición. El formulario abierto desde la columna Estado se cierra automáticamente después de un cambio exitoso; conserva los datos si hay un error para poder corregirlo.
