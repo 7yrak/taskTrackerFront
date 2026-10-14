@@ -15,6 +15,34 @@
   @if (error) {
     <p class="error" role="alert">{{ error }}</p>
   }
+  <div class="quick-filters" role="group" aria-label="Filtros rápidos de horas extras">
+    <button
+      mat-stroked-button
+      (click)="toggleThisMonth()"
+      [attr.aria-pressed]="thisMonthActive"
+      [class.active]="thisMonthActive"
+    >
+      <mat-icon>calendar_month</mat-icon>Este mes
+    </button>
+    <button
+      mat-stroked-button
+      (click)="pendingOnly = !pendingOnly"
+      [attr.aria-pressed]="pendingOnly"
+      [class.active]="pendingOnly"
+    >
+      <mat-icon>pending_actions</mat-icon>Por confirmar
+    </button>
+    <button
+      mat-button
+      (click)="clearFilters()"
+      [disabled]="!projectFilter && !personFilter && !from && !to && !search && !pendingOnly"
+    >
+      <mat-icon>filter_alt_off</mat-icon>Limpiar filtros
+    </button>
+    <span class="quick-filter-help"
+      >Puedes combinar ambos. Por confirmar incluye tema o cliente pendiente.</span
+    >
+  </div>
   <div class="filters">
     <mat-form-field appearance="outline"
       ><mat-label>Proyecto</mat-label

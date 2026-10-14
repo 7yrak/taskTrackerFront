@@ -61,6 +61,7 @@ export class OvertimeComponent implements OnInit {
   from = '';
   to = '';
   search = '';
+  pendingOnly = false;
   loading = true;
   busy = false;
   error = '';
@@ -107,12 +108,52 @@ export class OvertimeComponent implements OnInit {
       ...new Set([...this.entries.map((e) => e.person), ...this.members.map((m) => m.name)]),
     ].sort();
   }
+  private currentMonthRange() {
+    const parts = new Intl.DateTimeFormat('en', {
+      timeZone: 'America/Santiago',
+      year: 'numeric',
+      month: '2-digit',
+    }).formatToParts(new Date());
+    const year = parts.find((part) => part.type === 'year')!.value;
+    const month = parts.find((part) => part.type === 'month')!.value;
+    const lastDay = new Date(Date.UTC(Number(year), Number(month), 0)).getUTCDate();
+    return { from: `${year}-${month}-01`, to: `${year}-${month}-${lastDay}` };
+  }
+  get thisMonthActive() {
+    const range = this.currentMonthRange();
+    return this.from === range.from && this.to === range.to;
+  }
+  toggleThisMonth() {
+    const range = this.currentMonthRange();
+    if (this.thisMonthActive) {
+      this.from = '';
+      this.to = '';
+    } else {
+      this.from = range.from;
+      this.to = range.to;
+    }
+  }
+  clearFilters() {
+    this.projectFilter = null;
+    this.personFilter = '';
+    this.from = '';
+    this.to = '';
+    this.search = '';
+    this.pendingOnly = false;
+  }
+  private isPending(entry: Entry) {
+    return [entry.topic, entry.client].some((value) => {
+      const text = (value ?? '').trim().toLocaleLowerCase('es');
+      return !text || text === 'por confirmar';
+    });
+  }
   get filtered() {
     const q = this.search.trim().toLocaleLowerCase();
     return this.entries.filter(
       (e) =>
         (!this.projectFilter || e.projectId === this.projectFilter) &&
         (!this.personFilter || e.person === this.personFilter) &&
+        (!this.pendingOnly || this.isPending(e)) &&
         (!this.from || e.date >= this.from) &&
         (!this.to || e.date <= this.to) &&
         (!q ||

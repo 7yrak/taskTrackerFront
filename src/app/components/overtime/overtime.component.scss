@@ -156,3 +156,24 @@ mat-select {
   --mat-select-placeholder-text-color: var(--text-muted);
   --mat-select-trigger-text-size: 13px;
 }
+
+.quick-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  .active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--text-primary);
+    --mat-button-outlined-outline-color: var(--accent);
+  }
+  .quick-filter-help {
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+  button[mat-button] {
+    --mat-button-text-label-text-color: var(--text-primary);
+  }
+}
