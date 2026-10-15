@@ -431,7 +431,7 @@ export class IncidentsComponent implements OnInit, OnDestroy {
             : text.compare(String(left), String(right));
         if (compared) return sort.direction === 'asc' ? compared : -compared;
       }
-      return 0;
+      return a.id - b.id;
     });
   }
   column(status: IncidentStatus) {
