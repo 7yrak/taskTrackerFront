@@ -177,3 +177,19 @@ mat-select {
     --mat-button-text-label-text-color: var(--text-primary);
   }
 }
+
+.status-chip {
+  display: inline-block;
+  white-space: nowrap;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface-2);
+  &.sent {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+  }
+}
+.mat-column-status {
+  min-width: 120px;
+}

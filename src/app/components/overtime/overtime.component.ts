@@ -27,6 +27,7 @@ interface Entry {
   topic: string;
   client: string;
   hours: number;
+  sentToManagement: boolean;
 }
 @Component({
   selector: 'app-overtime',
@@ -55,7 +56,7 @@ export class OvertimeComponent implements OnInit {
   entries: Entry[] = [];
   projects: Project[] = [];
   members: Member[] = [];
-  columns = ['date', 'person', 'hours', 'topic', 'client', 'project', 'actions'];
+  columns = ['date', 'person', 'hours', 'topic', 'client', 'project', 'status', 'actions'];
   projectFilter: number | null = null;
   personFilter = '';
   from = '';
@@ -79,6 +80,7 @@ export class OvertimeComponent implements OnInit {
       topic: '',
       client: 'Por confirmar',
       hours: 1,
+      sentToManagement: false,
     };
   }
   ngOnInit() {
@@ -247,28 +249,71 @@ export class OvertimeComponent implements OnInit {
         }
       });
   }
-  download() {
-    const cell = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
-    const rows = [
-      ['Fecha', 'Persona', 'Horas', 'Tema/Motivo', 'Cliente', 'Proyecto'],
-      ...this.filtered.map((e) => [e.date, e.person, e.hours, e.topic, e.client, e.projectName]),
-    ];
-    const csv =
-      '\uFEFF' +
-      rows
-        .map((row) =>
-          row
-            .map((value) =>
-              cell(typeof value === 'string' && /^[=+@-]/.test(value) ? `'${value}` : value),
-            )
-            .join(';'),
-        )
-        .join('\r\n');
-    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'horas-extras.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+  async downloadExcel() {
+    if (this.exporting || !this.filtered.length) return;
+    this.exporting = true;
+    this.error = '';
+    try {
+      const file = await firstValueFrom(
+        this.http.post(
+          `${this.base}/export/excel`,
+          this.filtered.map((e) => e.id),
+          { responseType: 'blob' },
+        ),
+      );
+      const url = URL.createObjectURL(file);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'horas-extras.xlsx';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      this.error = 'No se pudo exportar a Excel';
+    } finally {
+      this.exporting = false;
+      this.change.markForCheck();
+    }
+  }
+  exporting = false;
+  async downloadPdf() {
+    if (this.exporting || !this.filtered.length) return;
+    const rows = this.filtered.map((e) => [
+      e.date,
+      e.person,
+      String(e.hours),
+      e.topic,
+      e.client,
+      e.projectName ?? '',
+    ]);
+    const total = this.total;
+    this.exporting = true;
+    this.error = '';
+    try {
+      const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable'),
+      ]);
+      const doc = new jsPDF({ orientation: 'landscape' });
+      doc.setFontSize(16);
+      doc.text('Horas extras', 14, 16);
+      doc.setFontSize(10);
+      doc.text(`${rows.length} registros | Total: ${total} horas`, 14, 24);
+      autoTable(doc, {
+        startY: 30,
+        head: [['Fecha', 'Persona', 'Horas', 'Tema/Motivo', 'Cliente', 'Proyecto']],
+        body: rows,
+        styles: { fontSize: 9, overflow: 'linebreak' },
+        columnStyles: { 0: { cellWidth: 25 }, 2: { cellWidth: 18 }, 3: { cellWidth: 85 } },
+        didDrawPage: () => {
+          doc.text(`Página ${doc.getNumberOfPages()}`, 14, doc.internal.pageSize.height - 8);
+        },
+      });
+      doc.save('horas-extras.pdf');
+    } catch {
+      this.error = 'No se pudo exportar a PDF';
+    } finally {
+      this.exporting = false;
+      this.change.markForCheck();
+    }
   }
 }
