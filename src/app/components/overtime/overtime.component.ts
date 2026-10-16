@@ -17,6 +17,7 @@ import { ProjectService } from '../../services/project.service';
 import { MemberService } from '../../services/member.service';
 import { Project } from '../../models/project.model';
 import { Member } from '../../models/member.model';
+import { personKey, personNames } from './overtime-people';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog/confirm-dialog.component';
 interface Entry {
   id?: number;
@@ -105,10 +106,17 @@ export class OvertimeComponent implements OnInit {
       },
     });
   }
+  private get names() {
+    return personNames(
+      this.members.map((m) => m.name),
+      this.entries.map((e) => e.person),
+    );
+  }
   get people() {
-    return [
-      ...new Set([...this.entries.map((e) => e.person), ...this.members.map((m) => m.name)]),
-    ].sort();
+    return [...this.names.values()].sort((a, b) => a.localeCompare(b, 'es'));
+  }
+  private canonicalPerson(person: string) {
+    return this.names.get(personKey(person)) ?? person.trim();
   }
   private currentMonthRange() {
     const parts = new Intl.DateTimeFormat('en', {
@@ -150,17 +158,19 @@ export class OvertimeComponent implements OnInit {
     });
   }
   get filtered() {
-    const q = this.search.trim().toLocaleLowerCase();
-    return this.entries.filter(
-      (e) =>
-        (!this.projectFilter || e.projectId === this.projectFilter) &&
-        (!this.personFilter || e.person === this.personFilter) &&
-        (!this.pendingOnly || this.isPending(e)) &&
-        (!this.from || e.date >= this.from) &&
-        (!this.to || e.date <= this.to) &&
-        (!q ||
-          `${e.topic} ${e.person} ${e.projectName} ${e.client}`.toLocaleLowerCase().includes(q)),
-    );
+    const q = personKey(this.search);
+    const names = this.names;
+    return this.entries
+      .map((e) => ({ ...e, person: names.get(personKey(e.person)) ?? e.person }))
+      .filter(
+        (e) =>
+          (!this.projectFilter || e.projectId === this.projectFilter) &&
+          (!this.personFilter || personKey(e.person) === personKey(this.personFilter)) &&
+          (!this.pendingOnly || this.isPending(e)) &&
+          (!this.from || e.date >= this.from) &&
+          (!this.to || e.date <= this.to) &&
+          (!q || personKey(`${e.topic} ${e.person} ${e.projectName} ${e.client}`).includes(q)),
+      );
   }
   get total() {
     return Math.round(this.filtered.reduce((sum, e) => sum + Number(e.hours), 0) * 100) / 100;
@@ -203,7 +213,7 @@ export class OvertimeComponent implements OnInit {
     try {
       const request = {
         ...this.form,
-        person: this.form.person.trim(),
+        person: this.canonicalPerson(this.form.person),
         topic: this.form.topic.trim(),
         client: this.form.client.trim(),
         hours: Number(this.form.hours),
