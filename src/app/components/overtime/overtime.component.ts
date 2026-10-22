@@ -106,10 +106,28 @@ export class OvertimeComponent implements OnInit {
       },
     });
   }
+  private personKey(value: string) {
+    // Preserve ñ as a distinct letter while ignoring accents on vowels.
+    return this.cleanPerson(value).toLocaleLowerCase('es').normalize('NFD')
+      .replace(/ñ/g, 'ñ').replace(/[̀-ͯ]/g, '');
+  }
+  private cleanPerson(value: string) {
+    return (value ?? '').normalize('NFC').trim().replace(/\s+/g, ' ');
+  }
+  private get personNames() {
+    const names = new Map<string, string>();
+    // Prefer the official team name, then retain historical people.
+    for (const name of [...this.members.map((m) => m.name), ...this.entries.map((e) => e.person)]) {
+      const key = this.personKey(name);
+      if (key && !names.has(key)) names.set(key, this.cleanPerson(name));
+    }
+    return names;
+  }
+  personName(value: string) {
+    return this.personNames.get(this.personKey(value)) ?? this.cleanPerson(value);
+  }
   get people() {
-    return [
-      ...new Set([...this.entries.map((e) => e.person), ...this.members.map((m) => m.name)]),
-    ].sort();
+    return [...this.personNames.values()].sort((a, b) => a.localeCompare(b, 'es'));
   }
   private currentMonthRange() {
     const parts = new Intl.DateTimeFormat('en', {
@@ -155,7 +173,7 @@ export class OvertimeComponent implements OnInit {
     return this.entries.filter(
       (e) =>
         (!this.projectFilter || e.projectId === this.projectFilter) &&
-        (!this.personFilter || e.person === this.personFilter) &&
+        (!this.personFilter || this.personKey(e.person) === this.personKey(this.personFilter)) &&
         (!this.pendingOnly || this.isPending(e)) &&
         (!this.from || e.date >= this.from) &&
         (!this.to || e.date <= this.to) &&
@@ -168,14 +186,16 @@ export class OvertimeComponent implements OnInit {
   }
   get summary() {
     const people = new Map<string, number>();
-    for (const e of this.filtered)
-      people.set(e.person, (people.get(e.person) ?? 0) + Number(e.hours));
+    for (const e of this.filtered) {
+      const person = this.personName(e.person);
+      people.set(person, (people.get(person) ?? 0) + Number(e.hours));
+    }
     return [...people].map(([person, hours]) => ({ person, hours: Math.round(hours * 100) / 100 }));
   }
   open(entry?: Entry, inline = false) {
     if (this.busy) return;
     this.error = '';
-    this.form = entry ? { ...entry } : this.empty();
+    this.form = entry ? { ...entry, person: this.personName(entry.person) } : this.empty();
     this.editingId = entry?.id ?? null;
     this.inlineId = inline ? this.editingId : null;
     this.modal = !inline;
@@ -204,7 +224,7 @@ export class OvertimeComponent implements OnInit {
     try {
       const request = {
         ...this.form,
-        person: this.form.person.trim(),
+        person: this.personName(this.form.person),
         topic: this.form.topic.trim(),
         client: this.form.client.trim(),
         hours: Number(this.form.hours),
@@ -303,7 +323,7 @@ export class OvertimeComponent implements OnInit {
     if (this.exporting || this.busy || !this.filtered.length) return;
     const rows = this.filtered.map((e) => [
       e.date,
-      e.person,
+      this.personName(e.person),
       String(e.hours),
       e.topic,
       e.client,
