@@ -66,6 +66,7 @@ export class OvertimeComponent implements OnInit {
   loading = true;
   busy = false;
   error = '';
+  success = '';
   modal = false;
   form: Entry = this.empty();
   editingId: number | null = null;
@@ -250,14 +251,14 @@ export class OvertimeComponent implements OnInit {
       });
   }
   async downloadExcel() {
-    if (this.exporting || !this.filtered.length) return;
+    if (this.exporting || this.busy || !this.entries.length) return;
     this.exporting = true;
     this.error = '';
     try {
       const file = await firstValueFrom(
         this.http.post(
           `${this.base}/export/excel`,
-          this.filtered.map((e) => e.id),
+          this.entries.map((e) => e.id),
           { responseType: 'blob' },
         ),
       );
@@ -275,8 +276,31 @@ export class OvertimeComponent implements OnInit {
     }
   }
   exporting = false;
+  async importExcel(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || this.busy || this.exporting) return;
+    this.busy = true;
+    this.error = '';
+    this.success = '';
+    try {
+      const data = new FormData();
+      data.append('file', file);
+      this.entries = await firstValueFrom(
+        this.http.post<Entry[]>(`${this.base}/import/excel`, data),
+      );
+      this.clearFilters();
+      this.success = `Carga completa: ${this.entries.length} registros. Se reemplazaron todas las horas anteriores.`;
+    } catch (e: any) {
+      this.error = e.error?.message || 'No se pudo cargar el Excel. Se conservaron las horas anteriores.';
+    } finally {
+      this.busy = false;
+      this.change.markForCheck();
+    }
+  }
   async downloadPdf() {
-    if (this.exporting || !this.filtered.length) return;
+    if (this.exporting || this.busy || !this.filtered.length) return;
     const rows = this.filtered.map((e) => [
       e.date,
       e.person,

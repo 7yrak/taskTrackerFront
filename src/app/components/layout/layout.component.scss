@@ -126,7 +126,8 @@
   overflow: auto;
   background: var(--bg-app);
 
-  &.tasks-route {
+  &.tasks-route,
+  &.overtime-route {
     overflow: hidden;
   }
 }

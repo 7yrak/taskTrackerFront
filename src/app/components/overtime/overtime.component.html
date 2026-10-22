@@ -5,17 +5,24 @@
       <p>Registro por proyecto, persona, tema y cliente.</p>
     </div>
     <div class="header-actions">
+      <input #excelInput type="file" accept=".xlsx" hidden (change)="importExcel($event)" />
+      <button mat-stroked-button (click)="excelInput.click()"
+        [disabled]="loading || busy || exporting || modal || inlineId !== null"
+        matTooltip="Reemplaza todas las horas extras con el contenido del Excel, sin importar los filtros.">
+        <mat-icon>upload</mat-icon> Cargar Excel
+      </button>
       <button
         mat-stroked-button
         (click)="downloadExcel()"
-        [disabled]="loading || exporting || !filtered.length"
+        [disabled]="loading || busy || exporting || !entries.length"
+        matTooltip="Descarga todas las horas extras para editar y volver a cargar."
       >
         <mat-icon>download</mat-icon> Excel
       </button>
       <button
         mat-stroked-button
         (click)="downloadPdf()"
-        [disabled]="loading || exporting || !filtered.length"
+        [disabled]="loading || busy || exporting || !filtered.length"
       >
         <mat-icon>picture_as_pdf</mat-icon> PDF</button
       ><button mat-flat-button (click)="open()" [disabled]="busy">
@@ -25,6 +32,9 @@
   </div>
   @if (error) {
     <p class="error" role="alert">{{ error }}</p>
+  }
+  @if (success) {
+    <p class="success" role="status">{{ success }}</p>
   }
   <div class="quick-filters" role="group" aria-label="Filtros rápidos de horas extras">
     <button
@@ -92,7 +102,7 @@
   @if (loading) {
     <p role="status">Cargando…</p>
   } @else {
-    <div class="table-wrapper">
+    <div class="table-wrapper" tabindex="0" role="region" aria-label="Tabla de horas extras">
       <table mat-table [dataSource]="filtered" class="overtime-table">
         <ng-container matColumnDef="date"
           ><th mat-header-cell *matHeaderCellDef>Fecha</th>
@@ -244,7 +254,7 @@
             </div>
           </td></ng-container
         >
-        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-header-row *matHeaderRowDef="columns; sticky: true"></tr>
         <tr
           mat-row
           *matRowDef="let row; columns: columns"

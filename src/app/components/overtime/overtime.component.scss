@@ -1,6 +1,23 @@
 @use '../../shared/styles/editable-table' as shared;
 :host {
-  display: block;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.page-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  > :not(.table-wrapper) { flex-shrink: 0; }
+}
+.success {
+  color: var(--accent-text);
 }
 .page-header {
   display: flex;
@@ -29,6 +46,8 @@
 }
 .summary {
   margin: 12px 0 20px;
+  max-height: 100px;
+  overflow: auto;
   span {
     padding: 6px 10px;
     background: var(--bg-card);
@@ -41,7 +60,10 @@
   }
 }
 .table-wrapper {
+  flex: 1;
+  min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--bg-card);
@@ -55,6 +77,9 @@
   min-width: 850px;
   @include shared.cells;
   @include shared.inline-controls;
+  th.mat-mdc-header-cell {
+    background: color-mix(in srgb, var(--bg-card) 90%, var(--accent));
+  }
   input {
     width: 100%;
     min-width: 70px;
@@ -116,6 +141,12 @@
   }
 }
 @media (max-width: 600px) {
+  .page-container { padding: 12px; }
+  .filters { gap: 6px; }
+  .filters mat-form-field { width: calc(50% - 3px); }
+  .summary { max-height: 60px; margin: 8px 0; }
+  .quick-filters { margin-bottom: 8px; }
+  .quick-filter-help { display: none; }
   .page-header {
     flex-direction: column;
     align-items: flex-start;

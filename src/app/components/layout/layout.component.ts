@@ -35,4 +35,7 @@ export class LayoutComponent {
   isTasksRoute(): boolean {
     return this.router.url.includes('/tasks');
   }
+  isOvertimeRoute(): boolean {
+    return this.router.url.split('?')[0] === '/overtime';
+  }
 }
