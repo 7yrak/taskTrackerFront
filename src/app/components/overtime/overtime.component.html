@@ -2,7 +2,7 @@
   <div class="page-header">
     <div>
       <h1 class="page-title">Horas extras</h1>
-      <p>Registro por proyecto, persona, tema y cliente.</p>
+      <p>Registro por proyecto, persona y tema.</p>
     </div>
     <div class="header-actions">
       <input #excelInput type="file" accept=".xlsx" hidden (change)="importExcel($event)" />
@@ -61,7 +61,7 @@
       <mat-icon>filter_alt_off</mat-icon>Limpiar filtros
     </button>
     <span class="quick-filter-help"
-      >Puedes combinar ambos. Por confirmar incluye tema o cliente pendiente.</span
+      >Puedes combinar ambos. Por confirmar incluye tema pendiente.</span
     >
   </div>
   <div class="filters">
@@ -90,7 +90,7 @@
       ><mat-label>Hasta</mat-label><input matInput type="date" [(ngModel)]="to"
     /></mat-form-field>
     <mat-form-field appearance="outline"
-      ><mat-label>Buscar tema o cliente</mat-label><input matInput [(ngModel)]="search"
+      ><mat-label>Buscar tema</mat-label><input matInput [(ngModel)]="search"
     /></mat-form-field>
   </div>
   <div class="summary">
@@ -170,16 +170,6 @@
             }
           </td></ng-container
         >
-        <ng-container matColumnDef="client">
-          <th mat-header-cell *matHeaderCellDef>Cliente</th>
-          <td mat-cell *matCellDef="let e">
-            @if (inlineId === e.id) {
-              <input [(ngModel)]="form.client" maxlength="255" aria-label="Cliente" />
-            } @else {
-              {{ e.client }}
-            }
-          </td>
-        </ng-container>
         <ng-container matColumnDef="status">
           <th mat-header-cell *matHeaderCellDef>Estado</th>
           <td mat-cell *matCellDef="let e">
@@ -274,7 +264,7 @@
     }
   </datalist>
   @if (modal) {
-    <div class="overlay" (click)="cancel()">
+    <div class="overlay">
       <section
         class="modal"
         role="dialog"
@@ -283,11 +273,15 @@
         cdkTrapFocus
         [cdkTrapFocusAutoCapture]="true"
         (click)="$event.stopPropagation()"
-        (keydown.escape)="cancel()"
       >
+        <div class="modal-header">
         <h2 id="overtime-title">
           {{ editingId ? 'Editar horas extras' : 'Registrar horas extras' }}
         </h2>
+        <button mat-icon-button type="button" aria-label="Cerrar" [disabled]="busy" (click)="cancel()">
+          <mat-icon>close</mat-icon>
+        </button>
+        </div>
         <form (ngSubmit)="save()">
           <mat-form-field appearance="outline"
             ><mat-label>Proyecto</mat-label
@@ -332,11 +326,6 @@
             </mat-select>
             <mat-hint>Indica si el registro ya fue enviado a jefatura.</mat-hint>
           </mat-form-field>
-          <mat-form-field appearance="outline" class="wide">
-            <mat-label>Cliente</mat-label>
-            <input matInput name="client" [(ngModel)]="form.client" maxlength="255" required />
-            <mat-hint>Usa “Por confirmar” si todavía no está definido.</mat-hint>
-          </mat-form-field>
           <mat-form-field appearance="outline" class="wide"
             ><mat-label>Tema/Motivo</mat-label
             ><textarea
@@ -352,9 +341,7 @@
             <p role="alert" class="error wide">{{ error }}</p>
           }
           <div class="modal-actions wide">
-            <button mat-stroked-button type="button" [disabled]="busy" (click)="cancel()">
-              Cancelar</button
-            ><button mat-flat-button type="submit" [disabled]="busy || !valid">
+            <button mat-flat-button type="submit" [disabled]="busy || !valid">
               {{ busy ? 'Guardando…' : 'Guardar' }}
             </button>
           </div>

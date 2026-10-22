@@ -56,7 +56,7 @@ export class OvertimeComponent implements OnInit {
   entries: Entry[] = [];
   projects: Project[] = [];
   members: Member[] = [];
-  columns = ['date', 'person', 'hours', 'topic', 'client', 'project', 'status', 'actions'];
+  columns = ['date', 'person', 'hours', 'topic', 'project', 'status', 'actions'];
   projectFilter: number | null = null;
   personFilter = '';
   from = '';
@@ -163,7 +163,7 @@ export class OvertimeComponent implements OnInit {
     this.pendingOnly = false;
   }
   private isPending(entry: Entry) {
-    return [entry.topic, entry.client].some((value) => {
+    return [entry.topic].some((value) => {
       const text = (value ?? '').trim().toLocaleLowerCase('es');
       return !text || text === 'por confirmar';
     });
@@ -178,7 +178,7 @@ export class OvertimeComponent implements OnInit {
         (!this.from || e.date >= this.from) &&
         (!this.to || e.date <= this.to) &&
         (!q ||
-          `${e.topic} ${e.person} ${e.projectName} ${e.client}`.toLocaleLowerCase().includes(q)),
+          `${e.topic} ${e.person} ${e.projectName}`.toLocaleLowerCase().includes(q)),
     );
   }
   get total() {
@@ -212,7 +212,6 @@ export class OvertimeComponent implements OnInit {
       !!this.form.date &&
       !!this.form.person.trim() &&
       !!this.form.topic.trim() &&
-      !!this.form.client.trim() &&
       Number(this.form.hours) > 0 &&
       Number(this.form.hours) <= 24
     );
@@ -326,7 +325,6 @@ export class OvertimeComponent implements OnInit {
       this.personName(e.person),
       String(e.hours),
       e.topic,
-      e.client,
       e.projectName ?? '',
     ]);
     const total = this.total;
@@ -344,7 +342,7 @@ export class OvertimeComponent implements OnInit {
       doc.text(`${rows.length} registros | Total: ${total} horas`, 14, 24);
       autoTable(doc, {
         startY: 30,
-        head: [['Fecha', 'Persona', 'Horas', 'Tema/Motivo', 'Cliente', 'Proyecto']],
+        head: [['Fecha', 'Persona', 'Horas', 'Tema/Motivo', 'Proyecto']],
         body: rows,
         styles: { fontSize: 9, overflow: 'linebreak' },
         columnStyles: { 0: { cellWidth: 25 }, 2: { cellWidth: 18 }, 3: { cellWidth: 85 } },

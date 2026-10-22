@@ -224,3 +224,12 @@ mat-select {
 .mat-column-status {
   min-width: 120px;
 }
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  h2 { margin: 0; }
+}
