@@ -4,6 +4,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { KovaAuth } from '../../core/kova-auth';
 import { ThemeService } from '../../services/theme.service';
 import { LogoComponent } from '../shared/logo/logo.component';
 
@@ -19,6 +20,8 @@ import { LogoComponent } from '../shared/logo/logo.component';
   styleUrl: './layout.component.scss'
 })
 export class LayoutComponent {
+  readonly auth = inject(KovaAuth);
+  logout() { this.auth.logout().subscribe({ next: () => void this.router.navigateByUrl('/acceso') }); }
   theme = inject(ThemeService);
   private router = inject(Router);
 
