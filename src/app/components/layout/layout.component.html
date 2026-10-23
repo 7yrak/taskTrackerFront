@@ -18,6 +18,11 @@
     </nav>
 
     <div class="topbar-actions">
+      @if (auth.pilot) {
+        <span>{{ auth.account()?.organizationName }}</span>
+        <a mat-button href="/kova/portal">KOVA</a>
+        <button mat-button (click)="logout()">Cerrar sesión</button>
+      }
       <button mat-icon-button
               class="theme-toggle"
               (click)="theme.toggle()"
