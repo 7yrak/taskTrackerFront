@@ -1,3 +1,4 @@
+import {isKovaInstancePath} from './instance-path';
 import { DOCUMENT } from '@angular/common';
 import { HttpBackend, HttpClient, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
@@ -10,7 +11,7 @@ export interface KovaSession { organizationName: string; organizationId: string;
 export class KovaAuth {
   private readonly document = inject(DOCUMENT);
   private readonly http = inject(HttpClient);
-  readonly pilot = new URL(this.document.baseURI).pathname.startsWith('/tasktracker-prueba/');
+  readonly pilot = isKovaInstancePath(new URL(this.document.baseURI).pathname);
   readonly account = signal<KovaSession | null>(null);
   private readonly base = new URL('./', this.document.baseURI);
   endpoint(path: string) { return new URL(path, this.base).toString(); }
