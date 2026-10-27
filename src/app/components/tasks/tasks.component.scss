@@ -304,7 +304,7 @@
 
   // Fila vencida
   tr.overdue-row { // Aplicar el fondo a toda la fila
-    background-color: var(--red-soft) !important; // Asegura que sobrescriba otros fondos de fila
+    background-color: transparent !important; // el tono lo pinta el td (regla global); sumar ambos doblaba la opacidad
   }
   tr.overdue-row td.mat-mdc-cell:first-of-type {
     box-shadow: inset 3px 0 0 var(--red);
