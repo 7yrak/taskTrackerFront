@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { KovaAuth } from '../../core/kova-auth';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
@@ -20,6 +21,8 @@ import { LogoComponent } from '../shared/logo/logo.component';
 })
 export class LayoutComponent {
   theme = inject(ThemeService);
+  readonly auth = inject(KovaAuth);
+  logout() {this.auth.logout().subscribe({next:()=>void this.router.navigateByUrl('/acceso')});}
   private router = inject(Router);
 
   navItems = [
