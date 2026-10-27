@@ -1,0 +1,138 @@
+:host { display: block; min-height: 100vh; }
+
+.login {
+  display: grid;
+  grid-template-columns: minmax(340px, 5fr) 6fr;
+  min-height: 100vh;
+  background: var(--bg-app);
+}
+
+.brand-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 48px 56px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(34, 211, 238, 0.28), transparent 45%),
+    radial-gradient(circle at 90% 95%, rgba(99, 102, 241, 0.30), transparent 50%),
+    linear-gradient(160deg, #0B1B3F 0%, #0C2A55 55%, #0A4A66 100%);
+}
+
+.brand-copy {
+  h2 { margin: 0 0 12px; font-size: clamp(30px, 3.4vw, 44px); line-height: 1.1; }
+  p { margin: 0; max-width: 34ch; font-size: 17px; line-height: 1.55; color: rgba(255, 255, 255, 0.78); }
+}
+
+.brand-points {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 15px;
+
+  li { display: flex; align-items: center; gap: 12px; }
+  mat-icon {
+    width: 34px; height: 34px; padding: 8px; box-sizing: border-box; border-radius: 10px;
+    font-size: 18px; background: rgba(255, 255, 255, 0.12); color: #67E8F9;
+  }
+}
+
+.form-panel { display: grid; place-items: center; padding: 32px 20px; }
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  padding: 40px 36px 36px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-md);
+
+  h1 { margin: 0 0 6px; font-size: 28px; color: var(--text-primary); }
+  .lead { margin: 0 0 24px; color: var(--text-secondary); }
+  label { display: block; margin: 16px 0 6px; font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+}
+
+.mobile-logo { display: none; margin-bottom: 24px; }
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  height: 48px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+
+  &:focus-within {
+    border-color: var(--accent);
+    background: var(--bg-card);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+
+  > mat-icon { color: var(--text-muted); font-size: 20px; width: 20px; height: 20px; flex-shrink: 0; }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 15px;
+  }
+}
+
+.reveal {
+  display: grid; place-items: center; width: 32px; height: 32px; padding: 0;
+  border: 0; border-radius: 8px; background: transparent; color: var(--text-secondary); cursor: pointer;
+  mat-icon { font-size: 20px; width: 20px; height: 20px; }
+  &:hover { background: var(--accent-dim); color: var(--accent-text); }
+  &:focus-visible { outline: 2px solid var(--accent); }
+}
+
+.submit {
+  width: 100%;
+  height: 48px;
+  margin-top: 28px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+
+  &:hover:not(:disabled) { background: var(--accent-strong); box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 32%, transparent); }
+  &:active:not(:disabled) { transform: translateY(1px); }
+  &:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+}
+
+.msg {
+  margin: 0 0 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.45;
+
+  &.error { background: var(--red-soft); color: var(--red-text); border: 1px solid var(--red-border); }
+  &.info { background: var(--blue-soft); color: var(--blue-text); border: 1px solid var(--blue-border); }
+}
+
+@media (max-width: 860px) {
+  .login { grid-template-columns: 1fr; }
+  .brand-panel { display: none; }
+  .mobile-logo { display: block; }
+  .form-panel { align-items: start; padding-top: 8vh; }
+  .card { padding: 32px 24px; }
+}

@@ -1,14 +1,14 @@
 import { Routes } from '@angular/router';
-import { kovaGuard } from './core/kova-auth';
+import { authGuard } from './core/auth';
 import { LayoutComponent } from './components/layout/layout.component';
 
 export const routes: Routes = [
-  { path: 'acceso', loadComponent: () => import('./components/kova-login.component').then(m => m.KovaLogin) },
+  { path: 'acceso', loadComponent: () => import('./components/login/login.component').then(m => m.LoginComponent) },
   {
     path: '',
     component: LayoutComponent,
-    canActivate: [kovaGuard],
-    canActivateChild: [kovaGuard],
+    canActivate: [authGuard],
+    canActivateChild: [authGuard],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       {

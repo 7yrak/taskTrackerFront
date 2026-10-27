@@ -1,42 +1,46 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// GLOBAL STYLES — Evertec Design System · Light + Dark
+// GLOBAL STYLES — TaskTracker design tokens · Light + Dark
+// Todos los componentes leen estas variables: cambiar la identidad = cambiar este bloque.
 // ─────────────────────────────────────────────────────────────────────────────
 
 * { box-sizing: border-box; }
 
 // ══ LIGHT THEME (default) ════════════════════════════════════════════════════
 body {
-  --bg-app:         #EEF2F7;
+  --bg-app:         #F3F6FA;
   --bg-card:        #FFFFFF;
-  --bg-surface:     #F8F8F8; /* Fondo sutilmente diferente */
-  --bg-surface-2:   #F0F0F0; /* Otro fondo sutil */
-  --bg-nav:         #FFF8F0; /* Naranja muy claro para el menú lateral */
-  --bg-nav-header:  #EA580C; /* Naranja oscuro para el encabezado del menú (para que el logo blanco se vea) */
+  --bg-surface:     #F8FAFC;
+  --bg-surface-2:   #EEF2F7;
+  --bg-nav:         #FFFFFF;
+  --bg-nav-header:  #0E7490;
 
-  --text-primary:   #333333; /* Gris oscuro para texto principal */
-  --text-secondary: #666666; /* Gris medio para texto secundario */
-  --text-muted:     #AAAAAA; /* Gris claro para texto atenuado */
-  --text-on-nav:    #333333; /* Texto oscuro para el menú lateral claro */
-  --text-on-dark:   #FFFFFF; /* Texto blanco para fondos oscuros (como el header del nav) */
+  --text-primary:   #0F172A;
+  --text-secondary: #475569;
+  --text-muted:     #64748B;
+  --text-on-nav:    #0F172A;
+  --text-on-dark:   #FFFFFF;
 
-  --border:         #E0E0E0; /* Borde gris claro */
-  --border-subtle:  #F0F0F0; /* Borde gris muy claro */
+  --border:         #E2E8F0;
+  --border-subtle:  #EEF2F7;
 
-  --accent:         #FF8C00; /* Naranja principal vibrante */
-  --accent-bright:  #FFA500; /* Naranja más brillante */
-  --accent-dim:     #FFF8F0; /* Naranja muy claro para acentos sutiles */
-  --accent-text:    #994D00; /* Naranja oscuro para texto sobre acento */
+  // Acento: teal de la marca TaskTracker (coincide con el favicon)
+  --accent:         #0E7490;
+  --accent-bright:  #06B6D4;
+  --accent-strong:  #155E75;
+  --accent-dim:     #E0F4F8;
+  --accent-text:    #155E75;
+  --on-accent:      #FFFFFF;
 
-  --shadow-sm:      0 2px 8px rgba(12,31,74,0.07);
-  --shadow-md:      0 6px 20px rgba(12,31,74,0.12);
+  --shadow-sm:      0 1px 2px rgba(15,23,42,0.05), 0 2px 8px rgba(15,23,42,0.05);
+  --shadow-md:      0 12px 32px rgba(15,23,42,0.12);
 
-  // Colores semánticos clásicos para estados y prioridades
+  // Colores semánticos para estados y prioridades
   --red:            #DC2626;
   --red-soft:       #FEF2F2;
   --red-border:     #FECACA;
   --red-text:       #991B1B;
 
-  --orange:         #F97316;
+  --orange:         #EA580C;
   --orange-soft:    #FFF7ED;
   --orange-border:  #FED7AA;
   --orange-text:    #9A3412;
@@ -61,63 +65,85 @@ body {
   --purple-border:  #DDD6FE;
   --purple-text:    #5B21B6;
 
+  --pink:           #DB2777;
+
   --gray:           #64748B;
   --gray-soft:      #F1F5F9;
   --gray-border:    #E2E8F0;
   --gray-text:      #475569;
 
-  --transition: 0.22s ease;
+  --radius-sm:      8px;
+  --radius-md:      12px;
+  --radius-lg:      16px;
+  --transition: 0.2s ease;
 }
 
 // ══ DARK THEME ════════════════════════════════════════════════════════════════
 body.dark-theme {
   color-scheme: dark;
 
-  --bg-app:         #020617;
-  --bg-card:        #0F172A; /* Azul noche para tarjetas */
-  --bg-surface:     #111827; /* Superficie principal */
-  --bg-surface-2:   #1F2937; /* Superficie secundaria */
-  --bg-nav:         #0B1220; /* Menú lateral profundo */
-  --bg-nav-header:  #EA580C; /* Naranja oscuro para el encabezado del menú (consistente con light theme) */
+  --bg-app:         #0B1120;
+  --bg-card:        #121B2E;
+  --bg-surface:     #172033;
+  --bg-surface-2:   #1E2A40;
+  --bg-nav:         #0F1829;
+  --bg-nav-header:  #0E7490;
 
-  --text-primary:   #F8FAFC; /* Blanco suave para texto principal */
-  --text-secondary: #CBD5E1; /* Gris claro para texto secundario */
-  --text-muted:     #94A3B8; /* Gris atenuado visible */
-  --text-on-nav:    #F8FAFC; /* Texto claro para el menú lateral oscuro */
-  --text-on-dark:   #FFFFFF; /* Texto blanco para fondos oscuros */
+  --text-primary:   #F1F5F9;
+  --text-secondary: #CBD5E1;
+  --text-muted:     #94A3B8;
+  --text-on-nav:    #F1F5F9;
+  --text-on-dark:   #FFFFFF;
 
-  --border:         #273244; /* Borde azul grisáceo */
-  --border-subtle:  #1E293B; /* Borde más oscuro */
+  --border:         #26334A;
+  --border-subtle:  #1C2840;
 
-  --accent:         #FF8C00; /* Naranja principal vibrante */
-  --accent-bright:  #FFA500; /* Naranja más brillante */
-  --accent-dim:     rgba(255,140,0,0.2); /* Naranja con transparencia para acentos sutiles */
-  --accent-text:    #FFFFFF; /* Texto blanco sobre acento */
+  --accent:         #22D3EE;
+  --accent-bright:  #67E8F9;
+  --accent-strong:  #67E8F9;
+  --accent-dim:     rgba(34,211,238,0.14);
+  --accent-text:    #A5F3FC;
+  --on-accent:      #04222B;
 
-  --shadow-sm:      0 4px 14px rgba(0,0,0,0.28); /* Sombras ajustadas para tema oscuro */
-  --shadow-md:      0 10px 28px rgba(0,0,0,0.40);
+  --shadow-sm:      0 1px 2px rgba(0,0,0,0.3), 0 4px 14px rgba(0,0,0,0.25);
+  --shadow-md:      0 16px 40px rgba(0,0,0,0.45);
 
-  --red:            #FF7043; /* Naranja rojizo para "rojo" semántico */
-  --red-soft:       rgba(255,112,67,0.2);
-  --red-border:     rgba(255,112,67,0.4);
-  --red-text:       #FFAB91;
+  --red:            #F87171;
+  --red-soft:       rgba(248,113,113,0.14);
+  --red-border:     rgba(248,113,113,0.38);
+  --red-text:       #FCA5A5;
 
-  --orange:         #FF8C00; /* Usar el acento principal para "naranja" semántico */
-  --orange-soft:    rgba(255,140,0,0.2);
-  --orange-border:  rgba(255,140,0,0.4);
-  --orange-text:    #FFFFFF;
+  --orange:         #FB923C;
+  --orange-soft:    rgba(251,146,60,0.14);
+  --orange-border:  rgba(251,146,60,0.38);
+  --orange-text:    #FDBA74;
 
-  --amber:          #FFB300; /* Naranja amarillento para "ámbar" semántico */
-  --amber-soft:     rgba(255,179,0,0.2);
-  --amber-border:   rgba(255,179,0,0.4);
-  --amber-text:     #FFFFFF;
+  --amber:          #FBBF24;
+  --amber-soft:     rgba(251,191,36,0.14);
+  --amber-border:   rgba(251,191,36,0.38);
+  --amber-text:     #FCD34D;
 
-  --green:          #FF8C00; /* Usar el acento principal para "verde" semántico */
-  --green-soft:     rgba(255,140,0,0.2);
-  --green-border:   rgba(255,140,0,0.4);
-  --green-text:     #FFFFFF;
+  --green:          #34D399;
+  --green-soft:     rgba(52,211,153,0.14);
+  --green-border:   rgba(52,211,153,0.38);
+  --green-text:     #6EE7B7;
 
-  --pink:           #FF7043; /* Naranja rojizo para "rosa" semántico */
+  --blue:           #60A5FA;
+  --blue-soft:      rgba(96,165,250,0.14);
+  --blue-border:    rgba(96,165,250,0.38);
+  --blue-text:      #93C5FD;
+
+  --purple:         #A78BFA;
+  --purple-soft:    rgba(167,139,250,0.14);
+  --purple-border:  rgba(167,139,250,0.38);
+  --purple-text:    #C4B5FD;
+
+  --pink:           #F472B6;
+
+  --gray:           #94A3B8;
+  --gray-soft:      rgba(148,163,184,0.12);
+  --gray-border:    rgba(148,163,184,0.30);
+  --gray-text:      #CBD5E1;
 }
 
 // ══ BASE ══════════════════════════════════════════════════════════════════════
@@ -126,10 +152,6 @@ html, body {
   margin: 0;
   overflow: hidden;
   font-family: 'Inter', 'Roboto', 'Helvetica Neue', sans-serif;
-  background:
-    radial-gradient(circle at top left, rgba(14, 165, 233, 0.10), transparent 28%),
-    radial-gradient(circle at top right, rgba(251, 146, 60, 0.10), transparent 32%),
-    linear-gradient(180deg, color-mix(in srgb, var(--bg-app) 94%, white), var(--bg-app));
   background-color: var(--bg-app);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
@@ -137,12 +159,10 @@ html, body {
   transition: background-color var(--transition), color var(--transition);
 }
 
-body.dark-theme {
-  background:
-    radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 26%),
-    radial-gradient(circle at top right, rgba(249, 115, 22, 0.14), transparent 28%),
-    radial-gradient(circle at bottom left, rgba(124, 58, 237, 0.10), transparent 24%),
-    linear-gradient(180deg, #07111f, var(--bg-app));
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
 body.dark-theme app-dashboard {
@@ -284,12 +304,30 @@ h1, h2, h3, h4, h5, h6,
 
 .spacer { flex: 1 1 auto; }
 
+// ── Responsive base ───────────────────────────────────────────────────────────
+@media (max-width: 720px) {
+  .page-container { padding: 18px 14px; }
+
+  .page-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 20px;
+
+    > .spacer { display: none; }
+    > button, > a { margin-right: 0 !important; }
+  }
+
+  .page-title { font-size: 20px; }
+  .filter-bar { padding: 12px; gap: 10px; }
+}
+
 // ── Status chips ──────────────────────────────────────────────────────────────
 .status-chip {
   display: inline-flex;
   align-items: center;
   padding: 3px 10px;
-  border-radius: 4px;
+  border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
@@ -308,8 +346,8 @@ h1, h2, h3, h4, h5, h6,
 .priority-chip {
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
-  border-radius: 3px;
+  padding: 2px 9px;
+  border-radius: 999px;
   font-size: 10px;
   font-weight: 700;
   white-space: nowrap;
@@ -335,7 +373,7 @@ h1, h2, h3, h4, h5, h6,
 
 // ── Material card override ────────────────────────────────────────────────────
 mat-card {
-  border-radius: 8px !important;
+  border-radius: var(--radius-md) !important;
   border: 1px solid var(--border) !important;
   box-shadow: var(--shadow-sm) !important;
   background: var(--bg-card) !important;
@@ -350,15 +388,28 @@ mat-card {
 }
 
 .mat-mdc-dialog-surface {
-  border-radius: 24px !important;
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.22) !important;
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md) !important;
   overflow: hidden;
 }
 
 .mat-mdc-dialog-container {
   padding: 0 !important;
 }
+
+// Los diálogos no traen marco propio: la superficie da el aire y el contenido va a ras.
+.mat-mdc-dialog-surface {
+  padding: 24px 24px 16px;
+}
+
+.mat-mdc-dialog-title,
+.mat-mdc-dialog-content,
+.mat-mdc-dialog-actions {
+  padding-inline: 0 !important;
+}
+
+.mat-mdc-dialog-title::before { display: none; }
 
 body.dark-theme {
   .mat-mdc-card,
@@ -432,7 +483,7 @@ body.dark-theme {
   margin-bottom: 20px;
   padding: 14px 16px;
   background: var(--bg-card);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
   transition: background var(--transition), border-color var(--transition);
@@ -445,42 +496,89 @@ body.dark-theme {
 
 // ── Progress bar ─────────────────────────────────────────────────────────────
 .mat-mdc-progress-bar {
-  --mdc-linear-progress-active-indicator-color: var(--accent);
-  --mdc-linear-progress-track-color: var(--border);
+  --mat-progress-bar-active-indicator-color: var(--accent);
+  --mat-progress-bar-track-color: var(--border);
+  border-radius: 999px;
 }
 
-// ── Button overrides ─────────────────────────────────────────────────────────
-.mat-mdc-raised-button.mat-primary,
-.mat-mdc-flat-button.mat-primary {
-  --mdc-filled-button-container-color: var(--accent); /* Usar el color de acento */
-  --mdc-filled-button-label-text-color: #ffffff;
+// ── Material: el tema prebuilt (indigo) se alinea con el acento de la marca ──
+body {
+  --mat-button-filled-container-color: var(--accent);
+  --mat-button-filled-label-text-color: var(--on-accent);
+  --mat-button-filled-disabled-container-color: var(--bg-surface-2);
+  --mat-button-filled-disabled-label-text-color: var(--text-muted);
+  --mat-button-text-label-text-color: var(--accent-text);
+  --mat-button-outlined-label-text-color: var(--text-primary);
+  --mat-button-outlined-outline-color: var(--border);
+
+  --mat-form-field-outlined-focus-outline-color: var(--accent);
+  --mat-form-field-outlined-focus-label-text-color: var(--accent-text);
+  --mat-form-field-outlined-caret-color: var(--accent);
+  --mat-form-field-filled-focus-active-indicator-color: var(--accent);
+  --mat-form-field-filled-focus-label-text-color: var(--accent-text);
+  --mat-form-field-filled-caret-color: var(--accent);
+  --mat-form-field-focus-select-arrow-color: var(--accent);
+  --mat-select-focused-arrow-color: var(--accent);
+
+  --mat-option-selected-state-label-text-color: var(--accent-text);
+  --mat-datepicker-calendar-date-selected-state-background-color: var(--accent);
+  --mat-datepicker-calendar-date-selected-state-text-color: var(--on-accent);
+  --mat-datepicker-calendar-date-today-outline-color: var(--accent);
+  --mat-button-toggle-selected-state-background-color: var(--accent-dim);
+  --mat-button-toggle-selected-state-text-color: var(--accent-text);
+  --mat-checkbox-selected-icon-color: var(--accent);
+  --mat-checkbox-selected-checkmark-color: var(--on-accent);
+  --mat-slide-toggle-selected-track-color: var(--accent);
+  --mat-slide-toggle-selected-handle-color: var(--on-accent);
+}
+
+// color="primary" fija los tokens en el propio botón: se pisan al mismo nivel
+.mat-mdc-unelevated-button.mat-primary,
+.mat-mdc-raised-button.mat-primary {
+  --mat-button-filled-container-color: var(--accent);
+  --mat-button-filled-label-text-color: var(--on-accent);
+  --mat-button-filled-state-layer-color: var(--on-accent);
+  border-radius: var(--radius-sm);
+}
+
+.mat-mdc-button.mat-primary {
+  --mat-button-text-label-text-color: var(--accent-text);
+  --mat-button-text-state-layer-color: var(--accent);
+}
+
+.mat-mdc-icon-button.mat-primary {
+  --mat-icon-button-icon-color: var(--accent);
+}
+
+.mat-mdc-outlined-button {
+  border-radius: var(--radius-sm);
 }
 
 .mat-mdc-outlined-button.mat-primary {
-  --mdc-outlined-button-label-text-color: var(--accent);
-  --mdc-outlined-button-outline-color: var(--accent);
+  --mat-button-outlined-label-text-color: var(--accent-text);
+  --mat-button-outlined-outline-color: var(--accent);
 }
 
 .snack-success {
-  --mdc-snackbar-container-color: #0f766e;
-  --mdc-snackbar-supporting-text-color: #fff;
+  --mat-snack-bar-container-color: #0f766e;
+  --mat-snack-bar-supporting-text-color: #fff;
   --mat-snack-bar-button-color: #fff;
 }
 
 .snack-warning {
-  --mdc-snackbar-container-color: #b45309;
-  --mdc-snackbar-supporting-text-color: #fff;
+  --mat-snack-bar-container-color: #b45309;
+  --mat-snack-bar-supporting-text-color: #fff;
   --mat-snack-bar-button-color: #fff;
 }
 
 .snack-error {
-  --mdc-snackbar-container-color: #b91c1c;
-  --mdc-snackbar-supporting-text-color: #fff;
+  --mat-snack-bar-container-color: #b91c1c;
+  --mat-snack-bar-supporting-text-color: #fff;
   --mat-snack-bar-button-color: #fff;
 }
 
 .snack-info {
-  --mdc-snackbar-container-color: #0f172a;
-  --mdc-snackbar-supporting-text-color: #fff;
+  --mat-snack-bar-container-color: #0f172a;
+  --mat-snack-bar-supporting-text-color: #fff;
   --mat-snack-bar-button-color: #fff;
 }

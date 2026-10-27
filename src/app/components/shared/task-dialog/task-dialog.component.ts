@@ -205,20 +205,20 @@ export interface TaskDialogData {
     .dialog-form mat-form-field { margin-bottom: 0; }
     .derived-note {
       margin: 0;
-      color: #1E293B;
+      color: var(--text-primary);
       font-size: 12px;
       line-height: 1.35;
       display: flex;
       align-items: center;
       gap: 6px;
-      background: #E0F2FE;
+      background: var(--blue-soft);
       padding: 8px 12px;
       border-radius: 6px;
-      border-left: 4px solid #3B82F6;
+      border-left: 4px solid var(--blue);
     }
     .comments-section {
       margin-top: 4px;
-      border-top: 1px solid #E2E8F0;
+      border-top: 1px solid var(--border);
       padding-top: 12px;
       display: flex;
       flex-direction: column;
@@ -227,7 +227,7 @@ export interface TaskDialogData {
     .comments-title {
       font-size: 13px;
       font-weight: 600;
-      color: #334155;
+      color: var(--text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.5px;
       display: flex;
@@ -236,14 +236,14 @@ export interface TaskDialogData {
     }
     .comments-list { display: flex; flex-direction: column; gap: 8px; }
     .comment-item {
-      background: #F8FAFC;
+      background: var(--bg-surface);
       border-radius: 8px;
       padding: 10px 12px;
-      border: 1px solid #E2E8F0;
+      border: 1px solid var(--border);
       transition: background 0.2s;
       box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
-    .comment-item:hover { background: #F1F5F9; }
+    .comment-item:hover { background: var(--bg-surface-2); }
     .comment-header {
       display: flex;
       justify-content: space-between;
@@ -254,7 +254,7 @@ export interface TaskDialogData {
     .comment-author {
       font-weight: 600;
       font-size: 12px;
-      color: #0F172A;
+      color: var(--text-primary);
       display: flex;
       align-items: center;
       gap: 6px;
@@ -264,7 +264,7 @@ export interface TaskDialogData {
     .comment-date-input {
       border: 1px solid transparent;
       background: transparent;
-      color: #64748B;
+      color: var(--text-muted);
       font-size: 11px;
       font-family: inherit;
       padding: 2px 4px;
@@ -273,8 +273,8 @@ export interface TaskDialogData {
       transition: all 0.2s;
     }
     .comment-date-input:hover, .comment-date-input:focus {
-      border-color: #CBD5E1;
-      background: #FFF;
+      border-color: var(--border);
+      background: var(--bg-card);
       outline: none;
     }
     .delete-comment-btn {
@@ -291,28 +291,28 @@ export interface TaskDialogData {
       width: 18px !important;
       height: 18px !important;
       line-height: 18px !important;
-      color: #EF4444;
+      color: var(--red);
     }
-    .comment-body { font-size: 13px; color: #334155; white-space: pre-wrap; line-height: 1.45; }
+    .comment-body { font-size: 13px; color: var(--text-secondary); white-space: pre-wrap; line-height: 1.45; }
     .no-comments {
       font-size: 12px;
-      color: #94A3B8;
+      color: var(--text-muted);
       font-style: italic;
       margin: 0;
       text-align: center;
       padding: 12px;
-      background: #F8FAFC;
+      background: var(--bg-surface);
       border-radius: 8px;
-      border: 1px dashed #CBD5E1;
+      border: 1px dashed var(--border);
     }
     .add-comment-row {
       display: flex;
       gap: 10px;
       align-items: stretch;
-      background: #F8FAFC;
+      background: var(--bg-surface);
       padding: 12px;
       border-radius: 8px;
-      border: 1px solid #E2E8F0;
+      border: 1px solid var(--border);
       box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
     }
     .comment-input { flex: 1; }

@@ -20,34 +20,33 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  min-height: 72px;
-  padding: 12px 18px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-card) 96%, var(--accent-dim)) 0%, var(--bg-card) 100%);
+  min-height: 64px;
+  padding: 10px 20px;
+  background: color-mix(in srgb, var(--bg-card) 88%, transparent);
+  backdrop-filter: saturate(160%) blur(12px);
   border-bottom: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
   position: sticky;
   top: 0;
   z-index: 20;
-  transition: background var(--transition), border-color var(--transition), box-shadow var(--transition);
+  transition: background var(--transition), border-color var(--transition);
 }
 
 .brand-link {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
   flex-shrink: 0;
   text-decoration: none;
   color: inherit;
   font-size: 17px;
   font-weight: 700;
-  padding-right: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .top-nav {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 4px;
   flex: 1 1 auto;
   min-width: 0;
   overflow-x: auto;
@@ -64,32 +63,32 @@
   align-items: center;
   gap: 8px;
   min-width: auto;
-  height: 40px;
+  height: 38px;
   padding: 0 14px;
-  border-radius: 999px;
+  border-radius: 10px;
   color: var(--text-secondary);
-  font-weight: 600;
-  letter-spacing: 0.1px;
+  font-weight: 500;
+  letter-spacing: 0;
   text-transform: none;
   flex-shrink: 0;
-  transition: background var(--transition), color var(--transition), transform var(--transition);
+  transition: background var(--transition), color var(--transition);
 
   mat-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
+    font-size: 19px;
+    width: 19px;
+    height: 19px;
+    margin: 0;
   }
 
   &:hover {
-    background: var(--accent-dim);
-    color: var(--accent-text);
-    transform: translateY(-1px);
+    background: var(--bg-surface-2);
+    color: var(--text-primary);
   }
 
   &.active-link {
     background: var(--accent-dim);
     color: var(--accent-text);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+    font-weight: 600;
 
     mat-icon {
       color: var(--accent);
@@ -106,15 +105,60 @@
 
 .theme-toggle {
   color: var(--text-secondary);
-  background: transparent;
   border-radius: 10px;
-  transition: background var(--transition), color var(--transition), transform var(--transition);
+  transition: background var(--transition), color var(--transition);
 
   &:hover {
-    background: var(--accent-dim);
-    color: var(--accent-text);
-    transform: translateY(-1px);
+    background: var(--bg-surface-2);
+    color: var(--text-primary);
   }
+}
+
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 8px 0 5px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+
+  &:hover {
+    background: var(--bg-surface-2);
+  }
+
+  mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    color: var(--text-muted);
+  }
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0C1F4A, #0094B8);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.user-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .content-area {
@@ -132,43 +176,11 @@
   }
 }
 
-body.dark-theme {
-  .app-topbar {
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(11, 18, 32, 0.98) 100%);
-    border-bottom-color: rgba(148, 163, 184, 0.14);
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.34);
-  }
-
-  .nav-link {
-    color: #E2E8F0;
-
-    &:hover,
-    &.active-link {
-      background: rgba(255, 140, 0, 0.16);
-      color: #FFFFFF;
-    }
-
-    &.active-link {
-      box-shadow: inset 0 0 0 1px rgba(255, 140, 0, 0.22);
-    }
-  }
-
-  .theme-toggle {
-    color: #E2E8F0;
-
-    &:hover {
-      background: rgba(255, 140, 0, 0.16);
-      color: #FFFFFF;
-    }
-  }
-}
-
 @media (max-width: 900px) {
   .app-topbar {
     flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 12px 14px 14px;
+    gap: 6px 10px;
+    padding: 10px 14px 8px;
   }
 
   .brand-link {
@@ -184,6 +196,14 @@ body.dark-theme {
     order: 3;
     flex-basis: 100%;
     justify-content: flex-start;
-    padding: 4px 0 0;
+    padding: 0;
+  }
+
+  .user-name {
+    display: none;
+  }
+
+  .user-chip {
+    padding: 0 6px 0 5px;
   }
 }

@@ -6,6 +6,7 @@
   flex: 1;
   height: 100%;
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
 
   .page-container {
@@ -16,6 +17,7 @@
     min-height: 0;
     overflow: hidden;
     max-width: none;
+    width: 100%;
     padding-bottom: 0;
     min-width: 0;
   }
@@ -109,42 +111,39 @@
   @include editable.inline-controls;
   width: 100%;
   table-layout: fixed;
-  min-width: 100%;
+  min-width: max(100%, calc(var(--task-col-title) + var(--task-col-project) + var(--task-col-assignee) + var(--task-col-status) + var(--task-col-priority) + var(--task-col-startDate) + var(--task-col-dueDate) + var(--task-col-progressActual) + var(--task-col-progressExpected) + var(--task-col-actions)));
   --mat-table-header-container-height: 44px;
   --mat-table-row-item-container-height: auto;
   --mat-table-background-color: var(--bg-card);
   --mat-table-row-item-label-text-color: var(--text-primary);
   --mat-table-header-headline-color: var(--text-secondary);
-  --task-col-title: 500px;
+  --task-col-title: 380px;
   --task-col-project: 120px;
   --task-col-assignee: 120px;
-  --task-col-status: 135px;
-  --task-col-priority: 90px;
+  --task-col-status: 160px;
+  --task-col-priority: 108px;
   --task-col-startDate: 64px;
   --task-col-dueDate: 78px;
   --task-col-progressActual: 64px;
   --task-col-progressExpected: 74px;
   --task-col-actions: 112px;
 
+  // En table-layout: fixed el min-width de las celdas se ignora: las columnas llevan ancho
+  // explícito y "Tarea" absorbe el resto (la tabla no baja del mínimo y entonces hace scroll).
   .mat-column-title {
-    width: 42%;
-    min-width: var(--task-col-title);
+    width: auto;
   }
   .mat-column-project {
-    width: 9%;
-    min-width: var(--task-col-project);
+    width: var(--task-col-project);
   }
   .mat-column-assignee {
-    width: 11%;
-    min-width: var(--task-col-assignee);
+    width: var(--task-col-assignee);
   }
   .mat-column-status {
-    width: 8%;
-    min-width: var(--task-col-status);
+    width: var(--task-col-status);
   }
   .mat-column-priority {
-    width: 6%;
-    min-width: var(--task-col-priority);
+    width: var(--task-col-priority);
   }
   .mat-column-startDate {
     width: var(--task-col-startDate);
@@ -179,7 +178,7 @@
     text-transform: uppercase;
     letter-spacing: 0.6px;
     white-space: nowrap;
-    background: var(--orange-border);
+    background: var(--bg-surface-2);
     border-bottom: none !important;
     padding: 0 6px;
     position: relative;

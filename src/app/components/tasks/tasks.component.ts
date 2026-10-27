@@ -61,11 +61,11 @@ type TaskTableColumn = keyof TaskTableColumnWidths;
 const TASK_TABLE_COLUMN_WIDTHS_STORAGE_KEY = 'tasks.tableColumnWidths.v3';
 
 const DEFAULT_TASK_TABLE_COLUMN_WIDTHS: TaskTableColumnWidths = {
-  title: 500,
+  title: 380,
   project: 120,
   assignee: 120,
-  status: 135,
-  priority: 90,
+  status: 160,
+  priority: 108,
   startDate: 64,
   dueDate: 78,
   progressActual: 64,
@@ -77,8 +77,8 @@ const MIN_TASK_TABLE_COLUMN_WIDTHS: TaskTableColumnWidths = {
   title: 260,
   project: 100,
   assignee: 100,
-  status: 125,
-  priority: 84,
+  status: 150,
+  priority: 100,
   startDate: 60,
   dueDate: 72,
   progressActual: 60,

@@ -18,14 +18,25 @@
     </nav>
 
     <div class="topbar-actions">
-      <a mat-button href="/kova/portal">Volver a KOVA</a>
-      <button mat-button type="button" (click)="logout()">Cerrar sesión</button>
       <button mat-icon-button
               class="theme-toggle"
+              type="button"
               (click)="theme.toggle()"
+              [attr.aria-label]="theme.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
               [matTooltip]="theme.isDark() ? 'Modo claro' : 'Modo oscuro'">
         <mat-icon>{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
       </button>
+      <button type="button" class="user-chip" [matMenuTriggerFor]="userMenu" aria-label="Menú de usuario">
+        <span class="avatar" aria-hidden="true">{{ initial }}</span>
+        <span class="user-name">{{ auth.account()?.username }}</span>
+        <mat-icon aria-hidden="true">expand_more</mat-icon>
+      </button>
+      <mat-menu #userMenu="matMenu" xPosition="before">
+        <button mat-menu-item type="button" (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          <span>Cerrar sesión</span>
+        </button>
+      </mat-menu>
     </div>
   </header>
 

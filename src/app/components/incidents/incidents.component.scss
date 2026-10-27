@@ -103,7 +103,7 @@ button[aria-pressed='true'] {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  background: var(--orange-border);
+  background: var(--bg-surface-2);
   border: 0;
   white-space: nowrap;
 }
@@ -497,7 +497,7 @@ input[type='file']::file-selector-button {
   width: 100%;
 }
 .preview-table th {
-  background: var(--orange-border);
+  background: var(--bg-surface-2);
   color: var(--text-primary);
   font-size: 10px;
   text-transform: uppercase;

@@ -143,9 +143,9 @@
 }
 
 .role-muted {
-  background: #F1F5F9;
-  color: #475569;
-  border-color: #CBD5E1;
+  background: var(--gray-soft);
+  color: var(--gray-text);
+  border-color: var(--gray-border);
 }
 
 .count-block {

@@ -26,11 +26,11 @@ export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
 
 export const PROJECT_STATUS_COLORS: Record<ProjectStatus, string> = {
   [ProjectStatus.INITIATED]: '#64748B',
-  [ProjectStatus.PLANNING]: '#3B82F6',
-  [ProjectStatus.IN_PROGRESS]: '#F59E0B',
-  [ProjectStatus.ON_HOLD]: '#EF4444',
-  [ProjectStatus.MONITORING]: '#8B5CF6',
-  [ProjectStatus.COMPLETED]: '#10B981',
+  [ProjectStatus.PLANNING]: '#2563EB',
+  [ProjectStatus.IN_PROGRESS]: '#0E7490',
+  [ProjectStatus.ON_HOLD]: '#DC2626',
+  [ProjectStatus.MONITORING]: '#7C3AED',
+  [ProjectStatus.COMPLETED]: '#047857',
   [ProjectStatus.CLOSED]: '#1E293B'
 };
 
