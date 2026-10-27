@@ -20,4 +20,5 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci --no-audit --no-fund
+      - run: node --test tests/overtime-people.test.cjs
       - run: npm run build -- --base-href=/tasktracker/

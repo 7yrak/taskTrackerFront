@@ -169,7 +169,7 @@ export class OvertimeComponent implements OnInit {
     });
   }
   get filtered() {
-    const q = this.search.trim().toLocaleLowerCase();
+    const q = this.personKey(this.search);
     return this.entries.filter(
       (e) =>
         (!this.projectFilter || e.projectId === this.projectFilter) &&
@@ -178,7 +178,7 @@ export class OvertimeComponent implements OnInit {
         (!this.from || e.date >= this.from) &&
         (!this.to || e.date <= this.to) &&
         (!q ||
-          `${e.topic} ${e.person} ${e.projectName}`.toLocaleLowerCase().includes(q)),
+          this.personKey(`${e.topic} ${e.person} ${e.projectName}`).includes(q)),
     );
   }
   get total() {
