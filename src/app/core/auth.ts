@@ -40,6 +40,7 @@ export class Auth {
   }
 
   logout() {
+    if (typeof window !== 'undefined' && window.location.hostname === '7yrak-server.tail390d34.ts.net') { window.location.assign('https://7yrak-server.tail390d34.ts.net/auth/logout'); return of(void 0); }
     return this.csrf().pipe(
       switchMap(csrf => this.http.post(this.endpoint('auth/logout'), null, { headers: { [csrf.headerName]: csrf.token } })),
       map(() => { this.account.set(null); }),

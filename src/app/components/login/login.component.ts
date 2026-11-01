@@ -13,6 +13,8 @@ import { LogoComponent } from '../shared/logo/logo.component';
   styleUrl: './login.component.scss',
 })
 export class LoginComponent {
+  readonly usingSharedPortal = typeof window !== 'undefined' && window.location.hostname === '7yrak-server.tail390d34.ts.net';
+
   private readonly auth = inject(Auth);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -24,6 +26,8 @@ export class LoginComponent {
   readonly error = signal('');
   readonly notice = this.route.snapshot.queryParamMap.get('estado') === 'expirada'
     ? 'Tu sesión expiró. Ingresa de nuevo para continuar.' : '';
+
+  constructor() { if (this.usingSharedPortal) window.location.replace('/tasktracker/'); }
 
   submit() {
     if (this.busy() || !this.username.trim() || !this.password) return;
