@@ -2,7 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { HttpBackend, HttpClient, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { catchError, map, of, switchMap, tap, throwError } from 'rxjs';
+import { EMPTY, catchError, map, of, switchMap, tap, throwError } from 'rxjs';
 import { API_BASE_URL } from '../config/api.config';
 
 export interface AuthSession { username: string; }
@@ -40,7 +40,7 @@ export class Auth {
   }
 
   logout() {
-    if (typeof window !== 'undefined' && window.location.hostname === '7yrak-server.tail390d34.ts.net') { window.location.assign('https://7yrak-server.tail390d34.ts.net/auth/logout'); return of(void 0); }
+    if (typeof window !== 'undefined' && window.location.hostname === '7yrak-server.tail390d34.ts.net') { window.location.assign('https://7yrak-server.tail390d34.ts.net/auth/logout'); return EMPTY; }
     return this.csrf().pipe(
       switchMap(csrf => this.http.post(this.endpoint('auth/logout'), null, { headers: { [csrf.headerName]: csrf.token } })),
       map(() => { this.account.set(null); }),
