@@ -15,7 +15,7 @@ import { CommonModule } from '@angular/common';
         <defs>
           <linearGradient [attr.id]="gradientId" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%"   stop-color="#0C1F4A"/>
-            <stop offset="100%" stop-color="#0094B8"/>
+            <stop offset="100%" stop-color="#0284c7"/>
           </linearGradient>
         </defs>
 
@@ -32,7 +32,7 @@ import { CommonModule } from '@angular/common';
         <rect x="30" y="11" width="5" height="22" rx="2.5" fill="white"/>
 
         <!-- Milestone dot at base of right stem -->
-        <circle cx="32.5" cy="37" r="4.5" fill="#00C4E8"/>
+        <circle cx="32.5" cy="37" r="4.5" fill="#38bdf8"/>
         <circle cx="32.5" cy="37" r="2" fill="white" opacity="0.6"/>
       </svg>
 
@@ -72,7 +72,7 @@ import { CommonModule } from '@angular/common';
 
     /* On dark backgrounds */
     .logo-on-dark .logo-word-task    { color: #FFFFFF; }
-    .logo-on-dark .logo-word-tracker { color: #67E8F9; }
+    .logo-on-dark .logo-word-tracker { color: #7dd3fc; }
   `]
 })
 export class LogoComponent {

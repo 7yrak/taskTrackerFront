@@ -12,7 +12,7 @@ body {
   --bg-surface:     #F8FAFC;
   --bg-surface-2:   #EEF2F7;
   --bg-nav:         #FFFFFF;
-  --bg-nav-header:  #0E7490;
+  --bg-nav-header:  #0369a1;
 
   --text-primary:   #0F172A;
   --text-secondary: #475569;
@@ -23,12 +23,12 @@ body {
   --border:         #E2E8F0;
   --border-subtle:  #EEF2F7;
 
-  // Acento: teal de la marca TaskTracker (coincide con el favicon)
-  --accent:         #0E7490;
-  --accent-bright:  #06B6D4;
-  --accent-strong:  #155E75;
-  --accent-dim:     #E0F4F8;
-  --accent-text:    #155E75;
+  // Acento: azul atlántico de TaskTracker (coincide con el favicon)
+  --accent:         #0369a1;
+  --accent-bright:  #0284c7;
+  --accent-strong:  #075985;
+  --accent-dim:     #e0f2fe;
+  --accent-text:    #075985;
   --on-accent:      #FFFFFF;
 
   --shadow-sm:      0 1px 2px rgba(15,23,42,0.05), 0 2px 8px rgba(15,23,42,0.05);
@@ -87,7 +87,7 @@ body.dark-theme {
   --bg-surface:     #172033;
   --bg-surface-2:   #1E2A40;
   --bg-nav:         #0F1829;
-  --bg-nav-header:  #0E7490;
+  --bg-nav-header:  #0369a1;
 
   --text-primary:   #F1F5F9;
   --text-secondary: #CBD5E1;
@@ -98,12 +98,12 @@ body.dark-theme {
   --border:         #26334A;
   --border-subtle:  #1C2840;
 
-  --accent:         #22D3EE;
-  --accent-bright:  #67E8F9;
-  --accent-strong:  #67E8F9;
-  --accent-dim:     rgba(34,211,238,0.14);
-  --accent-text:    #A5F3FC;
-  --on-accent:      #04222B;
+  --accent:         #38bdf8;
+  --accent-bright:  #7dd3fc;
+  --accent-strong:  #7dd3fc;
+  --accent-dim:     rgba(56,189,248,0.14);
+  --accent-text:    #bae6fd;
+  --on-accent:      #082f49;
 
   --shadow-sm:      0 1px 2px rgba(0,0,0,0.3), 0 4px 14px rgba(0,0,0,0.25);
   --shadow-md:      0 16px 40px rgba(0,0,0,0.45);
