@@ -77,4 +77,8 @@ export class TaskService {
   exportExcel(): Observable<Blob> {
     return this.http.get(`${this.base}/export`, { responseType: 'blob' });
   }
+
+  exportView(rows: { id: number; level: number }[]): Observable<Blob> {
+    return this.http.post(`${this.base}/export/view`, rows, { responseType: 'blob' });
+  }
 }

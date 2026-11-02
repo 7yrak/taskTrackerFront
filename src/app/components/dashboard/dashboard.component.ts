@@ -1,3 +1,4 @@
+import { ReportPdf } from '../../shared/report-pdf';
 import { Component, inject, computed, signal, OnInit, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -722,41 +723,32 @@ export class DashboardComponent implements OnInit {
   }
 
   async exportDashboardPdf() {
-    const target = this.dashboardContent?.nativeElement;
-    if (!target) {
-      this.snack.open('No se encontró el contenedor del dashboard', 'OK', { duration: 2500 });
-      return;
-    }
+    if (this.isExportingPdf() || this.isLoading()) return;
     this.isExportingPdf.set(true);
     this.snack.open('Generando PDF, por favor espere...', 'OK', { duration: 5000 });
 
     try {
-      const { default: html2canvas } = await import('html2canvas');
-      const { jsPDF } = await import('jspdf');
-
-      const canvas = await html2canvas(target, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
-      const imgData = canvas.toDataURL('image/png');
-
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfPageHeight = pdf.internal.pageSize.getHeight();
-      
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-      heightLeft -= pdfPageHeight;
-
-      while (heightLeft > 0) {
-        position -= pdfPageHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-        heightLeft -= pdfPageHeight;
-      }
-      
-      const today = formatDateYmd(new Date());
-      pdf.save(`dashboard_reporte_${today}.pdf`);
+      const kpi = this.kpis();
+      const report = new ReportPdf('Informe de seguimiento',
+        `Proyectos: ${this.filterHealthStatus() === 'all' ? 'todos los estados' : this.healthLabel(this.filterHealthStatus() as Health)} · Orden: ${this.sortBy() === 'name' ? 'nombre' : this.sortBy() === 'progress' ? 'avance' : 'riesgo'}`, [
+          { label: 'Tareas monitoreadas', value: kpi.total },
+          { label: 'Completadas', value: kpi.done },
+          { label: 'Bloqueadas', value: kpi.blocked },
+          { label: 'Vencidas', value: kpi.overdue },
+        ]);
+      report.table('Estado de los proyectos', ['Proyecto', 'Estado', 'Tareas', 'Completadas', 'Avance real', 'Esperado', 'Vencidas'],
+        this.projectHealth().map(p => [p.projectName, this.healthLabel(p.health), p.totalTasks, p.doneTasks,
+          `${p.avgActual}%`, p.avgExpected == null ? 'Sin datos' : `${p.avgExpected}%`, p.overdueTasks]),
+        { columnStyles: { 0: { cellWidth: 75 } } });
+      report.table('Seguimiento del equipo', ['Persona', 'Estado', 'Tareas', 'Completadas', 'Bloqueadas', 'Vencidas', 'Avance real'],
+        this.memberHealth().map(m => [m.name, this.healthLabel(m.health), m.totalTasks, m.doneTasks, m.blockedTasks, m.overdueTasks, `${m.avgActual}%`]),
+        { columnStyles: { 0: { cellWidth: 75 } } });
+      report.table('Detalle de tareas monitoreadas', ['Tarea', 'Proyecto', 'Responsables', 'Estado', 'Vencimiento', 'Avance'],
+        this.allTasks().filter(t => !t.hasChildren && this.shouldIncludeInMonitoring(t)).map(t => [t.title, t.projectName ?? '',
+          t.assigneeNames?.join(', ') ?? 'Sin asignar', STATUS_LABELS[t.status], t.dueDate ?? 'Sin fecha',
+          t.progressActual == null ? 'Sin datos' : `${t.progressActual}%`]),
+        { columnStyles: { 0: { cellWidth: 75 }, 1: { cellWidth: 50 }, 2: { cellWidth: 50 } } });
+      report.finish().save(`dashboard_reporte_${formatDateYmd(new Date())}.pdf`);
     } catch (error) {
       this.snack.open('Error al generar el PDF', 'OK', { duration: 3000 });
     } finally {

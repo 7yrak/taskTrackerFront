@@ -1,3 +1,4 @@
+import { ReportPdf } from '../../shared/report-pdf';
 import { Component, inject, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -321,7 +322,7 @@ export class OvertimeComponent implements OnInit {
   async downloadPdf() {
     if (this.exporting || this.busy || !this.filtered.length) return;
     const rows = this.filtered.map((e) => [
-      e.date,
+      e.date.split('-').reverse().join('/'),
       this.personName(e.person),
       String(e.hours),
       e.topic,
@@ -331,26 +332,24 @@ export class OvertimeComponent implements OnInit {
     this.exporting = true;
     this.error = '';
     try {
-      const [{ jsPDF }, { default: autoTable }] = await Promise.all([
-        import('jspdf'),
-        import('jspdf-autotable'),
+      const context = [this.projects.find(p => p.id === this.projectFilter)?.name ?? 'Todos los proyectos',
+        this.personFilter || 'Todas las personas', `${this.from || 'Sin inicio'} a ${this.to || 'Sin término'}`,
+        this.pendingOnly ? 'Por confirmar' : '', this.search ? `Tema: ${this.search}` : ''].filter(Boolean).join(' / ');
+      const report = new ReportPdf('Horas extras', context, [
+        { label: 'Registros', value: rows.length },
+        { label: 'Horas del período', value: total },
+        { label: 'Personas', value: new Set(this.filtered.map(e => e.person)).size },
       ]);
-      const doc = new jsPDF({ orientation: 'landscape' });
-      doc.setFontSize(16);
-      doc.text('Horas extras', 14, 16);
-      doc.setFontSize(10);
-      doc.text(`${rows.length} registros | Total: ${total} horas`, 14, 24);
-      autoTable(doc, {
-        startY: 30,
-        head: [['Fecha', 'Persona', 'Horas', 'Tema/Motivo', 'Proyecto']],
-        body: rows,
-        styles: { fontSize: 9, overflow: 'linebreak' },
-        columnStyles: { 0: { cellWidth: 25 }, 2: { cellWidth: 18 }, 3: { cellWidth: 85 } },
-        didDrawPage: () => {
-          doc.text(`Página ${doc.getNumberOfPages()}`, 14, doc.internal.pageSize.height - 8);
+      report.table('Detalle de horas extras', ['Fecha', 'Persona', 'Horas', 'Tema / Motivo', 'Proyecto'], rows, {
+        columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 48 },
+          2: { cellWidth: 20, halign: 'right' }, 3: { cellWidth: 110 } },
+        foot: [['', 'Total horas', String(total), '', '']], showFoot: 'lastPage',
+        footStyles: { fillColor: [224, 242, 254], textColor: [12, 46, 66], fontStyle: 'bold' },
+        didParseCell: data => {
+          if (data.section === 'foot' && data.column.index === 2) data.cell.styles.halign = 'right';
         },
       });
-      doc.save('horas-extras.pdf');
+      report.finish().save('horas-extras.pdf');
     } catch {
       this.error = 'No se pudo exportar a PDF';
     } finally {

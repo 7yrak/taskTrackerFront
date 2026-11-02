@@ -11,9 +11,9 @@
             matTooltip="Exporta un respaldo de TODAS las tareas en formato CSV, compatible con la importación.">
       <mat-icon>file_download</mat-icon> Exportar Respaldo
     </button-->
-    <button mat-stroked-button (click)="exportView()" style="margin-right:8px"
-            matTooltip="Exporta la vista actual de la tabla a un archivo CSV.">
-      <mat-icon>table_view</mat-icon> Exportar Vista
+    <button mat-stroked-button (click)="exportView()" [disabled]="exportingExcel" style="margin-right:8px"
+            matTooltip="Descarga la vista actual en Excel, con formato, filtros y fechas.">
+      <mat-icon>table_view</mat-icon> {{ exportingExcel ? 'Generando Excel...' : 'Exportar Excel' }}
     </button>
     <button mat-stroked-button (click)="exportPdf()" style="margin-right:8px"
             matTooltip="Exporta la vista actual de la tabla a un archivo PDF.">

@@ -2,7 +2,7 @@ import { RowDrag } from '../../shared/row-drag';
 import { Component, inject, signal, ChangeDetectorRef, ViewChild, ElementRef, DestroyRef, computed, ViewChildren, QueryList, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { Subject, Subscription } from 'rxjs';
+import { Subject, Subscription, firstValueFrom } from 'rxjs';
 import { filter, startWith, switchMap, take } from 'rxjs/operators';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
@@ -18,8 +18,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { CdkDragDrop, moveItemInArray, transferArrayItem, CdkDropList, CdkDrag, CdkDropListGroup } from '@angular/cdk/drag-drop';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { ReportPdf } from '../../shared/report-pdf';
 import { TaskService, ImportResult } from '../../services/task.service';
 import { TaskFilterService, TaskViewPreset, PersistedSortState } from '../../services/task-filter.service';
 import { ProjectService } from '../../services/project.service';
@@ -1280,53 +1279,30 @@ export class TasksComponent implements AfterViewInit {
     });
   }
 
-  exportView() {
-    const visibleTasks = this.dataSource.data;
-    if (visibleTasks.length === 0) {
+  exportingExcel = false;
+  async exportView() {
+    if (this.exportingExcel) return;
+    const visibleTasks = [...this.dataSource.data];
+    if (!visibleTasks.length) {
       this.openInfoSnack('No hay tareas en la vista actual para exportar', 'warning');
       return;
     }
-
-    const headers = ['Título', 'Proyecto', 'Asignado a', 'Estado', 'Prioridad', 'Inicio', 'Vencimiento', '% Real', '% Esperado'];
-
-    const rows = visibleTasks.map(node => {
-      const prefix = '  '.repeat(node.level || 0);
-
-      const title = `${prefix}${node.title}`;
-      const project = node.projectName ?? '';
-      const assignee = node.assigneeNames?.join(', ') ?? '';
-      const status = this.statusLabels[node.status] ?? node.status;
-      const priority = this.priorityLabels[node.priority] ?? node.priority;
-
-      const startDate = node.startDate ? this.parseLocalDate(node.startDate)?.toLocaleDateString('es-ES') : '';
-      const dueDate = node.dueDate ? this.parseLocalDate(node.dueDate)?.toLocaleDateString('es-ES') : '';
-
-      const progressActual = node.progressActual != null ? `${node.progressActual}%` : '';
-      const progressExpected = node.progressExpected != null ? `${node.progressExpected}%` : '';
-
-      const rowData = [title, project, assignee, status, priority, startDate, dueDate, progressActual, progressExpected];
-
-      const escapeCsv = (val: string | undefined) => {
-        const strVal = String(val ?? '');
-        if (/[";\n\r]/.test(strVal)) {
-          return `"${strVal.replace(/"/g, '""')}"`;
-        }
-        return strVal;
-      };
-
-      return rowData.map(escapeCsv).join(';');
-    });
-
-    const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const today = this.formatLocalDate(new Date());
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `tasktracker_tasks_view_${today}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    this.openInfoSnack(`Exportando ${visibleTasks.length} tareas de la vista...`, 'info');
+    this.exportingExcel = true;
+    try {
+      const blob = await firstValueFrom(this.taskService.exportView(visibleTasks.map(t => ({ id: t.id, level: t.level || 0 }))));
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tasktracker_tareas_${this.formatLocalDate(new Date())}.xlsx`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      this.openInfoSnack(`Excel generado con ${visibleTasks.length} tareas`, 'info');
+    } catch {
+      this.openInfoSnack('No se pudo generar el Excel. Vuelve a intentarlo.', 'warning');
+    } finally {
+      this.exportingExcel = false;
+      this.hierarchyChange.markForCheck();
+    }
   }
 
   exportPdf() {
@@ -1336,12 +1312,15 @@ export class TasksComponent implements AfterViewInit {
       return;
     }
 
-    const doc = new jsPDF({ orientation: 'landscape' });
+    const report = new ReportPdf('Vista de tareas', 'Vista actual: se conserva el orden y la jerarquía de las tareas.', [
+      { label: 'Tareas en la vista', value: visibleTasks.length },
+      { label: 'Completadas', value: visibleTasks.filter(t => t.status === 'DONE').length },
+      { label: 'Bloqueadas', value: visibleTasks.filter(t => t.status === 'BLOCKED').length },
+    ]);
     const head = [['Título', 'Proyecto', 'Asignado', 'Estado', 'Prioridad', 'Inicio', 'Venc.', '% Real', '% Esp.']];
 
     const body = visibleTasks.map(node => {
-      const prefix = '  '.repeat(node.level || 0);
-      const title = `${prefix}${node.title}`;
+      const title = node.title;
       const project = node.projectName ?? '';
       const assignee = node.assigneeNames?.join(', ') ?? '';
       const status = this.statusLabels[node.status] ?? node.status;
@@ -1354,26 +1333,22 @@ export class TasksComponent implements AfterViewInit {
       return [title, project, assignee, status, priority, startDate, dueDate, progressActual, progressExpected];
     });
 
-    autoTable(doc, {
-      head: head,
-      body: body,
-      theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
-      headStyles: { fillColor: [44, 62, 80], textColor: 255, fontStyle: 'bold' },
-      columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 25 }, 2: { cellWidth: 30 } },
-      didDrawPage: (data: { settings: { margin: { left: number } }; pageNumber: number }) => {
-        doc.setFontSize(18);
-        doc.setTextColor(40);
-        doc.text('Vista de Tareas', data.settings.margin.left, 15);
-        const pageCount = (doc as { getNumberOfPages: () => number }).getNumberOfPages();
-        doc.setFontSize(10);
-        doc.text(`Página ${data.pageNumber} de ${pageCount}`, data.settings.margin.left, doc.internal.pageSize.getHeight() - 10);
+    report.table('Detalle de tareas', head[0], body, {
+      styles: { font: 'helvetica', fontSize: 8, cellPadding: 2.5, overflow: 'linebreak', textColor: [12, 46, 66] },
+      columnStyles: { 0: { cellWidth: 65 }, 1: { cellWidth: 32 }, 2: { cellWidth: 34 },
+        5: { cellWidth: 23 }, 6: { cellWidth: 23 }, 7: { halign: 'right' }, 8: { halign: 'right' } },
+      didParseCell: data => {
+        if (data.section !== 'body') return;
+        const task = visibleTasks[data.row.index];
+        if (!task) return;
+        if (data.column.index === 0) data.cell.styles.cellPadding = { top: 3, bottom: 3, right: 3, left: 3 + (task.level || 0) * 3 };
+        if (data.column.index === 3 && task.status === 'BLOCKED') data.cell.styles.textColor = [185, 28, 28];
+        if (data.column.index === 3 && task.status === 'DONE') data.cell.styles.textColor = [22, 101, 52];
       },
-      margin: { top: 20 },
     });
 
     const today = this.formatLocalDate(new Date());
-    doc.save(`tasktracker_tasks_view_${today}.pdf`);
+    report.finish().save(`tasktracker_tareas_${today}.pdf`);
   }
 
   exportTasks() {
