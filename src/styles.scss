@@ -586,3 +586,6 @@ body {
   --mat-snack-bar-supporting-text-color: #fff;
   --mat-snack-bar-button-color: #fff;
 }
+
+// Selectores de lote: contraste legible en ambos temas.
+.mat-mdc-checkbox { --mat-checkbox-label-text-color:var(--text-primary); --mat-checkbox-disabled-label-color:var(--text-muted); --mat-checkbox-unselected-icon-color:var(--text-secondary); --mat-checkbox-unselected-hover-icon-color:var(--accent); --mat-checkbox-selected-focus-icon-color:var(--accent); --mat-checkbox-selected-hover-icon-color:var(--accent); --mat-checkbox-selected-pressed-icon-color:var(--accent); }

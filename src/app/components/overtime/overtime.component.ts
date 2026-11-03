@@ -1,3 +1,4 @@
+import { ActivatedRoute } from '@angular/router';
 import { ReportPdf } from '../../shared/report-pdf';
 import { Component, inject, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -48,6 +49,7 @@ interface Entry {
   styleUrl: './overtime.component.scss',
 })
 export class OvertimeComponent implements OnInit {
+  private route = inject(ActivatedRoute);
   private http = inject(HttpClient);
   private projectsApi = inject(ProjectService);
   private membersApi = inject(MemberService);
@@ -86,6 +88,8 @@ export class OvertimeComponent implements OnInit {
     };
   }
   ngOnInit() {
+    const linkedProject = Number(this.route.snapshot.queryParamMap.get('projectId'));
+    if (Number.isSafeInteger(linkedProject) && linkedProject > 0) this.projectFilter = linkedProject;
     this.load();
   }
   load() {

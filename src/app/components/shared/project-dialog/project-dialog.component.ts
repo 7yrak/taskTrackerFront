@@ -74,9 +74,9 @@ const PROJECT_COLORS = [
     </mat-dialog-actions>
   `,
   styles: [`
-    .dialog-form { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; min-width: 400px; }
+    .dialog-form { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; min-width: 0; width: 100%; }
     .full-width { width: 100%; }
-    .color-label { font-size: 14px; color: #555; margin-bottom: 8px; display: block; }
+    .color-label { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; display: block; }
     .color-section { margin-top: 4px; }
     .color-grid { display: flex; flex-wrap: wrap; gap: 10px; }
     .color-swatch {

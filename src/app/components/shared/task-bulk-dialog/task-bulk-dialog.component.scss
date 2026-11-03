@@ -1,0 +1,14 @@
+:host { display:block; color:var(--text-primary); }
+.intro, .status-note, .review-heading p { color:var(--text-secondary); line-height:1.6; }
+.bulk-field { display:grid; grid-template-columns:215px minmax(0,1fr); align-items:start; gap:12px; margin:22px 0 30px; }
+.bulk-field mat-form-field { width:100%; }
+.error-message { border:1px solid var(--red-border); background:var(--red-soft); color:var(--red-text); padding:14px; border-radius:10px; }
+.review-heading { display:flex; gap:12px; align-items:center; padding:16px; border-radius:12px; background:var(--accent-dim); }
+.review-heading mat-icon { color:var(--accent); }
+h3, p { margin:0 0 6px; }
+.changes { padding:14px 14px 14px 36px; line-height:1.8; overflow-wrap:anywhere; }
+.task-preview { list-style:none; padding:0; margin:12px 0 0; max-height:210px; overflow:auto; }
+.task-preview li { display:flex; flex-direction:column; gap:5px; padding:12px 0; border-bottom:1px solid var(--border); overflow-wrap:anywhere; }
+.task-preview span { color:var(--text-secondary); font-size:12px; }
+mat-dialog-actions { gap:8px; padding:16px 24px; }
+@media(max-width:600px) { .bulk-field { grid-template-columns:1fr; gap:8px; } mat-dialog-actions { flex-wrap:wrap; padding:12px; } }

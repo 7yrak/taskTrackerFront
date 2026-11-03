@@ -29,3 +29,11 @@ export interface ProjectRequest {
   color?: string;
   status?: ProjectStatus;
 }
+
+export interface ProjectDetail {
+  project: Project;
+  tasks: import('./task.model').Task[];
+  members: import('./member.model').Member[];
+  incidents: import('./incident.model').Incident[];
+  overtime: { id: number; date: string; person: string; hours: number; topic: string; sentToManagement: boolean }[];
+}

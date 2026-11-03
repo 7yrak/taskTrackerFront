@@ -12,6 +12,9 @@ export interface ImportResult {
 
 @Injectable({ providedIn: 'root' })
 export class TaskService {
+  bulkUpdate(request: import('../models/task.model').TaskBulkUpdateRequest): Observable<Task[]> {
+    return this.http.patch<Task[]>(`${this.base}/bulk`, request);
+  }
   private http = inject(HttpClient);
   private base = `${API_BASE_URL}/tasks`;
 

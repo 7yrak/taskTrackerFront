@@ -1,3 +1,4 @@
+import { ActivatedRoute } from '@angular/router';
 import { RowDrag } from '../../shared/row-drag';
 import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -50,6 +51,7 @@ import { Task, PRIORITY_LABELS } from '../../models/task.model';
   styleUrl: './incidents.component.scss',
 })
 export class IncidentsComponent implements OnInit, OnDestroy {
+  private route = inject(ActivatedRoute);
   rowDrag = new RowDrag('incidents');
   startRowPointer(event: PointerEvent, row: Incident) {
     this.rowDrag.pointerStart(
@@ -347,6 +349,8 @@ export class IncidentsComponent implements OnInit, OnDestroy {
     };
   }
   ngOnInit() {
+    const linkedProject = Number(this.route.snapshot.queryParamMap.get('projectId'));
+    if (Number.isSafeInteger(linkedProject) && linkedProject > 0) this.projectFilter = String(linkedProject);
     try {
       const saved = JSON.parse(localStorage.getItem('incidents.tableColumnWidths.v1') ?? '{}');
       for (const key of Object.keys(this.columnWidths))

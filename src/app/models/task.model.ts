@@ -1,6 +1,18 @@
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE' | 'BLOCKED' | 'STOPPED';
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
+export interface TaskBulkUpdateRequest {
+  taskIds: number[];
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  updateAssignees?: boolean;
+  assigneeIds?: number[];
+  updateStartDate?: boolean;
+  startDate?: string | null;
+  updateDueDate?: boolean;
+  dueDate?: string | null;
+}
+
 export interface TaskComment {
   id?: number;
   author: string;

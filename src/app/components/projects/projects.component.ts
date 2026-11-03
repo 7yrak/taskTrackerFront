@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -23,7 +24,7 @@ import { PROJECT_STATUSES, PROJECT_STATUS_LABELS, PROJECT_STATUS_COLORS } from '
 @Component({
   selector: 'app-projects',
   imports: [
-    CommonModule, FormsModule,
+    CommonModule, FormsModule, RouterLink,
     MatCardModule, MatButtonModule, MatIconModule,
     MatDialogModule, MatProgressBarModule, MatMenuModule,
     MatSnackBarModule, MatTooltipModule,

@@ -177,6 +177,7 @@
 }
 
 @media (max-width: 900px) {
+  .content-area.tasks-route { overflow:auto; }
   .app-topbar {
     flex-wrap: wrap;
     gap: 6px 10px;

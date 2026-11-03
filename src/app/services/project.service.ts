@@ -17,6 +17,10 @@ export class ProjectService {
     return this.http.get<Project>(`${this.base}/${id}`);
   }
 
+  detail(id: number): Observable<import('../models/project.model').ProjectDetail> {
+    return this.http.get<import('../models/project.model').ProjectDetail>(`${this.base}/${id}/detail`);
+  }
+
   create(req: ProjectRequest): Observable<Project> {
     return this.http.post<Project>(this.base, req);
   }

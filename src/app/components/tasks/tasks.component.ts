@@ -1,3 +1,5 @@
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { TaskBulkDialogComponent } from '../shared/task-bulk-dialog/task-bulk-dialog.component';
 import { RowDrag } from '../../shared/row-drag';
 import { Component, inject, signal, ChangeDetectorRef, ViewChild, ElementRef, DestroyRef, computed, ViewChildren, QueryList, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -106,7 +108,7 @@ import { TASK_PRIORITIES, TASK_STATUSES, parseIsoDateLike, formatDateYmd } from 
     CommonModule, FormsModule,
     ReactiveFormsModule,
     MatTableModule, MatSortModule,
-    MatButtonModule, MatIconModule,
+    MatButtonModule, MatIconModule, MatCheckboxModule,
     MatDialogModule, MatSelectModule, MatFormFieldModule,
     MatInputModule,
     MatSnackBarModule, MatTooltipModule, MatMenuModule, MatButtonToggleModule,
@@ -198,12 +200,13 @@ export class TasksComponent implements AfterViewInit {
   dataSource = new MatTableDataSource<TaskNode>([]);
   taskCount  = signal(0);
 
-  projects = toSignal(this.projectService.getAll(), { initialValue: [] as Project[] });
+  projects = toSignal(this.refresh$.pipe(startWith(undefined), switchMap(() => this.projectService.getAll())), { initialValue: [] as Project[] });
   members  = toSignal(this.memberService.getAll(),  { initialValue: [] as Member[]  });
   columnWidths = signal<TaskTableColumnWidths>(this.loadColumnWidths());
   tableStyleVars = computed(() => this.buildTableStyleVars(this.columnWidths()));
 
   displayedColumns = [
+    'select',
     'title',
     'project',
     'assignee',
@@ -241,7 +244,7 @@ export class TasksComponent implements AfterViewInit {
 
   constructor() {
     toObservable(this.projects).pipe(
-      filter(p => p.length > 0), take(1), takeUntilDestroyed(this.destroyRef)
+      filter(p => p.length > 0), takeUntilDestroyed(this.destroyRef)
     ).subscribe(p => {
       if (!this.filterService.projectsInitialized) {
         this.filterService.projectsInitialized = true;
@@ -280,6 +283,7 @@ export class TasksComponent implements AfterViewInit {
   setViewMode(mode: 'table' | 'kanban') {
     this.viewMode = mode;
     this.filterService.saveViewMode(mode);
+    this.reconcileSelection();
   }
 
   saveCurrentView() {
@@ -594,6 +598,7 @@ export class TasksComponent implements AfterViewInit {
         this.kanbanTasks[task.status].push(task);
       }
     }
+    this.reconcileSelection();
   }
 
   drop(event: CdkDragDrop<TaskNode[]>) {
@@ -749,6 +754,7 @@ export class TasksComponent implements AfterViewInit {
     // Volvemos a filtrar y aplanar para mantener el filtro y recalcular hijos
     const filtered = this.filterTree(this.rootNodes);
     this.dataSource.data = this.flatten(filtered);
+    this.reconcileSelection();
   }
 
   hasExpandableTasks(): boolean {
@@ -765,6 +771,7 @@ export class TasksComponent implements AfterViewInit {
     this.setExpandedRecursive(this.rootNodes, expand);
     const filtered = this.filterTree(this.rootNodes);
     this.dataSource.data = this.flatten(filtered);
+    this.reconcileSelection();
   }
 
   private hasChildrenRecursive(node: TaskNode): boolean {
@@ -807,6 +814,36 @@ export class TasksComponent implements AfterViewInit {
 
   trackById(index: number, node: TaskNode): number {
     return node.id;
+  }
+
+  selectedTaskIds = signal<Set<number>>(new Set());
+  selectableTasks(): TaskNode[] {
+    return (this.viewMode === 'table' ? this.dataSource.data : Object.values(this.kanbanTasks).flat()).filter(t => !t.hasChildren);
+  }
+  allVisibleSelected(): boolean {
+    const tasks = this.selectableTasks();
+    return tasks.length > 0 && tasks.every(t => this.selectedTaskIds().has(t.id));
+  }
+  selectTask(id: number, checked: boolean) {
+    this.selectedTaskIds.update(old => { const next = new Set(old); checked ? next.add(id) : next.delete(id); return next; });
+  }
+  selectVisibleTasks(checked: boolean) {
+    this.selectedTaskIds.set(new Set(checked ? this.selectableTasks().slice(0, 500).map(t => t.id) : []));
+  }
+  private reconcileSelection() {
+    const visibleIds = new Set(this.selectableTasks().map(t => t.id));
+    this.selectedTaskIds.update(old => new Set([...old].filter(id => visibleIds.has(id))));
+  }
+  openBulkEdit() {
+    if (this.editingTaskId() !== null || this.editingTitleId() !== null || this.hierarchyBusy()) {
+      this.openInfoSnack('Guarda o cancela la edición actual antes de editar en lote', 'warning'); return;
+    }
+    const tasks = this.selectableTasks().filter(t => this.selectedTaskIds().has(t.id));
+    if (!tasks.length || tasks.length > 500) return;
+    this.dialog.open(TaskBulkDialogComponent, { width: '760px', maxWidth: '96vw', maxHeight: '94vh', data: { tasks, members: this.members() } })
+      .afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(result => {
+        if (result) { this.selectedTaskIds.set(new Set()); this.refresh$.next(); this.openInfoSnack(`${result.length} ${result.length === 1 ? 'tarea actualizada' : 'tareas actualizadas'}`, 'success'); }
+      });
   }
 
   // ── CRUD ──────────────────────────────────────────────────────────────────

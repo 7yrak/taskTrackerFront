@@ -1,0 +1,47 @@
+<h2 mat-dialog-title>Editar {{ data.tasks.length }} {{ data.tasks.length === 1 ? 'tarea' : 'tareas' }} en lote</h2>
+<mat-dialog-content>
+  @if (error()) { <p class="error-message" role="alert">{{ error() }}</p> }
+  @if (!preview()) {
+    <p class="intro">Activa los campos que quieres cambiar. Los demás conservarán su valor.</p>
+    <div class="bulk-field">
+      <mat-checkbox [(ngModel)]="statusEnabled">Cambiar estado</mat-checkbox>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Nuevo estado</mat-label>
+        <mat-select [(ngModel)]="status" [disabled]="!statusEnabled">@for (s of statuses; track s) { <mat-option [value]="s">{{ statusLabels[s] }}</mat-option> }</mat-select>
+      </mat-form-field>
+    </div>
+    <div class="bulk-field">
+      <mat-checkbox [(ngModel)]="priorityEnabled">Cambiar prioridad</mat-checkbox>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Nueva prioridad</mat-label>
+        <mat-select [(ngModel)]="priority" [disabled]="!priorityEnabled">@for (p of priorities; track p) { <mat-option [value]="p">{{ priorityLabels[p] }}</mat-option> }</mat-select>
+      </mat-form-field>
+    </div>
+    <div class="bulk-field">
+      <mat-checkbox [(ngModel)]="assigneesEnabled">Cambiar responsables</mat-checkbox>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Nuevos responsables</mat-label>
+        <mat-select [(ngModel)]="assigneeIds" multiple [disabled]="!assigneesEnabled">@for (m of data.members; track m.id) { <mat-option [value]="m.id">{{ m.name }}</mat-option> }</mat-select>
+        <mat-hint>La selección reemplaza a los responsables actuales. Vacío: sin asignar.</mat-hint>
+      </mat-form-field>
+    </div>
+    <div class="bulk-field">
+      <mat-checkbox [(ngModel)]="startEnabled">Cambiar inicio</mat-checkbox>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Nueva fecha de inicio</mat-label><input matInput type="date" [(ngModel)]="startDate" [disabled]="!startEnabled" /><mat-hint>Vacío: quitar la fecha.</mat-hint></mat-form-field>
+    </div>
+    <div class="bulk-field">
+      <mat-checkbox [(ngModel)]="dueEnabled">Cambiar vencimiento</mat-checkbox>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Nueva fecha de vencimiento</mat-label><input matInput type="date" [(ngModel)]="dueDate" [disabled]="!dueEnabled" /><mat-hint>Vacío: quitar la fecha.</mat-hint></mat-form-field>
+    </div>
+  } @else {
+    <div class="review-heading"><mat-icon>fact_check</mat-icon><div><h3>Revisa antes de aplicar</h3><p>{{ data.tasks.length }} {{ data.tasks.length === 1 ? 'tarea recibirá' : 'tareas recibirán' }} estos cambios.</p></div></div>
+    <ul class="changes">@for (change of changes(); track change) { <li>{{ change }}</li> }</ul>
+    @if (statusEnabled) { <p class="status-note">Completar una tarea lleva su avance al 100 %. Al reabrir una tarea al 100 %, el avance vuelve a 0 %.</p> }
+    <h3>Tareas seleccionadas</h3>
+    <ul class="task-preview">@for (task of data.tasks; track task.id) { <li><strong>{{ task.title }}</strong><span>{{ task.projectName || 'Sin proyecto' }}</span></li> }</ul>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close [disabled]="saving()">Cancelar</button>
+  @if (preview()) {
+    <button mat-stroked-button (click)="preview.set(false); error.set('')" [disabled]="saving()">Volver</button>
+    <button mat-flat-button (click)="save()" [disabled]="saving()">{{ saving() ? 'Guardando...' : 'Aplicar cambios' }}</button>
+  } @else { <button mat-flat-button (click)="review()" [disabled]="!hasChanges">Revisar cambios</button> }
+</mat-dialog-actions>

@@ -41,7 +41,7 @@
         <mat-card-header>
           <div class="project-color-badge" [style.background-color]="project.color"></div>
           <div style="flex: 1;">
-            <mat-card-title>{{ project.name }}</mat-card-title>
+            <mat-card-title><a class="project-title-link" [routerLink]="['/projects', project.id]">{{ project.name }}</a></mat-card-title>
             <mat-card-subtitle>{{ project.memberCount }} miembro(s)</mat-card-subtitle>
           </div>
           <div class="project-status-chip" 
@@ -101,6 +101,7 @@
         </mat-card-content>
 
         <mat-card-actions align="end">
+          <a mat-button [routerLink]="['/projects', project.id]" [attr.aria-label]="'Ver ficha de ' + project.name"><mat-icon>folder_open</mat-icon>Ver ficha</a>
           <button mat-icon-button color="primary" matTooltip="Editar" (click)="openEdit(project)">
             <mat-icon>edit</mat-icon>
           </button>

@@ -1,0 +1,67 @@
+<section class="page-container project-detail">
+  <a mat-button routerLink="/projects" class="back-link"><mat-icon>arrow_back</mat-icon>Todos los proyectos</a>
+  @if (loading()) {
+    <div class="state-card" role="status"><mat-icon>folder_open</mat-icon><h2>Cargando la ficha del proyecto...</h2><mat-progress-bar mode="indeterminate" /></div>
+  } @else if (error()) {
+    <div class="state-card" role="alert"><mat-icon>error_outline</mat-icon><h2>{{ error() }}</h2><button mat-flat-button (click)="load()">Reintentar</button></div>
+  } @else if (data(); as detail) {
+    <header class="project-hero">
+      <div class="project-heading"><span class="project-mark" [style.background]="detail.project.color"></span><div><p class="eyebrow">FICHA DEL PROYECTO</p><h1>{{ detail.project.name }}</h1><span class="status-pill">{{ projectStatusLabels[detail.project.status] }}</span></div></div>
+      <button mat-stroked-button (click)="editProject()"><mat-icon>edit</mat-icon>Editar proyecto</button>
+      <p class="description">{{ detail.project.description || 'Este proyecto aún no tiene una descripción.' }}</p>
+      <div class="project-meta"><span><mat-icon>event</mat-icon>Inicio: {{ summary().start ? (summary().start | date:'dd/MM/yyyy') : 'Sin fecha' }}</span><span><mat-icon>flag</mat-icon>Entrega: {{ summary().end ? (summary().end | date:'dd/MM/yyyy') : 'Sin fecha' }}</span><span><mat-icon>group</mat-icon>{{ detail.members.length }} personas vinculadas</span></div>
+    </header>
+    <div class="metric-grid">
+      <article><span>Tareas ejecutables</span><strong>{{ summary().total }}</strong><small>{{ summary().done }} completadas · sin contar grupos</small></article>
+      <article [class.alert-metric]="summary().overdue > 0"><span>Vencidas</span><strong>{{ summary().overdue }}</strong><small>{{ summary().blocked }} bloqueadas</small></article>
+      <article><span>Incidentes abiertos</span><strong>{{ summary().openIncidents }}</strong><small>{{ detail.incidents.length }} registrados en total</small></article>
+      <article><span>Horas extras</span><strong>{{ summary().hours | number:'1.0-2' }} <small>h</small></strong><small>{{ detail.overtime.length }} registros</small></article>
+    </div>
+    <mat-tab-group [selectedIndex]="tab()" (selectedIndexChange)="tab.set($event)" animationDuration="0ms" class="project-tabs">
+      <mat-tab label="Resumen">
+        <div class="overview-grid tab-content">
+          <article class="panel"><p class="eyebrow">AVANCE DEL PROYECTO</p><div class="progress-number">{{ summary().progress }}<span>%</span></div><mat-progress-bar mode="determinate" [value]="summary().progress"/><p class="muted">Promedio de las tareas ejecutables; cada grupo se resume desde sus subtareas.</p>
+            @if (detail.project.progressExpected != null) { <div class="expected"><span>Avance esperado por fechas</span><strong>{{ detail.project.progressExpected }} %</strong></div> }
+            <button mat-button (click)="tab.set(1)">Revisar tareas<mat-icon>arrow_forward</mat-icon></button>
+          </article>
+          <article class="panel"><p class="eyebrow">PRÓXIMAS ENTREGAS</p><h2>Qué necesita atención</h2>
+            @for (task of nextTasks(); track task.id) { <button class="next-task" (click)="editTask(task)"><span><strong>{{ task.title }}</strong><small>{{ task.assigneeNames?.join(', ') || 'Sin asignar' }}</small></span><span class="task-date" [class.overdue]="overdue(task)">{{ task.dueDate ? (task.dueDate | date:'dd/MM/yyyy') : 'Sin fecha' }}</span></button> }
+            @empty { <p class="empty-text">No hay tareas activas pendientes de entrega.</p> }
+          </article>
+        </div>
+      </mat-tab>
+      <mat-tab label="Tareas">
+        <div class="tab-content">
+          <div class="section-toolbar"><div><h2>Tareas del proyecto</h2><p class="muted">Los grupos conservan su jerarquía. Selecciona tareas ejecutables para editar en lote.</p></div><button mat-flat-button (click)="editBatch()" [disabled]="!selected().size || selected().size > 500"><mat-icon>edit_note</mat-icon>Editar selección ({{ selected().size }})</button></div>
+          <div class="selection-strip"><mat-checkbox [checked]="allSelected()" [indeterminate]="selected().size > 0 && !allSelected()" (change)="selectAll($event.checked)" [disabled]="!leaves().length">Seleccionar tareas (máximo 500)</mat-checkbox>@if (selected().size) { <button mat-button (click)="selectAll(false)">Limpiar selección</button> }</div>
+          <div class="table-scroll"><table class="detail-table"><thead><tr><th>Selección</th><th>Tarea</th><th>Responsables</th><th>Estado</th><th>Prioridad</th><th>Vencimiento</th><th>Avance</th><th>Acción</th></tr></thead><tbody>
+            @for (row of taskRows(); track row.task.id) { <tr [class.group-row]="row.task.hasChildren"><td><mat-checkbox [checked]="selected().has(row.task.id)" [disabled]="row.task.hasChildren || (!selected().has(row.task.id) && selected().size >= 500)" (change)="toggle(row.task.id,$event.checked)" [aria-label]="'Seleccionar ' + row.task.title" /></td><td><span class="task-title" [style.padding-left.px]="row.level * 16">@if(row.task.hasChildren) { <mat-icon>account_tree</mat-icon> }{{ row.task.title }}</span></td><td>{{ row.task.assigneeNames?.join(', ') || 'Sin asignar' }}</td><td><span class="status-pill" [class.blocked]="row.task.status === 'BLOCKED'">{{ statusLabels[row.task.status] }}</span></td><td>{{ priorityLabels[row.task.priority] }}</td><td [class.overdue]="overdue(row.task)">{{ row.task.dueDate ? (row.task.dueDate | date:'dd/MM/yyyy') : 'Sin fecha' }}</td><td>{{ row.task.progressActual }} %</td><td><button mat-icon-button (click)="editTask(row.task)" [attr.aria-label]="'Editar ' + row.task.title"><mat-icon>edit</mat-icon></button></td></tr> }
+            @empty { <tr><td colspan="8" class="empty-text">Todavía no hay tareas en este proyecto.</td></tr> }
+          </tbody></table></div>
+        </div>
+      </mat-tab>
+      <mat-tab label="Incidentes">
+        <div class="tab-content"><div class="section-toolbar"><h2>Seguimiento de incidentes</h2><a mat-stroked-button routerLink="/incidents" [queryParams]="{projectId:detail.project.id}">Gestionar incidentes<mat-icon>arrow_forward</mat-icon></a></div>
+          <div class="table-scroll"><table class="detail-table"><thead><tr><th>Incidente</th><th>Estado</th><th>Ambiente</th><th>Desarrollo</th><th>QA</th><th>Fecha objetivo</th></tr></thead><tbody>
+            @for(i of detail.incidents; track i.id) { <tr><td><strong>{{ i.title }}</strong><small class="table-note">#{{ i.id }} · {{ i.reporter }}</small></td><td>{{ incidentStatusLabels[i.status] }}</td><td>{{ i.detectedEnvironment }}</td><td>{{ i.developerName || 'Sin asignar' }}</td><td>{{ i.qaName || 'Sin asignar' }}</td><td>{{ i.dueDate ? (i.dueDate | date:'dd/MM/yyyy') : 'Sin fecha' }}</td></tr> }
+            @empty { <tr><td colspan="6" class="empty-text">No hay incidentes registrados en este proyecto.</td></tr> }
+          </tbody></table></div>
+        </div>
+      </mat-tab>
+      <mat-tab label="Equipo">
+        <div class="tab-content"><h2>Personas vinculadas al proyecto</h2><p class="muted">Miembros del proyecto y responsables de sus tareas o incidentes.</p><div class="member-grid">
+          @for(member of detail.members; track member.id) { <article class="member-card"><span class="avatar">{{ member.name.slice(0,1) }}</span><div><h3>{{ member.name }}</h3><p>{{ member.role || 'Miembro del equipo' }}</p><small>{{ memberTasks(member.id) }} tareas ejecutables asignadas</small></div></article> }
+          @empty { <p class="empty-text">Todavía no hay personas vinculadas al proyecto.</p> }
+        </div></div>
+      </mat-tab>
+      <mat-tab label="Horas extras">
+        <div class="tab-content"><div class="section-toolbar"><div><h2>Horas extras del proyecto</h2><p class="muted">{{ summary().hours | number:'1.0-2' }} horas registradas en total.</p></div><a mat-stroked-button routerLink="/overtime" [queryParams]="{projectId:detail.project.id}">Gestionar horas<mat-icon>arrow_forward</mat-icon></a></div>
+          <div class="table-scroll"><table class="detail-table"><thead><tr><th>Fecha</th><th>Persona</th><th>Tema / Motivo</th><th>Horas</th><th>Enviado a jefatura</th></tr></thead><tbody>
+            @for(entry of detail.overtime; track entry.id) { <tr><td>{{ entry.date | date:'dd/MM/yyyy' }}</td><td>{{ entry.person }}</td><td>{{ entry.topic }}</td><td class="number">{{ entry.hours | number:'1.0-2' }}</td><td>{{ entry.sentToManagement ? 'Sí' : 'No' }}</td></tr> }
+            @empty { <tr><td colspan="5" class="empty-text">No hay horas extras registradas en este proyecto.</td></tr> }
+          </tbody></table></div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  }
+</section>

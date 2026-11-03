@@ -92,6 +92,13 @@
     <span class="task-count">{{ taskCount() }} tarea(s)</span>
   </div>
 
+  <div class="bulk-toolbar" role="group" aria-label="Edición en lote">
+    <mat-checkbox [checked]="allVisibleSelected()" [indeterminate]="selectedTaskIds().size > 0 && !allVisibleSelected()"
+      (change)="selectVisibleTasks($event.checked)" [disabled]="!selectableTasks().length">Seleccionar visibles</mat-checkbox>
+    <span>{{ selectedTaskIds().size }} seleccionadas <small>· máximo 500 · los grupos se calculan desde sus subtareas</small></span>
+    <button mat-flat-button (click)="openBulkEdit()" [disabled]="!selectedTaskIds().size || selectedTaskIds().size > 500"><mat-icon>edit_note</mat-icon>Editar selección</button>
+    @if (selectedTaskIds().size) { <button mat-button (click)="selectVisibleTasks(false)">Limpiar selección</button> }
+  </div>
   <!-- Tabla árbol -->
   @if (viewMode === 'table') {
 <div class="hierarchy-drop-zones" [class.dragging]="rowDrag.id !== null">
@@ -106,6 +113,14 @@
     <div class="table-scroll">
       <table mat-table [dataSource]="dataSource" class="tasks-table" [trackBy]="trackById" [formGroup]="editForm" [ngStyle]="tableStyleVars()">
 
+        <ng-container matColumnDef="select" sticky>
+          <th mat-header-cell *matHeaderCellDef><span class="selection-label">Elegir</span></th>
+          <td mat-cell *matCellDef="let node">
+            <mat-checkbox [checked]="selectedTaskIds().has(node.id)" [disabled]="node.hasChildren || (!selectedTaskIds().has(node.id) && selectedTaskIds().size >= 500)"
+              (pointerdown)="$event.stopPropagation()" (click)="$event.stopPropagation()"
+              (change)="selectTask(node.id,$event.checked)" [aria-label]="'Seleccionar ' + node.title" />
+          </td>
+        </ng-container>
         <!-- Columna Tarea (con árbol) -->
         <ng-container matColumnDef="title">
           <th mat-header-cell *matHeaderCellDef>
@@ -473,7 +488,7 @@
             (drop)="dropRow($event, row.id, row.projectId)"
             [class.hierarchy-drop-target]="rowDrag.target === row.id"
             [class.overdue-row]="isRowCritical(row)"
-            [class.parent-row]="row.hasChildren"
+            [class.parent-row]="row.hasChildren" [class.batch-selected]="selectedTaskIds().has(row.id)"
             [class.task-done-row]="row.status === 'DONE'"
             [class.recently-updated]="isRecentlyUpdated(row.id)"
             [class.editing-row]="editingTaskId() === row.id"></tr>
@@ -504,6 +519,9 @@
              
           <div class="kanban-card" *ngFor="let task of kanbanTasks[status]" cdkDrag>
             <div class="card-header">
+              <mat-checkbox [checked]="selectedTaskIds().has(task.id)" [disabled]="!selectedTaskIds().has(task.id) && selectedTaskIds().size >= 500"
+                (pointerdown)="$event.stopPropagation()" (click)="$event.stopPropagation()" (change)="selectTask(task.id,$event.checked)"
+                [aria-label]="'Seleccionar ' + task.title" />
               <div style="display: flex; gap: 8px; align-items: center;">
                 <span class="priority-chip {{ task.priority }}">{{ priorityLabels[task.priority] }}</span>
                 <span class="project-name" *ngIf="task.projectName">
